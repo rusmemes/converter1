@@ -28,21 +28,6 @@ public class TableStringColumnFactory {
             , BiConsumer<OrderRow, String> setter
             , EventHandler<? super KeyEvent> cellEditingListener
     ) {
-        return createColumnInternal(text, minWidth, property, createCellFactory(cellEditingListener), setter);
-    }
-
-    private static <S, T> TableColumn<S, T> createColumnInternal(
-            String text, double minWidth, String property
-            , Callback<TableColumn<S, T>, TableCell<S, T>> cellFactory
-            , BiConsumer<S, T> setter
-    ) {
-        TableColumn<S, T> column = new TableColumn<>(text);
-        column.setMinWidth(minWidth);
-        column.setCellValueFactory(new PropertyValueFactory<>(property));
-        column.setCellFactory(cellFactory);
-        column.setOnEditCommit(
-                cellEditEvent -> setter.accept(cellEditEvent.getRowValue(), cellEditEvent.getNewValue())
-        );
-        return column;
+        return ColumnFactory.createColumn(text, minWidth, property, createCellFactory(cellEditingListener), setter);
     }
 }
