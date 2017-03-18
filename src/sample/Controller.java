@@ -23,8 +23,14 @@ public class Controller {
     public void orderButtonAction() {
         final FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Only *.xls or *.xlsx files", "*.xls", "*.xlsx"));
+        fileChooser.setTitle("Укажите файл с заявкой");
+        fileChooser.setInitialDirectory(
+                new File(System.getProperty("user.home"))
+        );
         File file = fileChooser.showOpenDialog(primaryStage);
-        orderPathField.setText(file.getAbsolutePath());
+        if (file != null) {
+            orderPathField.setText(file.getAbsolutePath());
+        }
     }
 
 }
