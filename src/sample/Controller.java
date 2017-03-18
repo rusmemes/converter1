@@ -1,20 +1,31 @@
 package sample;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.TableView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import java.awt.*;
 import java.io.File;
-import java.io.IOException;
 
 public class Controller {
 
     private Stage primaryStage;
+    private File selectedFile;
 
     @FXML
-    javafx.scene.control.TextField orderPathField;
+    private javafx.scene.control.TextField orderPathField;
+
+    @FXML
+    private javafx.scene.control.TextField orderNumberField;
+
+    @FXML
+    private javafx.scene.control.TextField clientNameField;
+
+    @FXML
+    private TableView filesTable;
+
+    @FXML
+    private TableView orderTable;
 
     public void setPrimaryStage(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -30,6 +41,9 @@ public class Controller {
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
             orderPathField.setText(file.getAbsolutePath());
+            selectedFile = file;
+            orderNumberField.setText(file.getParentFile().getName());
+            clientNameField.setText("test");
         }
     }
 
