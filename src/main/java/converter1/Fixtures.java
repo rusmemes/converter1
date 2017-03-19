@@ -7,7 +7,7 @@ public class Fixtures {
     private Fixtures() {
     }
 
-    public static ObservableList<OrderRow> getData() {
+    public static ObservableList<OrderRow> getOrderData() {
         return FXCollections.observableArrayList(
                 new OrderRow("1", "Деталь 1", "1", "материал", "марка материала", "окраска", "принадлежность", "гибка", "1", "комментарий"),
                 new OrderRow("2", "Деталь 2", "2", "материал", "марка материала", "окраска", "принадлежность", "гибка", "2", "комментарий"),
@@ -29,6 +29,31 @@ public class Fixtures {
                 new OrderRow("18", "Деталь 18", "18", "материал", "марка материала", "окраска", "принадлежность", "гибка", "18", "комментарий"),
                 new OrderRow("19", "Деталь 19", "19", "материал", "марка материала", "окраска", "принадлежность", "гибка", "19", "комментарий"),
                 new OrderRow("20", "Деталь 20", "20", "материал", "марка материала", "окраска", "принадлежность", "гибка", "20", "комментарий")
+        );
+    }
+
+    public static ObservableList<FileRow> getFilesData() {
+        return FXCollections.observableArrayList(
+                new FileRow("file 1"),
+                new FileRow("file 2"),
+                new FileRow("file 3"),
+                new FileRow("file 4"),
+                new FileRow("file 5"),
+                new FileRow("file 6"),
+                new FileRow("file 7"),
+                new FileRow("file 8"),
+                new FileRow("file 9"),
+                new FileRow("file 10"),
+                new FileRow("file 11"),
+                new FileRow("file 12"),
+                new FileRow("file 13"),
+                new FileRow("file 14"),
+                new FileRow("file 15"),
+                new FileRow("file 16"),
+                new FileRow("file 17"),
+                new FileRow("file 18"),
+                new FileRow("file 19"),
+                new FileRow("file 20")
         );
     }
 }

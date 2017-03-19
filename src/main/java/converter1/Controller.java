@@ -26,14 +26,25 @@ public class Controller {
 
     @FXML
     private TableView filesTable;
+    private ObservableList<FileRow> filesTableData = Fixtures.getFilesData();
 
     @FXML
     private TableView<OrderRow> orderTable;
-    private ObservableList<OrderRow> orderTableData = Fixtures.getData();
+    private ObservableList<OrderRow> orderTableData = Fixtures.getOrderData();
 
     @FXML
     public void initialize() {
+        initializeFilesTable();
         initializeOrderTable();
+    }
+
+    private void initializeFilesTable() {
+        TableColumn<FileRow, String> fileNameColumn = ColumnFactory.createColumn(
+                "Файл", 100, "fileName",
+                TextFieldTableCell.forTableColumn(), FileRow::setFileName
+        );
+        filesTable.setItems(filesTableData);
+        filesTable.getColumns().addAll(fileNameColumn);
     }
 
     private void initializeOrderTable() {
