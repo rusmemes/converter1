@@ -1,3 +1,4 @@
 .idea
-converter1.iml
-out/
+*.iml
+out
+target

@@ -1,5 +1,6 @@
-package order;
+package converter1.table;
 
+import converter1.OrderRow;
 import javafx.event.EventHandler;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;

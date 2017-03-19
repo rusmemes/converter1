@@ -1,9 +1,9 @@
-package order;
+package converter1.table;
 
+import converter1.OrderRow;
 import javafx.event.EventHandler;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
 import javafx.util.Callback;
 

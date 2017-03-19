@@ -1,4 +1,4 @@
-package sample;
+package converter1;
 
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -10,11 +10,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import order.EditableStringCell;
-import order.Fixtures;
-import order.OrderRow;
-import order.TableIntegerColumnFactory;
-import order.TableStringColumnFactory;
+import converter1.table.EditableStringCell;
+import converter1.table.TableIntegerColumnFactory;
+import converter1.table.TableStringColumnFactory;
 
 import java.io.File;
 
