@@ -1,21 +1,16 @@
 package converter1;
 
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import converter1.table.TableIntegerColumnFactory;
-import converter1.table.TableStringColumnFactory;
 
 import java.io.File;
 
 public class Controller {
-
-    private static final EventHandler<KeyEvent> EMPTY_EVENT_HANDLER = event -> {};
 
     private Stage primaryStage;
     private File selectedFile;
@@ -44,54 +39,56 @@ public class Controller {
     private void initializeOrderTable() {
         orderTable.setEditable(true);
 
-        TableColumn<OrderRow, Integer> posNumberColumn = TableIntegerColumnFactory.createColumn(
-                "№", 10, "posNumber", OrderRow::setPosNumber, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> posNumberColumn = ColumnFactory.createColumn(
+                "№", 10, "posNumber",
+                TextFieldTableCell.forTableColumn(), OrderRow::setPosNumber
         );
 
         posNumberColumn.setEditable(false);
 
-        TableColumn<OrderRow, String> detailNameColumn = TableStringColumnFactory.createColumn(
-                "Наименование детали", 100, "detailName"
-                , OrderRow::setDetailName
-                , EMPTY_EVENT_HANDLER);
-
-        TableColumn<OrderRow, Integer> countColumn = TableIntegerColumnFactory.createColumn(
-                "Количество", 50, "count", OrderRow::setCount, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> detailNameColumn = ColumnFactory.createColumn(
+                "Наименование детали", 100, "detailName",
+                TextFieldTableCell.forTableColumn(), OrderRow::setDetailName
         );
 
-        TableColumn<OrderRow, String> materialColumn = TableStringColumnFactory.createColumn(
-                "Материал", 50, "material"
-                , OrderRow::setMaterial, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> countColumn = ColumnFactory.createColumn(
+                "Количество", 50, "count",
+                TextFieldTableCell.forTableColumn(), OrderRow::setCount
         );
 
-        TableColumn<OrderRow, String> materialBrandColumn = TableStringColumnFactory.createColumn(
-                "Марка материала", 50, "materialBrand"
-                , OrderRow::setMaterialBrand, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
+                "Материал", 50, "material",
+                TextFieldTableCell.forTableColumn(), OrderRow::setMaterial
         );
 
-        TableColumn<OrderRow, String> colorColumn = TableStringColumnFactory.createColumn(
-                "Окраска", 50, "color"
-                , OrderRow::setColor, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> materialBrandColumn = ColumnFactory.createColumn(
+                "Марка материала", 50, "materialBrand",
+                TextFieldTableCell.forTableColumn(), OrderRow::setMaterialBrand
         );
 
-        TableColumn<OrderRow, String> ownerColumn = TableStringColumnFactory.createColumn(
-                "Принадлежность", 50, "owner"
-                , OrderRow::setOwner, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> colorColumn = ColumnFactory.createColumn(
+                "Окраска", 50, "color",
+                TextFieldTableCell.forTableColumn(), OrderRow::setColor
         );
 
-        TableColumn<OrderRow, String> bendingColumn = TableStringColumnFactory.createColumn(
-                "Гибка", 50, "bending"
-                , OrderRow::setBending, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> ownerColumn = ColumnFactory.createColumn(
+                "Принадлежность", 50, "owner",
+                TextFieldTableCell.forTableColumn(), OrderRow::setOwner
         );
 
-        TableColumn<OrderRow, Integer> bendsCountColumn = TableIntegerColumnFactory.createColumn(
-                "Количество гибов", 50, "bendsCount"
-                , OrderRow::setBendsCount, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> bendingColumn = ColumnFactory.createColumn(
+                "Гибка", 50, "bending",
+                TextFieldTableCell.forTableColumn(), OrderRow::setBending
         );
 
-        TableColumn<OrderRow, String> commentColumn = TableStringColumnFactory.createColumn(
-                "Комментарий", 50, "comment"
-                , OrderRow::setComment, EMPTY_EVENT_HANDLER
+        TableColumn<OrderRow, String> bendsCountColumn = ColumnFactory.createColumn(
+                "Количество гибов", 50, "bendsCount",
+                TextFieldTableCell.forTableColumn(), OrderRow::setBendsCount
+        );
+
+        TableColumn<OrderRow, String> commentColumn = ColumnFactory.createColumn(
+                "Комментарий", 50, "comment",
+                TextFieldTableCell.forTableColumn(), OrderRow::setComment
         );
 
         orderTable.setItems(orderTableData);

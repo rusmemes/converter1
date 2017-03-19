@@ -1,4 +1,4 @@
-package converter1.table;
+package converter1;
 
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -9,8 +9,10 @@ import java.util.function.BiConsumer;
 
 public interface ColumnFactory {
 
-    static <S, T> TableColumn<S, T> createColumn(String text, double minWidth, String property
-            , Callback<TableColumn<S, T>, TableCell<S, T>> cellFactory, BiConsumer<S, T> setter
+    static <S, T> TableColumn<S, T> createColumn(
+            String text, double minWidth, String property,
+            Callback<TableColumn<S, T>, TableCell<S, T>> cellFactory,
+            BiConsumer<S, T> setter
     ) {
         TableColumn<S, T> column = new TableColumn<>(text);
         column.setMinWidth(minWidth);

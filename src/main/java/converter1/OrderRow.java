@@ -1,44 +1,43 @@
 package converter1;
 
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class OrderRow {
 
-    private final SimpleIntegerProperty posNumber;
+    private final SimpleStringProperty posNumber;
     private final SimpleStringProperty detailName;
-    private final SimpleIntegerProperty count;
+    private final SimpleStringProperty count;
     private final SimpleStringProperty material;
     private final SimpleStringProperty materialBrand;
     private final SimpleStringProperty color;
     private final SimpleStringProperty owner;
     private final SimpleStringProperty bending;
-    private final SimpleIntegerProperty bendsCount;
+    private final SimpleStringProperty bendsCount;
     private final SimpleStringProperty comment;
 
-    public OrderRow(Integer posNumber, String detailName, Integer count, String material, String materialBrand,
-                    String color, String owner, String bending, Integer bendsCount, String comment) {
-        this.posNumber = new SimpleIntegerProperty(posNumber);
+    public OrderRow(String posNumber, String detailName, String count, String material, String materialBrand,
+                    String color, String owner, String bending, String bendsCount, String comment) {
+        this.posNumber = new SimpleStringProperty(posNumber);
         this.detailName = new SimpleStringProperty(detailName);
-        this.count = new SimpleIntegerProperty(count);
+        this.count = new SimpleStringProperty(count);
         this.material = new SimpleStringProperty(material);
         this.materialBrand = new SimpleStringProperty(materialBrand);
         this.color = new SimpleStringProperty(color);
         this.owner = new SimpleStringProperty(owner);
         this.bending = new SimpleStringProperty(bending);
-        this.bendsCount = new SimpleIntegerProperty(bendsCount);
+        this.bendsCount = new SimpleStringProperty(bendsCount);
         this.comment = new SimpleStringProperty(comment);
     }
 
-    public int getPosNumber() {
+    public String getPosNumber() {
         return posNumber.get();
     }
 
-    public SimpleIntegerProperty posNumberProperty() {
+    public SimpleStringProperty posNumberProperty() {
         return posNumber;
     }
 
-    public void setPosNumber(int posNumber) {
+    public void setPosNumber(String posNumber) {
         this.posNumber.set(posNumber);
     }
 
@@ -54,15 +53,15 @@ public class OrderRow {
         this.detailName.set(detailName);
     }
 
-    public int getCount() {
+    public String getCount() {
         return count.get();
     }
 
-    public SimpleIntegerProperty countProperty() {
+    public SimpleStringProperty countProperty() {
         return count;
     }
 
-    public void setCount(int count) {
+    public void setCount(String count) {
         this.count.set(count);
     }
 
@@ -126,15 +125,15 @@ public class OrderRow {
         this.bending.set(bending);
     }
 
-    public int getBendsCount() {
+    public String getBendsCount() {
         return bendsCount.get();
     }
 
-    public SimpleIntegerProperty bendsCountProperty() {
+    public SimpleStringProperty bendsCountProperty() {
         return bendsCount;
     }
 
-    public void setBendsCount(int bendsCount) {
+    public void setBendsCount(String bendsCount) {
         this.bendsCount.set(bendsCount);
     }
 
