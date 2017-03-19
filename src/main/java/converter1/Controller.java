@@ -4,6 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -33,9 +34,14 @@ public class Controller {
     private ObservableList<OrderRow> orderTableData = Fixtures.getOrderData();
 
     @FXML
+    private TextArea logArea;
+
+    @FXML
     public void initialize() {
         initializeFilesTable();
         initializeOrderTable();
+        logArea.setEditable(false);
+        logArea.setText("Initialized\n");
     }
 
     private void initializeFilesTable() {
@@ -102,6 +108,8 @@ public class Controller {
                 TextFieldTableCell.forTableColumn(), OrderRow::setComment
         );
 
+        orderTable.getSelectionModel().setCellSelectionEnabled(true);
+
         orderTable.setItems(orderTableData);
         orderTable.getColumns().addAll(
                 posNumberColumn,
@@ -115,6 +123,22 @@ public class Controller {
                 bendsCountColumn,
                 commentColumn
         );
+
+        orderTable.getColumns().forEach(c -> c.setOnEditCommit(event -> {
+            TableColumn<OrderRow, ?> column = event.getTableColumn();
+            String posNumber = event.getRowValue().getPosNumber();
+            Object oldValue = event.getOldValue();
+            Object newValue = event.getNewValue();
+            logArea.setText(logArea.getText() + String.format(
+                    "Value at column '%s' in row '%s' was changed from '%s' to '%s'\n"
+                    , column.getText()
+                    , posNumber
+                    , oldValue
+                    , newValue
+                    )
+            );
+            orderTable.requestFocus();
+        }));
     }
 
     public void setPrimaryStage(Stage primaryStage) {
