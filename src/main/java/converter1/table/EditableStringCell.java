@@ -3,6 +3,9 @@ package converter1.table;
 import converter1.OrderRow;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TextField;
+import org.apache.commons.lang.StringUtils;
+
+import java.util.Objects;
 
 public class EditableStringCell extends TableCell<OrderRow, String> {
 
@@ -24,19 +27,28 @@ public class EditableStringCell extends TableCell<OrderRow, String> {
             setGraphic(textField);
             textField.selectAll();
         }
-
     }
 
     @Override
     public void cancelEdit() {
         super.cancelEdit();
 
-        setText(getItem());
-        setGraphic(null);
+        String newValue = textField.getText();
+        String oldValue = getItem();
+        if (!Objects.equals(oldValue, newValue)) {
+            updateItem(newValue, StringUtils.isEmpty(newValue));
+        } else {
+            setText(oldValue);
+            setGraphic(null);
+        }
     }
 
     @Override
     public void updateItem(String item, boolean empty) {
+        if (textField != null) {
+            item = textField.getText();
+            empty = StringUtils.isEmpty(item);
+        }
         super.updateItem(item, empty);
 
         if (empty) {
@@ -50,6 +62,9 @@ public class EditableStringCell extends TableCell<OrderRow, String> {
                 setText(null);
                 setGraphic(textField);
             } else {
+                if (textField != null) {
+                    textField.setText(getString());
+                }
                 setText(getString());
                 setGraphic(null);
             }
