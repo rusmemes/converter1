@@ -1,4 +1,4 @@
-package converter1;
+package ru.ewromet.converter1;
 
 import javafx.beans.property.SimpleStringProperty;
 

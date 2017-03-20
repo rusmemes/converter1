@@ -1,4 +1,4 @@
-package converter1;
+package ru.ewromet.converter1;
 
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -10,11 +10,13 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.IOException;
 
 public class Controller {
 
     private Stage primaryStage;
     private File selectedFile;
+    private OrderParser parser;
 
     @FXML
     private javafx.scene.control.TextField orderPathField;
@@ -41,7 +43,16 @@ public class Controller {
         initializeFilesTable();
         initializeOrderTable();
         logArea.setEditable(false);
-        logArea.setText("Initialized\n");
+        parser = new OrderParser();
+        logMessage("Initialized");
+    }
+
+    private void logError(String line) {
+        logArea.setText(logArea.getText() + "[ERROR] " + line + " [/ERROR]" + "\n");
+    }
+
+    private void logMessage(String line) {
+        logArea.setText(logArea.getText() + "[MESSAGE] " + line + " [/MESSAGE]" + "\n");
     }
 
     private void initializeFilesTable() {
@@ -129,14 +140,13 @@ public class Controller {
             String posNumber = event.getRowValue().getPosNumber();
             Object oldValue = event.getOldValue();
             Object newValue = event.getNewValue();
-            logArea.setText(logArea.getText() + String.format(
-                    "Value at column '%s' in row '%s' was changed from '%s' to '%s'\n"
+            logMessage(String.format(
+                    "Изменение: колонка '%s', строка '%s', старое значение: '%s', новое значение: '%s'"
                     , column.getText()
                     , posNumber
                     , oldValue
                     , newValue
-                    )
-            );
+            ));
             orderTable.requestFocus();
         }));
     }
@@ -158,7 +168,12 @@ public class Controller {
             selectedFile = file;
             orderNumberField.setText(file.getParentFile().getName());
             clientNameField.setText("test");
+            try {
+                ObservableList<OrderRow> orderRows = parser.parse(file);
+                orderTable.setItems(orderRows);
+            } catch (Exception e) {
+                logError(e.getMessage());
+            }
         }
     }
-
 }

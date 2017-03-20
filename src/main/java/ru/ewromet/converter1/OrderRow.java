@@ -1,4 +1,4 @@
-package converter1;
+package ru.ewromet.converter1;
 
 import javafx.beans.property.SimpleStringProperty;
 
@@ -14,6 +14,7 @@ public class OrderRow {
     private final SimpleStringProperty bending;
     private final SimpleStringProperty bendsCount;
     private final SimpleStringProperty comment;
+    private SimpleStringProperty relativeFilePath;
 
     public OrderRow(String posNumber, String detailName, String count, String material, String materialBrand,
                     String color, String owner, String bending, String bendsCount, String comment) {
@@ -147,5 +148,17 @@ public class OrderRow {
 
     public void setComment(String comment) {
         this.comment.set(comment);
+    }
+
+    public String getRelativeFilePath() {
+        return relativeFilePath.get();
+    }
+
+    public SimpleStringProperty relativeFilePathProperty() {
+        return relativeFilePath;
+    }
+
+    public void setRelativeFilePath(String relativeFilePath) {
+        this.relativeFilePath.set(relativeFilePath);
     }
 }

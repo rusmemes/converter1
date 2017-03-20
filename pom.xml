@@ -6,7 +6,7 @@
 
     <groupId>converter1</groupId>
     <artifactId>converter1</artifactId>
-    <name>converter1</name>
+    <name>ru.ewromet.converter1</name>
 
     <packaging>jar</packaging>
     <version>1.0</version>
@@ -30,7 +30,7 @@
     </dependencies>
 
     <properties>
-        <mainClass>converter1.Main</mainClass>
+        <mainClass>ru.ewromet.converter1.Main</mainClass>
     </properties>
 
     <build>
