@@ -10,7 +10,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.io.IOException;
 
 public class Controller {
 
@@ -48,11 +47,11 @@ public class Controller {
     }
 
     private void logError(String line) {
-        logArea.setText(logArea.getText() + "[ERROR] " + line + " [/ERROR]" + "\n");
+        logArea.setText(logArea.getText() + "[ERROR] " + line + " [/ERROR]\n");
     }
 
     private void logMessage(String line) {
-        logArea.setText(logArea.getText() + "[MESSAGE] " + line + " [/MESSAGE]" + "\n");
+        logArea.setText(logArea.getText() + "[MESSAGE] " + line + " [/MESSAGE]\n");
     }
 
     private void initializeFilesTable() {
@@ -164,13 +163,13 @@ public class Controller {
         );
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
-            orderPathField.setText(file.getAbsolutePath());
-            selectedFile = file;
-            orderNumberField.setText(file.getParentFile().getName());
-            clientNameField.setText("test");
             try {
-                ObservableList<OrderRow> orderRows = parser.parse(file);
-                orderTable.setItems(orderRows);
+                ParseResult parseResult = parser.parse(file);
+                orderTable.setItems(parseResult.getOrderRows());
+                orderPathField.setText(file.getAbsolutePath());
+                selectedFile = file;
+                orderNumberField.setText(file.getParentFile().getName());
+                clientNameField.setText(parseResult.getClientName());
             } catch (Exception e) {
                 logError(e.getMessage());
             }

@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 public class OrderParser {
-    public ObservableList<OrderRow> parse(File orderExcelFile) throws IOException {
+    public ParseResult parse(File orderExcelFile) throws IOException {
 
         try (FileInputStream inputStream = new FileInputStream(orderExcelFile);
              Workbook workbook = getWorkbook(inputStream, orderExcelFile.getAbsolutePath())
@@ -43,7 +43,7 @@ public class OrderParser {
             }
         }
 
-        return FXCollections.emptyObservableList();
+        return new ParseResult(FXCollections.emptyObservableList(), "test");
     }
 
     private Workbook getWorkbook(FileInputStream inputStream, String excelFilePath) throws IOException {
