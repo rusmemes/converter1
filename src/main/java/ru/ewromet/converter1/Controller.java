@@ -11,7 +11,7 @@ import javafx.stage.Stage;
 
 import java.io.File;
 
-public class Controller {
+public class Controller implements Logger {
 
     private Stage primaryStage;
     private File selectedFile;
@@ -46,11 +46,13 @@ public class Controller {
         logMessage("Initialized");
     }
 
-    private void logError(String line) {
+    @Override
+    public void logError(String line) {
         logArea.setText(logArea.getText() + "[ERROR] " + line + " [/ERROR]\n");
     }
 
-    private void logMessage(String line) {
+    @Override
+    public void logMessage(String line) {
         logArea.setText(logArea.getText() + "[MESSAGE] " + line + " [/MESSAGE]\n");
     }
 
@@ -164,7 +166,7 @@ public class Controller {
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
             try {
-                ParseResult parseResult = parser.parse(file);
+                ParseResult parseResult = parser.parse(file, this);
                 orderTable.setItems(parseResult.getOrderRows());
                 orderPathField.setText(file.getAbsolutePath());
                 selectedFile = file;
