@@ -1,6 +1,7 @@
 package ru.ewromet.converter1;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -43,16 +44,28 @@ public class OrderParser {
 
             Cell labelCell = orderInfoRow.getCell(2);
             Cell clientNameCell = orderInfoRow.getCell(3);
+            String clientName = StringUtils.EMPTY;
 
             if (labelCell == null || !StringUtils.contains(labelCell.getStringCellValue(), "Заказчик")
                     || clientNameCell == null || StringUtils.isEmpty(clientNameCell.getStringCellValue())) {
-                throw new Exception("Ожидается, что в 4-ой колонке 6-ой строки будет информация о заказчике");
+                clientName = clientNameCell.getStringCellValue();
+                logger.logMessage("Имя клиента: " + clientName);
             }
 
-            String clientName = clientNameCell.getStringCellValue();
-            logger.logMessage("Имя клиента: " + clientName);
-            Row tableHeaderRow = sheet.getRow(13);
-            String posColumnHeader = tableHeaderRow.getCell(1).getStringCellValue();
+            int tableHeaderRowNum = 0;
+            Row tableHeaderRow = null;
+            String posColumnHeader = StringUtils.EMPTY;
+            for (int i = 6; i < sheet.getLastRowNum(); i++) {
+                tableHeaderRow = sheet.getRow(i);
+                final Cell cell = tableHeaderRow.getCell(1);
+                if (cell != null) {
+                    posColumnHeader = cell.getStringCellValue();
+                    if (StringUtils.contains(posColumnHeader, "\u2116")) {
+                        tableHeaderRowNum = i;
+                        break;
+                    }
+                }
+            }
 
             if (!StringUtils.contains(posColumnHeader, "\u2116")) {
                 throw new Exception("Ошибка при попытке найти колонку с позициями деталей по символу '\u2116'");
@@ -64,40 +77,58 @@ public class OrderParser {
                 Cell cell = tableHeaderRow.getCell(i);
                 if (i < 15) {
                     if (cell == null || !StringUtils.containsIgnoreCase(cell.getStringCellValue(), headerLabels.get(i))) {
-                        throw new Exception("Ожидается, что в строке шапки таблицы (14-я строка) в ячейке " +
+                        throw new Exception("Ожидается, что в строке шапки таблицы (строка " + tableHeaderRowNum + ") в ячейке " +
                                 "№" + (i + 1) + " будет содержаться подстрока '" + headerLabels.get(i) + "'");
                     }
                 } else if (cell != null && StringUtils.isNotBlank(cell.getStringCellValue())) {
                     throw new Exception(
-                            "Ожидается, что последней колонкой с контентом в строке шапки (14-я строка) таблицы " +
+                            "Ожидается, что последней колонкой с контентом в строке шапки (строка " + tableHeaderRowNum + ") таблицы " +
                                     "будет колонка №15. Наличие контента в любой последующей ячейке данной строки " +
                                     "может свидетельствовать о некорректности заполнения файла заявки");
                 }
             }
 
-            logger.logMessage("Проверка шапки таблицы завершена");
-//            for (Row nextRow : sheet) {
-//                Iterator<Cell> cellIterator = nextRow.cellIterator();
-//
-//                while (cellIterator.hasNext()) {
-//                    Cell nextCell = cellIterator.next();
-//                    int columnIndex = nextCell.getColumnIndex();
-//
-//                    switch (columnIndex) {
-//                        case 1:
-//
-//                            break;
-//                        case 2:
-//
-//                            break;
-//                        case 3:
-//
-//                            break;
-//                    }
-//                }
-//            }
-            return new ParseResult(FXCollections.emptyObservableList(), clientName);
+            logger.logMessage("Проверка шапки таблицы (строка " + tableHeaderRowNum + ") завершена");
+
+            final ObservableList<OrderRow> orderRows = FXCollections.observableArrayList();
+
+            for (int i = tableHeaderRowNum + 1; i < sheet.getLastRowNum(); i++) {
+                final Row row = sheet.getRow(i);
+                Cell cell = row.getCell(1);
+                if (cell == null) {
+                    continue;
+                } else {
+                    try {
+                        cell.getNumericCellValue();
+                    } catch (Exception e) {
+                        logger.logMessage("Окончание таблицы - строка " + i);
+                        break;
+                    }
+                }
+                cell = row.getCell(2);
+                if (cell == null || StringUtils.isBlank(cell.getStringCellValue())) {
+                    continue;
+                }
+                orderRows.add(createOrderRowFromExcelRow(row));
+            }
+
+            return new ParseResult(orderRows, clientName);
         }
+    }
+
+    private OrderRow createOrderRowFromExcelRow(Row excelRow) {
+        return new OrderRow(
+                String.valueOf((int) excelRow.getCell(1).getNumericCellValue()),
+                excelRow.getCell(2).getStringCellValue(),
+                String.valueOf((int) excelRow.getCell(3).getNumericCellValue()),
+                excelRow.getCell(4).getStringCellValue(),
+                excelRow.getCell(5).getStringCellValue(),
+                excelRow.getCell(7).getStringCellValue(),
+                excelRow.getCell(8).getStringCellValue(),
+                excelRow.getCell(9).getNumericCellValue() > 0 ? "да" : "нет",
+                String.valueOf((int) excelRow.getCell(9).getNumericCellValue()),
+                excelRow.getCell(14).getStringCellValue()
+        );
     }
 
     private Workbook getWorkbook(FileInputStream inputStream, String excelFilePath) throws IOException {
