@@ -1,5 +1,7 @@
 package ru.ewromet.converter1;
 
+import org.apache.commons.lang3.StringUtils;
+
 import javafx.beans.property.SimpleStringProperty;
 
 public class OrderRow {
@@ -11,13 +13,24 @@ public class OrderRow {
     private final SimpleStringProperty materialBrand;
     private final SimpleStringProperty color;
     private final SimpleStringProperty owner;
-    private final SimpleStringProperty bending;
     private final SimpleStringProperty bendsCount;
     private final SimpleStringProperty comment;
     private SimpleStringProperty relativeFilePath;
 
+    public OrderRow() {
+        this.posNumber = new SimpleStringProperty(StringUtils.EMPTY);
+        this.detailName = new SimpleStringProperty(StringUtils.EMPTY);
+        this.count = new SimpleStringProperty(StringUtils.EMPTY);
+        this.material = new SimpleStringProperty(StringUtils.EMPTY);
+        this.materialBrand = new SimpleStringProperty(StringUtils.EMPTY);
+        this.color = new SimpleStringProperty(StringUtils.EMPTY);
+        this.owner = new SimpleStringProperty(StringUtils.EMPTY);
+        this.bendsCount = new SimpleStringProperty(StringUtils.EMPTY);
+        this.comment = new SimpleStringProperty(StringUtils.EMPTY);
+    }
+
     public OrderRow(String posNumber, String detailName, String count, String material, String materialBrand,
-                    String color, String owner, String bending, String bendsCount, String comment) {
+                    String color, String owner, String bendsCount, String comment) {
         this.posNumber = new SimpleStringProperty(posNumber);
         this.detailName = new SimpleStringProperty(detailName);
         this.count = new SimpleStringProperty(count);
@@ -25,7 +38,6 @@ public class OrderRow {
         this.materialBrand = new SimpleStringProperty(materialBrand);
         this.color = new SimpleStringProperty(color);
         this.owner = new SimpleStringProperty(owner);
-        this.bending = new SimpleStringProperty(bending);
         this.bendsCount = new SimpleStringProperty(bendsCount);
         this.comment = new SimpleStringProperty(comment);
     }
@@ -112,18 +124,6 @@ public class OrderRow {
 
     public void setOwner(String owner) {
         this.owner.set(owner);
-    }
-
-    public String getBending() {
-        return bending.get();
-    }
-
-    public SimpleStringProperty bendingProperty() {
-        return bending;
-    }
-
-    public void setBending(String bending) {
-        this.bending.set(bending);
     }
 
     public String getBendsCount() {

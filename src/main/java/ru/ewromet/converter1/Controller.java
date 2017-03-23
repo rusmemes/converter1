@@ -69,11 +69,14 @@ public class Controller implements Logger {
         orderTable.setEditable(true);
 
         TableColumn<OrderRow, String> posNumberColumn = ColumnFactory.createColumn(
-                "№", 10, "posNumber",
+                "№", 30, "posNumber",
                 TextFieldTableCell.forTableColumn(), OrderRow::setPosNumber
         );
 
         posNumberColumn.setEditable(false);
+        posNumberColumn.setMaxWidth(30);
+        posNumberColumn.setResizable(false);
+        posNumberColumn.setStyle("-fx-alignment: CENTER;");
 
         TableColumn<OrderRow, String> detailNameColumn = ColumnFactory.createColumn(
                 "Наименование детали", 100, "detailName",
@@ -81,39 +84,46 @@ public class Controller implements Logger {
         );
 
         TableColumn<OrderRow, String> countColumn = ColumnFactory.createColumn(
-                "Количество", 50, "count",
+                "Количество", 80, "count",
                 TextFieldTableCell.forTableColumn(), OrderRow::setCount
         );
+
+        countColumn.setMaxWidth(80);
+        countColumn.setResizable(false);
+        countColumn.setStyle("-fx-alignment: CENTER;");
 
         TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
                 "Материал", 50, "material",
                 TextFieldTableCell.forTableColumn(), OrderRow::setMaterial
         );
+        materialColumn.setStyle("-fx-alignment: CENTER;");
 
         TableColumn<OrderRow, String> materialBrandColumn = ColumnFactory.createColumn(
                 "Марка материала", 50, "materialBrand",
                 TextFieldTableCell.forTableColumn(), OrderRow::setMaterialBrand
         );
+        materialBrandColumn.setStyle("-fx-alignment: CENTER;");
 
         TableColumn<OrderRow, String> colorColumn = ColumnFactory.createColumn(
                 "Окраска", 50, "color",
                 TextFieldTableCell.forTableColumn(), OrderRow::setColor
         );
+        colorColumn.setStyle("-fx-alignment: CENTER;");
 
         TableColumn<OrderRow, String> ownerColumn = ColumnFactory.createColumn(
                 "Принадлежность", 50, "owner",
                 TextFieldTableCell.forTableColumn(), OrderRow::setOwner
         );
-
-        TableColumn<OrderRow, String> bendingColumn = ColumnFactory.createColumn(
-                "Гибка", 50, "bending",
-                TextFieldTableCell.forTableColumn(), OrderRow::setBending
-        );
+        ownerColumn.setStyle("-fx-alignment: CENTER;");
 
         TableColumn<OrderRow, String> bendsCountColumn = ColumnFactory.createColumn(
-                "Количество гибов", 50, "bendsCount",
+                "Кол-во гибов", 85, "bendsCount",
                 TextFieldTableCell.forTableColumn(), OrderRow::setBendsCount
         );
+
+        bendsCountColumn.setMaxWidth(85);
+        bendsCountColumn.setResizable(false);
+        bendsCountColumn.setStyle("-fx-alignment: CENTER;");
 
         TableColumn<OrderRow, String> commentColumn = ColumnFactory.createColumn(
                 "Комментарий", 50, "comment",
@@ -131,7 +141,6 @@ public class Controller implements Logger {
                 materialBrandColumn,
                 colorColumn,
                 ownerColumn,
-                bendingColumn,
                 bendsCountColumn,
                 commentColumn
         );
