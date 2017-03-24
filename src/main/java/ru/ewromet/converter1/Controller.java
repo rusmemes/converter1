@@ -8,10 +8,14 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
+
+import static ru.ewromet.converter1.OrderRow.MATERIALS_LABELS;
 
 public class Controller implements Logger {
 
@@ -96,7 +100,8 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
                 "Материал", 50, "material",
-                TextFieldTableCell.forTableColumn(), OrderRow::setMaterial
+                ChoiceBoxTableCell.forTableColumn(MATERIALS_LABELS.keySet().toArray(new String[MATERIALS_LABELS.size()])),
+                OrderRow::setMaterial
         );
         materialColumn.setStyle("-fx-alignment: CENTER;");
 

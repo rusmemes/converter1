@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -18,6 +18,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+
+import static ru.ewromet.converter1.OrderRow.MATERIALS_LABELS;
 
 public class OrderParser {
 
@@ -113,6 +115,8 @@ public class OrderParser {
 
                 final ObservableList<OrderRow> orderRows = FXCollections.observableArrayList();
 
+                Set<String> addedDetailNames = new HashSet<>();
+
                 for (int l = tableHeaderRowNum + 1; l < sheet.getLastRowNum(); l++) {
                     final Row row = sheet.getRow(l);
                     Cell cell = row.getCell(firstCellNum);
@@ -130,6 +134,9 @@ public class OrderParser {
                     if (cell == null || StringUtils.isBlank(cell.getStringCellValue())) {
                         continue;
                     }
+                    if (!addedDetailNames.add(cell.getStringCellValue())) {
+                        throw new Exception("Дублирующееся наименование детали: " + cell.getStringCellValue());
+                    }
                     orderRows.add(createOrderRowFromExcelRow(row));
                 }
 
@@ -141,7 +148,7 @@ public class OrderParser {
         return new ParseResult(FXCollections.emptyObservableList(), StringUtils.EMPTY);
     }
 
-    private OrderRow createOrderRowFromExcelRow(Row excelRow) {
+    private OrderRow createOrderRowFromExcelRow(Row excelRow) throws Exception {
         final OrderRow orderRow = new OrderRow();
         for (Integer columnIndex : tableColumns.keySet()) {
             final Cell cell = excelRow.getCell(columnIndex);
@@ -158,31 +165,38 @@ public class OrderParser {
             }
             switch (columnIndex) {
                 case 1:
-                    if  (StringUtils.isBlank(value)) {
-                        value = "0";
+                    final Integer posNumber = Integer.valueOf(value);
+                    if (posNumber < 1) {
+                        throw new Exception("Некорретный номер позиции: " + posNumber);
                     }
-                    orderRow.setPosNumber(Integer.valueOf(value));
+                    orderRow.setPosNumber(posNumber);
                     break;
                 case 2:
                     orderRow.setDetailName(value);
                     break;
                 case 3:
-                    if  (StringUtils.isBlank(value)) {
-                        value = "0";
+                    final Integer count;
+                    if  (StringUtils.isBlank(value) || (count = Integer.valueOf(value)) == 0) {
+                        throw new Exception("Количество деталей не может быть равно 0, строка " + orderRow.getPosNumber());
                     }
-                    orderRow.setCount(Integer.valueOf(value));
+                    orderRow.setCount(count);
                     break;
                 case 4:
+                    value = value.trim().toLowerCase();
+                    if (!MATERIALS_LABELS.containsKey(value)) {
+                        throw new Exception("Строка " + orderRow.getPosNumber() + ": материал указан некорректно, допустимые варианты " + MATERIALS_LABELS.keySet());
+                    }
                     orderRow.setMaterial(value);
                     break;
                 case 5:
                     orderRow.setMaterialBrand(value);
                     break;
                 case 6:
-                    if  (StringUtils.isBlank(value)) {
-                        value = "0";
+                    final Float thickness;
+                    if  (StringUtils.isBlank(value) || (thickness = Float.valueOf(value)) == 0) {
+                        throw new Exception("Толщина не может быть равной 0, строка " + orderRow.getPosNumber());
                     }
-                    orderRow.setThickness(Float.valueOf(value));
+                    orderRow.setThickness(thickness);
                     break;
                 case 7:
                     orderRow.setColor(value);

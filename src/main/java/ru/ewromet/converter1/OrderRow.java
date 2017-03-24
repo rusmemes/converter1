@@ -1,12 +1,36 @@
 package ru.ewromet.converter1;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class OrderRow {
+
+    public static final Map<String, String> MATERIALS_LABELS = Collections.unmodifiableMap(new HashMap<String, String>(){{
+        put("сталь_хк", "Mild Steel");
+        put("сталь х/к", "Mild Steel");
+        put("сталь_гк", "Mild Steel");
+        put("сталь г/к", "Mild Steel");
+        put("сталь_рифл", "Mild Steel");
+        put("оцинковка", "Zintec");
+        put("нерж_мат", "Stainless Steel");
+        put("нерж.мат", "Stainless Steel");
+        put("нерж_рифл", "Stainless Steel");
+        put("нерж_зерк", "Stainless Steel Foil");
+        put("нерж.зерк +пл", "Stainless Steel Foil");
+        put("нерж.зерк", "Stainless Steel Foil");
+        put("нерж. зеркало", "Stainless Steel Foil");
+        put("нерж_шлиф", "Stainless Steel Foil");
+        put("aлюминий", "Aluminium");
+        put("aлюм_рифл", "Aluminium");
+        put("латунь", "Brass");
+        put("медь", "Copper");
+        put("иное", "");
+    }});
 
     private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();;
     private final SimpleStringProperty detailName = new SimpleStringProperty();;
