@@ -20,7 +20,9 @@ public interface ColumnFactory {
         column.setCellFactory(cellFactory);
         column.setSortable(false);
         column.setOnEditCommit(
-                cellEditEvent -> setter.accept(cellEditEvent.getRowValue(), cellEditEvent.getNewValue())
+                cellEditEvent -> {
+                    setter.accept(cellEditEvent.getRowValue(), cellEditEvent.getNewValue());
+                }
         );
         return column;
     }

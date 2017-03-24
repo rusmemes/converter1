@@ -21,21 +21,21 @@ import javafx.collections.ObservableList;
 
 public class OrderParser {
 
-    private static final Map<Integer, Pair<BiConsumer<OrderRow, String>, String>> tableColumns = new HashMap<Integer, Pair<BiConsumer<OrderRow, String>, String>>() {{
-        put(1, Pair.of(OrderRow::setPosNumber, "\u2116"));
-        put(2, Pair.of(OrderRow::setDetailName, "наименование детали"));
-        put(3, Pair.of(OrderRow::setCount, "количество"));
-        put(4, Pair.of(OrderRow::setMaterial, "материал"));
-        put(5, Pair.of(OrderRow::setMaterialBrand, "марка материала"));
-        put(6, Pair.of(OrderRow::setThickness, "толщина"));
-        put(7, Pair.of(OrderRow::setColor, "для окраски"));
-        put(8, Pair.of(OrderRow::setOwner, "принадлежность металла"));
-        put(9, Pair.of(OrderRow::setBendsCount, "количество гибов на деталь"));
-        put(10, Pair.of(OrderRow::setDrawCreation, "создание чертежа"));
-        put(11, Pair.of(OrderRow::setCleaning, "зачистка"));
-        put(12, Pair.of(OrderRow::setWasteReturn, "возврат отходов"));
-        put(13, Pair.of(OrderRow::setCuttingReturn, "возврат высечки"));
-        put(14, Pair.of(OrderRow::setComment, "комментарий"));
+    private static final Map<Integer, String> tableColumns = new HashMap<Integer, String>() {{
+        put(1, "\u2116");
+        put(2, "наименование детали");
+        put(3,"количество");
+        put(4, "материал");
+        put(5, "марка материала");
+        put(6, "толщина");
+        put(7,"для окраски");
+        put(8,"принадлежность металла");
+        put(9, "количество гибов на деталь");
+        put(10, "создание чертежа");
+        put(11, "зачистка");
+        put(12, "возврат отходов");
+        put(13, "возврат высечки");
+        put(14, "комментарий");
     }};
 
     public ParseResult parse(File orderExcelFile, Logger logger) throws Exception {
@@ -46,7 +46,7 @@ public class OrderParser {
             String clientName = StringUtils.EMPTY;
             String posColumnHeader = StringUtils.EMPTY;
             int tableHeaderRowNum = 0;
-            final String posNumberHeaderRowSymbol = tableColumns.get(1).getRight();
+            final String posNumberHeaderRowSymbol = tableColumns.get(1);
 
             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
                 Sheet sheet = workbook.getSheetAt(i);
@@ -102,7 +102,7 @@ public class OrderParser {
 
                 for (int l = firstCellNum; l < lastCellNum; l++) {
                     Cell cell = tableHeadRow.getCell(l);
-                    final String label = tableColumns.get(l).getRight();
+                    final String label = tableColumns.get(l);
                     if (cell == null || !StringUtils.containsIgnoreCase(cell.getStringCellValue(), label)) {
                         throw new Exception("Ожидается, что в строке шапки таблицы (строка " + (tableHeaderRowNum + 1) + ") " +
                                 "в ячейке " + "№" + (l + 1) + " будет содержаться подстрока '" + label + "'");
@@ -156,7 +156,62 @@ public class OrderParser {
                     value = String.valueOf((int) cell.getNumericCellValue());
                 } catch (Exception ignored2) {}
             }
-            tableColumns.get(columnIndex).getLeft().accept(orderRow, value);
+            switch (columnIndex) {
+                case 1:
+                    if  (StringUtils.isBlank(value)) {
+                        value = "0";
+                    }
+                    orderRow.setPosNumber(Integer.valueOf(value));
+                    break;
+                case 2:
+                    orderRow.setDetailName(value);
+                    break;
+                case 3:
+                    if  (StringUtils.isBlank(value)) {
+                        value = "0";
+                    }
+                    orderRow.setCount(Integer.valueOf(value));
+                    break;
+                case 4:
+                    orderRow.setMaterial(value);
+                    break;
+                case 5:
+                    orderRow.setMaterialBrand(value);
+                    break;
+                case 6:
+                    if  (StringUtils.isBlank(value)) {
+                        value = "0";
+                    }
+                    orderRow.setThickness(Float.valueOf(value));
+                    break;
+                case 7:
+                    orderRow.setColor(value);
+                    break;
+                case 8:
+                    orderRow.setOwner(value);
+                    break;
+                case 9:
+                    if  (StringUtils.isBlank(value)) {
+                        value = "0";
+                    }
+                    orderRow.setBendsCount(Integer.valueOf(value));
+                    break;
+                case 10:
+                    orderRow.setDrawCreation(value);
+                    break;
+                case 11:
+                    orderRow.setCleaning(value);
+                    break;
+                case 12:
+                    orderRow.setWasteReturn(value);
+                    break;
+                case 13:
+                    orderRow.setCuttingReturn(value);
+                    break;
+                case 14:
+                    orderRow.setComment(value);
+                    break;
+            }
         }
         return orderRow;
     }

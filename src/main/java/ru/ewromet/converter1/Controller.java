@@ -1,6 +1,9 @@
 package ru.ewromet.converter1;
 
+import java.io.File;
+
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -8,8 +11,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
-import java.io.File;
+import javafx.util.converter.IntegerStringConverter;
 
 public class Controller implements Logger {
 
@@ -68,9 +70,9 @@ public class Controller implements Logger {
     private void initializeOrderTable() {
         orderTable.setEditable(true);
 
-        TableColumn<OrderRow, String> posNumberColumn = ColumnFactory.createColumn(
+        TableColumn<OrderRow, Integer> posNumberColumn = ColumnFactory.createColumn(
                 "№", 30, "posNumber",
-                TextFieldTableCell.forTableColumn(), OrderRow::setPosNumber
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), OrderRow::setPosNumber
         );
 
         posNumberColumn.setEditable(false);
@@ -83,12 +85,12 @@ public class Controller implements Logger {
                 TextFieldTableCell.forTableColumn(), OrderRow::setDetailName
         );
 
-        TableColumn<OrderRow, String> countColumn = ColumnFactory.createColumn(
-                "Количество", 80, "count",
-                TextFieldTableCell.forTableColumn(), OrderRow::setCount
+        TableColumn<OrderRow, Integer> countColumn = ColumnFactory.createColumn(
+                "Кол-во", 50, "count",
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), OrderRow::setCount
         );
 
-        countColumn.setMaxWidth(80);
+        countColumn.setMaxWidth(50);
         countColumn.setResizable(false);
         countColumn.setStyle("-fx-alignment: CENTER;");
 
@@ -116,9 +118,9 @@ public class Controller implements Logger {
         );
         ownerColumn.setStyle("-fx-alignment: CENTER;");
 
-        TableColumn<OrderRow, String> bendsCountColumn = ColumnFactory.createColumn(
+        TableColumn<OrderRow, Integer> bendsCountColumn = ColumnFactory.createColumn(
                 "Кол-во гибов", 85, "bendsCount",
-                TextFieldTableCell.forTableColumn(), OrderRow::setBendsCount
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), OrderRow::setBendsCount
         );
 
         bendsCountColumn.setMaxWidth(85);
@@ -145,20 +147,23 @@ public class Controller implements Logger {
                 commentColumn
         );
 
-        orderTable.getColumns().forEach(c -> c.setOnEditCommit(event -> {
-            TableColumn<OrderRow, ?> column = event.getTableColumn();
-            String posNumber = event.getRowValue().getPosNumber();
-            Object oldValue = event.getOldValue();
-            Object newValue = event.getNewValue();
-            logMessage(String.format(
-                    "Изменение: колонка '%s', строка '%s', старое значение: '%s', новое значение: '%s'"
-                    , column.getText()
-                    , posNumber
-                    , oldValue
-                    , newValue
-            ));
-            orderTable.requestFocus();
-        }));
+        orderTable.getColumns().forEach(column -> {
+            final EventHandler oldOnEditCommitListener = column.getOnEditCommit();
+            column.setOnEditCommit(event -> {
+                oldOnEditCommitListener.handle(event);
+                final int posNumber = event.getRowValue().getPosNumber();
+                Object oldValue = event.getOldValue();
+                Object newValue = event.getNewValue();
+                logMessage(String.format(
+                        "Изменение: колонка '%s', строка '%d', старое значение: '%s', новое значение: '%s'"
+                        , event.getTableColumn().getText()
+                        , posNumber
+                        , oldValue
+                        , newValue
+                ));
+                orderTable.requestFocus();
+            });
+        });
     }
 
     public void setPrimaryStage(Stage primaryStage) {

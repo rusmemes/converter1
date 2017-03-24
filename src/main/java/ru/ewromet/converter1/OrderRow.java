@@ -2,46 +2,32 @@ package ru.ewromet.converter1;
 
 import org.apache.commons.lang3.StringUtils;
 
+import javafx.beans.property.SimpleFloatProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class OrderRow {
 
-    private final SimpleStringProperty posNumber;
-    private final SimpleStringProperty detailName;
-    private final SimpleStringProperty count;
-    private final SimpleStringProperty material;
-    private final SimpleStringProperty materialBrand;
-    private final SimpleStringProperty color;
-    private final SimpleStringProperty thickness;
-    private final SimpleStringProperty owner;
-    private final SimpleStringProperty bendsCount;
-    private final SimpleStringProperty drawCreation;
-    private final SimpleStringProperty cleaning;
-    private final SimpleStringProperty wasteReturn;
-    private final SimpleStringProperty cuttingReturn;
-    private final SimpleStringProperty comment;
-    private final SimpleStringProperty relativeFilePath;
+    private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();;
+    private final SimpleStringProperty detailName = new SimpleStringProperty();;
+    private final SimpleIntegerProperty count = new SimpleIntegerProperty();;
+    private final SimpleStringProperty material = new SimpleStringProperty();;
+    private final SimpleStringProperty materialBrand = new SimpleStringProperty();;
+    private final SimpleStringProperty color = new SimpleStringProperty();;
+    private final SimpleFloatProperty thickness = new SimpleFloatProperty();;
+    private final SimpleStringProperty owner = new SimpleStringProperty();;
+    private final SimpleIntegerProperty bendsCount = new SimpleIntegerProperty();;
+    private final SimpleStringProperty drawCreation = new SimpleStringProperty();;
+    private final SimpleStringProperty cleaning = new SimpleStringProperty();;
+    private final SimpleStringProperty wasteReturn = new SimpleStringProperty();;
+    private final SimpleStringProperty cuttingReturn = new SimpleStringProperty();;
+    private final SimpleStringProperty comment = new SimpleStringProperty();;
+    private final SimpleStringProperty relativeFilePath = new SimpleStringProperty();;
 
-    public OrderRow() {
-        this.posNumber = new SimpleStringProperty(StringUtils.EMPTY);
-        this.detailName = new SimpleStringProperty(StringUtils.EMPTY);
-        this.count = new SimpleStringProperty(StringUtils.EMPTY);
-        this.material = new SimpleStringProperty(StringUtils.EMPTY);
-        this.materialBrand = new SimpleStringProperty(StringUtils.EMPTY);
-        this.color = new SimpleStringProperty(StringUtils.EMPTY);
-        this.thickness = new SimpleStringProperty(StringUtils.EMPTY);
-        this.owner = new SimpleStringProperty(StringUtils.EMPTY);
-        this.bendsCount = new SimpleStringProperty(StringUtils.EMPTY);
-        this.drawCreation = new SimpleStringProperty(StringUtils.EMPTY);
-        this.cleaning = new SimpleStringProperty(StringUtils.EMPTY);
-        this.wasteReturn = new SimpleStringProperty(StringUtils.EMPTY);
-        this.cuttingReturn = new SimpleStringProperty(StringUtils.EMPTY);
-        this.comment = new SimpleStringProperty(StringUtils.EMPTY);
-        this.relativeFilePath = new SimpleStringProperty(StringUtils.EMPTY);
-    }
+    public OrderRow() {}
 
-    public OrderRow(String posNumber, String detailName, String count, String material, String materialBrand,
-                    String color, String owner, String bendsCount, String comment) {
+    public OrderRow(Integer posNumber, String detailName, Integer count, String material, String materialBrand,
+                    String color, String owner, Integer bendsCount, String comment) {
         this();
         this.posNumber.set(posNumber);
         this.detailName.set(detailName);
@@ -54,15 +40,15 @@ public class OrderRow {
         this.comment.set(comment);
     }
 
-    public String getPosNumber() {
+    public int getPosNumber() {
         return posNumber.get();
     }
 
-    public SimpleStringProperty posNumberProperty() {
+    public SimpleIntegerProperty posNumberProperty() {
         return posNumber;
     }
 
-    public void setPosNumber(String posNumber) {
+    public void setPosNumber(int posNumber) {
         this.posNumber.set(posNumber);
     }
 
@@ -78,15 +64,15 @@ public class OrderRow {
         this.detailName.set(detailName);
     }
 
-    public String getCount() {
+    public int getCount() {
         return count.get();
     }
 
-    public SimpleStringProperty countProperty() {
+    public SimpleIntegerProperty countProperty() {
         return count;
     }
 
-    public void setCount(String count) {
+    public void setCount(int count) {
         this.count.set(count);
     }
 
@@ -126,15 +112,15 @@ public class OrderRow {
         this.color.set(color);
     }
 
-    public String getThickness() {
+    public float getThickness() {
         return thickness.get();
     }
 
-    public SimpleStringProperty thicknessProperty() {
+    public SimpleFloatProperty thicknessProperty() {
         return thickness;
     }
 
-    public void setThickness(String thickness) {
+    public void setThickness(float thickness) {
         this.thickness.set(thickness);
     }
 
@@ -150,15 +136,15 @@ public class OrderRow {
         this.owner.set(owner);
     }
 
-    public String getBendsCount() {
+    public int getBendsCount() {
         return bendsCount.get();
     }
 
-    public SimpleStringProperty bendsCountProperty() {
+    public SimpleIntegerProperty bendsCountProperty() {
         return bendsCount;
     }
 
-    public void setBendsCount(String bendsCount) {
+    public void setBendsCount(int bendsCount) {
         this.bendsCount.set(bendsCount);
     }
 
