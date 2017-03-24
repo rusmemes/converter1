@@ -21,22 +21,20 @@ import javafx.collections.ObservableList;
 
 public class OrderParser {
 
-    private static final BiConsumer<OrderRow, String> EMPTY_SETTER = (orderRow, string) -> {};
-
     private static final Map<Integer, Pair<BiConsumer<OrderRow, String>, String>> tableColumns = new HashMap<Integer, Pair<BiConsumer<OrderRow, String>, String>>() {{
         put(1, Pair.of(OrderRow::setPosNumber, "\u2116"));
         put(2, Pair.of(OrderRow::setDetailName, "наименование детали"));
         put(3, Pair.of(OrderRow::setCount, "количество"));
         put(4, Pair.of(OrderRow::setMaterial, "материал"));
         put(5, Pair.of(OrderRow::setMaterialBrand, "марка материала"));
-        put(6, Pair.of(EMPTY_SETTER, "толщина"));
+        put(6, Pair.of(OrderRow::setThickness, "толщина"));
         put(7, Pair.of(OrderRow::setColor, "для окраски"));
         put(8, Pair.of(OrderRow::setOwner, "принадлежность металла"));
         put(9, Pair.of(OrderRow::setBendsCount, "количество гибов на деталь"));
-        put(10, Pair.of(EMPTY_SETTER, "создание чертежа"));
-        put(11, Pair.of(EMPTY_SETTER, "зачистка"));
-        put(12, Pair.of(EMPTY_SETTER, "возврат отходов"));
-        put(13, Pair.of(EMPTY_SETTER, "возврат высечки"));
+        put(10, Pair.of(OrderRow::setDrawCreation, "создание чертежа"));
+        put(11, Pair.of(OrderRow::setCleaning, "зачистка"));
+        put(12, Pair.of(OrderRow::setWasteReturn, "возврат отходов"));
+        put(13, Pair.of(OrderRow::setCuttingReturn, "возврат высечки"));
         put(14, Pair.of(OrderRow::setComment, "комментарий"));
     }};
 
@@ -137,8 +135,6 @@ public class OrderParser {
 
                 return new ParseResult(orderRows, clientName);
             }
-
-
         }
 
         logger.logError("Данные не найдены");
@@ -148,10 +144,6 @@ public class OrderParser {
     private OrderRow createOrderRowFromExcelRow(Row excelRow) {
         final OrderRow orderRow = new OrderRow();
         for (Integer columnIndex : tableColumns.keySet()) {
-            final BiConsumer<OrderRow, String> setter = tableColumns.get(columnIndex).getLeft();
-            if (setter == EMPTY_SETTER) {
-                continue;
-            }
             final Cell cell = excelRow.getCell(columnIndex);
             if (cell == null) {
                 continue;
@@ -164,7 +156,7 @@ public class OrderParser {
                     value = String.valueOf((int) cell.getNumericCellValue());
                 } catch (Exception ignored2) {}
             }
-            setter.accept(orderRow, value);
+            tableColumns.get(columnIndex).getLeft().accept(orderRow, value);
         }
         return orderRow;
     }
