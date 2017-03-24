@@ -186,11 +186,11 @@ public class OrderParser {
                     try {
                         final int count = (int)cell.getNumericCellValue();
                         if (count < 1) {
-                            throw new OrderParserException(String.valueOf(count));
+                            throw new OrderParserException(count);
                         }
                         orderRow.setCount(count);
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте количество");
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте количество " + e.getMessage());
                     }
                     break;
                 case 4:
@@ -275,21 +275,21 @@ public class OrderParser {
                     try {
                         orderRow.setWasteReturn(cell.getStringCellValue());
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат отходов  " + e.getMessage());
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат отходов " + e.getMessage());
                     }
                     break;
                 case 13:
                     try {
                         orderRow.setCuttingReturn(cell.getStringCellValue());
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат высечки  " + e.getMessage());
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат высечки " + e.getMessage());
                     }
                     break;
                 case 14:
                     try {
                         orderRow.setComment(cell.getStringCellValue());
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат комментарий  " + e.getMessage());
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат комментарий " + e.getMessage());
                     }
                     break;
             }
