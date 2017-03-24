@@ -2,15 +2,19 @@ package ru.ewromet.converter1;
 
 import java.io.File;
 
+import org.apache.commons.lang3.StringUtils;
+
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
@@ -41,25 +45,41 @@ public class Controller implements Logger {
     private ObservableList<OrderRow> orderTableData = Fixtures.getOrderData();
 
     @FXML
-    private TextArea logArea;
+    private HTMLEditor logArea;
 
     @FXML
     public void initialize() {
         initializeFilesTable();
         initializeOrderTable();
-        logArea.setEditable(false);
         parser = new OrderParser();
-        logMessage("Initialized");
+        hideHTMLEditorToolbars(logArea);
+        logArea.setDisable(true);
     }
+
+    public static void hideHTMLEditorToolbars(final HTMLEditor editor) {
+        editor.setVisible(false);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Node[] nodes = editor.lookupAll(".tool-bar").toArray(new Node[0]);
+                for (Node node : nodes) {
+                    node.setVisible(false);
+                    node.setManaged(false);
+                }
+                editor.setVisible(true);
+            }
+        });
+    }
+
 
     @Override
     public void logError(String line) {
-        logArea.setText(logArea.getText() + "[ERROR] " + line + " [/ERROR]\n");
+        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:red;'>" + line + "</span><br />");
     }
 
     @Override
     public void logMessage(String line) {
-        logArea.setText(logArea.getText() + "[MESSAGE] " + line + " [/MESSAGE]\n");
+        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:blue;'>" + line + "</span><br />");
     }
 
     private void initializeFilesTable() {
@@ -82,12 +102,13 @@ public class Controller implements Logger {
         posNumberColumn.setEditable(false);
         posNumberColumn.setMaxWidth(30);
         posNumberColumn.setResizable(false);
-        posNumberColumn.setStyle("-fx-alignment: CENTER;");
+        posNumberColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
         TableColumn<OrderRow, String> detailNameColumn = ColumnFactory.createColumn(
                 "Наименование детали", 100, "detailName",
                 TextFieldTableCell.forTableColumn(), OrderRow::setDetailName
         );
+        detailNameColumn.setStyle("-fx-alignment: CENTER-LEFT;");
 
         TableColumn<OrderRow, Integer> countColumn = ColumnFactory.createColumn(
                 "Кол-во", 50, "count",
@@ -96,32 +117,32 @@ public class Controller implements Logger {
 
         countColumn.setMaxWidth(50);
         countColumn.setResizable(false);
-        countColumn.setStyle("-fx-alignment: CENTER;");
+        countColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
         TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
                 "Материал", 50, "material",
                 ChoiceBoxTableCell.forTableColumn(MATERIALS_LABELS.keySet().toArray(new String[MATERIALS_LABELS.size()])),
                 OrderRow::setMaterial
         );
-        materialColumn.setStyle("-fx-alignment: CENTER;");
+        materialColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
         TableColumn<OrderRow, String> materialBrandColumn = ColumnFactory.createColumn(
                 "Марка материала", 50, "materialBrand",
                 TextFieldTableCell.forTableColumn(), OrderRow::setMaterialBrand
         );
-        materialBrandColumn.setStyle("-fx-alignment: CENTER;");
+        materialBrandColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
         TableColumn<OrderRow, String> colorColumn = ColumnFactory.createColumn(
                 "Окраска", 50, "color",
                 TextFieldTableCell.forTableColumn(), OrderRow::setColor
         );
-        colorColumn.setStyle("-fx-alignment: CENTER;");
+        colorColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
         TableColumn<OrderRow, String> ownerColumn = ColumnFactory.createColumn(
                 "Принадлежность", 50, "owner",
                 TextFieldTableCell.forTableColumn(), OrderRow::setOwner
         );
-        ownerColumn.setStyle("-fx-alignment: CENTER;");
+        ownerColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
         TableColumn<OrderRow, Integer> bendsCountColumn = ColumnFactory.createColumn(
                 "Кол-во гибов", 85, "bendsCount",
@@ -130,12 +151,13 @@ public class Controller implements Logger {
 
         bendsCountColumn.setMaxWidth(85);
         bendsCountColumn.setResizable(false);
-        bendsCountColumn.setStyle("-fx-alignment: CENTER;");
+        bendsCountColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
         TableColumn<OrderRow, String> commentColumn = ColumnFactory.createColumn(
                 "Комментарий", 50, "comment",
                 TextFieldTableCell.forTableColumn(), OrderRow::setComment
         );
+        commentColumn.setStyle("-fx-alignment: CENTER-LEFT;");
 
         orderTable.getSelectionModel().setCellSelectionEnabled(true);
 
@@ -155,10 +177,10 @@ public class Controller implements Logger {
         orderTable.getColumns().forEach(column -> {
             final EventHandler oldOnEditCommitListener = column.getOnEditCommit();
             column.setOnEditCommit(event -> {
-                oldOnEditCommitListener.handle(event);
-                final int posNumber = event.getRowValue().getPosNumber();
                 Object oldValue = event.getOldValue();
                 Object newValue = event.getNewValue();
+                oldOnEditCommitListener.handle(event);
+                final int posNumber = event.getRowValue().getPosNumber();
                 logMessage(String.format(
                         "Изменение: колонка '%s', строка '%d', старое значение: '%s', новое значение: '%s'"
                         , event.getTableColumn().getText()
@@ -184,6 +206,7 @@ public class Controller implements Logger {
         );
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
+            logArea.setHtmlText(StringUtils.EMPTY);
             try {
                 ParseResult parseResult = parser.parse(file, this);
                 orderTable.setItems(parseResult.getOrderRows());
@@ -192,6 +215,7 @@ public class Controller implements Logger {
                 orderNumberField.setText(file.getParentFile().getName());
                 clientNameField.setText(parseResult.getClientName());
             } catch (Exception e) {
+                e.printStackTrace();
                 logError(e.getMessage());
             }
         }

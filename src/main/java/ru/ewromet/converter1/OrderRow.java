@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -25,8 +26,8 @@ public class OrderRow {
         put("нерж.зерк", "Stainless Steel Foil");
         put("нерж. зеркало", "Stainless Steel Foil");
         put("нерж_шлиф", "Stainless Steel Foil");
-        put("aлюминий", "Aluminium");
-        put("aлюм_рифл", "Aluminium");
+        put("алюминий", "Aluminium");
+        put("алюм_рифл", "Aluminium");
         put("латунь", "Brass");
         put("медь", "Copper");
         put("иное", "");
@@ -38,7 +39,7 @@ public class OrderRow {
     private final SimpleStringProperty material = new SimpleStringProperty();;
     private final SimpleStringProperty materialBrand = new SimpleStringProperty();;
     private final SimpleStringProperty color = new SimpleStringProperty();;
-    private final SimpleFloatProperty thickness = new SimpleFloatProperty();;
+    private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();;
     private final SimpleStringProperty owner = new SimpleStringProperty();;
     private final SimpleIntegerProperty bendsCount = new SimpleIntegerProperty();;
     private final SimpleStringProperty drawCreation = new SimpleStringProperty();;
@@ -136,15 +137,15 @@ public class OrderRow {
         this.color.set(color);
     }
 
-    public float getThickness() {
+    public double getThickness() {
         return thickness.get();
     }
 
-    public SimpleFloatProperty thicknessProperty() {
+    public SimpleDoubleProperty thicknessProperty() {
         return thickness;
     }
 
-    public void setThickness(float thickness) {
+    public void setThickness(double thickness) {
         this.thickness.set(thickness);
     }
 

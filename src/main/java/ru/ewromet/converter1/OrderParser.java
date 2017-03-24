@@ -31,7 +31,7 @@ public class OrderParser {
         put(5, "марка материала");
         put(6, "толщина");
         put(7,"для окраски");
-        put(8,"принадлежность металла");
+        put(8,"принадлежность");
         put(9, "количество гибов на деталь");
         put(10, "создание чертежа");
         put(11, "зачистка");
@@ -89,7 +89,7 @@ public class OrderParser {
                 }
 
                 if (!StringUtils.contains(posColumnHeader, posNumberHeaderRowSymbol)) {
-                    throw new Exception("Ошибка при попытке найти колонку с позициями деталей по подстроке '" + posNumberHeaderRowSymbol + "'");
+                    throw new OrderParserException("Ошибка при попытке найти колонку с позициями деталей по подстроке '" + posNumberHeaderRowSymbol + "'");
                 }
 
                 logger.logMessage("Проверка шапки таблицы");
@@ -99,14 +99,14 @@ public class OrderParser {
                 final short lastCellNum = tableHeadRow.getLastCellNum();
 
                 if (lastCellNum - firstCellNum != tableColumns.size()) {
-                    throw new Exception("Количество колонок таблицы не корректное");
+                    throw new OrderParserException("Количество колонок таблицы не корректное, ожидаемый набор колонок " + tableColumns.values());
                 }
 
                 for (int l = firstCellNum; l < lastCellNum; l++) {
                     Cell cell = tableHeadRow.getCell(l);
                     final String label = tableColumns.get(l);
                     if (cell == null || !StringUtils.containsIgnoreCase(cell.getStringCellValue(), label)) {
-                        throw new Exception("Ожидается, что в строке шапки таблицы (строка " + (tableHeaderRowNum + 1) + ") " +
+                        throw new OrderParserException("Ожидается, что в строке шапки таблицы (строка " + (tableHeaderRowNum + 1) + ") " +
                                 "в ячейке " + "№" + (l + 1) + " будет содержаться подстрока '" + label + "'");
                     }
                 }
@@ -131,11 +131,19 @@ public class OrderParser {
                         }
                     }
                     cell = row.getCell(firstCellNum + 1);
-                    if (cell == null || StringUtils.isBlank(cell.getStringCellValue())) {
+                    if (cell == null) {
                         continue;
+                    } else {
+                        try {
+                            if (StringUtils.isBlank(cell.getStringCellValue())) {
+                                continue;
+                            }
+                        } catch (Exception e) {
+                            throw new OrderParserException(l, "проверьте наименование детали " + e.getMessage());
+                        }
                     }
                     if (!addedDetailNames.add(cell.getStringCellValue())) {
-                        throw new Exception("Дублирующееся наименование детали: " + cell.getStringCellValue());
+                        throw new OrderParserException("Дублирующееся наименование детали: " + cell.getStringCellValue());
                     }
                     orderRows.add(createOrderRowFromExcelRow(row));
                 }
@@ -155,75 +163,134 @@ public class OrderParser {
             if (cell == null) {
                 continue;
             }
-            String value = StringUtils.EMPTY;
-            try {
-                value = cell.getStringCellValue();
-            } catch (Exception ignored1) {
-                try {
-                    value = String.valueOf((int) cell.getNumericCellValue());
-                } catch (Exception ignored2) {}
-            }
             switch (columnIndex) {
                 case 1:
-                    final Integer posNumber = Integer.valueOf(value);
-                    if (posNumber < 1) {
-                        throw new Exception("Некорретный номер позиции: " + posNumber);
+                    try {
+                        final int posNumber = (int)cell.getNumericCellValue();
+                        if (posNumber < 1) {
+                            throw new OrderParserException(posNumber);
+                        }
+                        orderRow.setPosNumber(posNumber);
+                    } catch (Exception e) {
+                        throw new OrderParserException("Некорректная позиция: " + e.getMessage());
                     }
-                    orderRow.setPosNumber(posNumber);
                     break;
                 case 2:
-                    orderRow.setDetailName(value);
+                    try {
+                        orderRow.setDetailName(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), e.getMessage());
+                    }
                     break;
                 case 3:
-                    final Integer count;
-                    if  (StringUtils.isBlank(value) || (count = Integer.valueOf(value)) == 0) {
-                        throw new Exception("Количество деталей не может быть равно 0, строка " + orderRow.getPosNumber());
+                    try {
+                        final int count = (int)cell.getNumericCellValue();
+                        if (count < 1) {
+                            throw new OrderParserException(String.valueOf(count));
+                        }
+                        orderRow.setCount(count);
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте количество");
                     }
-                    orderRow.setCount(count);
                     break;
                 case 4:
-                    value = value.trim().toLowerCase();
+                    String value;
+                    try {
+                        value = cell.getStringCellValue().trim().toLowerCase();
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте материал " + e.getMessage());
+                    }
                     if (!MATERIALS_LABELS.containsKey(value)) {
-                        throw new Exception("Строка " + orderRow.getPosNumber() + ": материал указан некорректно, допустимые варианты " + MATERIALS_LABELS.keySet());
+                        throw new OrderParserException(orderRow.getPosNumber(), "некорректный Материал - '" + value + "', допустимые варианты " + MATERIALS_LABELS.keySet());
                     }
                     orderRow.setMaterial(value);
                     break;
                 case 5:
-                    orderRow.setMaterialBrand(value);
+                    try {
+                        orderRow.setMaterialBrand(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте марку материала " + e.getMessage());
+                    }
                     break;
                 case 6:
-                    final Float thickness;
-                    if  (StringUtils.isBlank(value) || (thickness = Float.valueOf(value)) == 0) {
-                        throw new Exception("Толщина не может быть равной 0, строка " + orderRow.getPosNumber());
+                    try {
+                        final double thickness = cell.getNumericCellValue();
+                        if  (thickness < 0D) {
+                            throw new OrderParserException(thickness);
+                        }
+                        orderRow.setThickness(thickness);
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "толщина материала " + e.getMessage());
                     }
-                    orderRow.setThickness(thickness);
                     break;
                 case 7:
-                    orderRow.setColor(value);
+                    try {
+                        orderRow.setColor(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        try {
+                            final double numericCellValue = cell.getNumericCellValue();
+                            if (numericCellValue == (int) numericCellValue) {
+                                orderRow.setColor(String.valueOf((int) numericCellValue));
+                            } else {
+                                orderRow.setColor(String.valueOf(numericCellValue));
+                            }
+                        } catch (Exception e1) {
+                            throw new OrderParserException(orderRow.getPosNumber(), "проверьте цвет " + e1.getMessage());
+                        }
+                    }
                     break;
                 case 8:
-                    orderRow.setOwner(value);
+                    try {
+                        orderRow.setOwner(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте принадлежность " + e.getMessage());
+                    }
                     break;
                 case 9:
-                    if  (StringUtils.isBlank(value)) {
-                        value = "0";
+                    try {
+                        final int bendsCount = (int)cell.getNumericCellValue();
+                        if (bendsCount < 0) {
+                            throw new OrderParserException(bendsCount);
+                        }
+                        orderRow.setBendsCount(bendsCount);
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте количество гибов " + e.getMessage());
                     }
-                    orderRow.setBendsCount(Integer.valueOf(value));
                     break;
                 case 10:
-                    orderRow.setDrawCreation(value);
+                    try {
+                        orderRow.setDrawCreation(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте создание чертежа " + e.getMessage());
+                    }
                     break;
                 case 11:
-                    orderRow.setCleaning(value);
+                    try {
+                        orderRow.setCleaning(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте зачистку " + e.getMessage());
+                    }
                     break;
                 case 12:
-                    orderRow.setWasteReturn(value);
+                    try {
+                        orderRow.setWasteReturn(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат отходов  " + e.getMessage());
+                    }
                     break;
                 case 13:
-                    orderRow.setCuttingReturn(value);
+                    try {
+                        orderRow.setCuttingReturn(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат высечки  " + e.getMessage());
+                    }
                     break;
                 case 14:
-                    orderRow.setComment(value);
+                    try {
+                        orderRow.setComment(cell.getStringCellValue());
+                    } catch (Exception e) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат комментарий  " + e.getMessage());
+                    }
                     break;
             }
         }
@@ -238,7 +305,7 @@ public class OrderParser {
         } else if (excelFilePath.toLowerCase().endsWith("xls")) {
             workbook = new HSSFWorkbook(inputStream);
         } else {
-            throw new IllegalArgumentException("The specified file is not Excel file");
+            throw new OrderParserException("The specified file is not Excel file");
         }
 
         return workbook;
