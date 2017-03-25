@@ -1,6 +1,3 @@
-.order-row-without-file {
+.unbinded-table-row {
     -fx-background-color:lightcoral;
-}
-.file-row-without-order-row {
-    -fx-background-color: lightgrey;
 }

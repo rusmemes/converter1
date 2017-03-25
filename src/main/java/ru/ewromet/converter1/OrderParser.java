@@ -191,7 +191,7 @@ public class OrderParser {
 
         fileToRowMap.forEach(((fileRow, orderRows) -> {
             if (orderRows.size() != 1) {
-                fileRow.setStringPosNumber("");
+                fileRow.setStringPosNumber(StringUtils.EMPTY);
             }
         }));
         rowToFileMap.forEach((orderRow, fileRows) -> {

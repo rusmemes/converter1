@@ -1,6 +1,9 @@
 package ru.ewromet.converter1;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -10,21 +13,18 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.util.Callback;
-import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
 import static ru.ewromet.converter1.OrderRow.MATERIALS_LABELS;
@@ -48,15 +48,17 @@ public class Controller implements Logger {
     private TableView<FileRow> filesTable;
     @FXML
     private TableView<OrderRow> orderTable;
-    private ObservableList<OrderRow> orderData = Fixtures.getOrderData();
 
     @FXML
     private HTMLEditor logArea;
 
     private MenuItem saveItem;
 
+    @FXML
+    private Button bindButton;
     private OrderRow selectedOrderRow;
     private FileRow selectedFileRow;
+
 
     @FXML
     public void initialize() {
@@ -66,6 +68,30 @@ public class Controller implements Logger {
         parser = new OrderParser();
         hideHTMLEditorToolbars(logArea);
         logArea.setDisable(true);
+
+        bindButton.setOnAction(event -> {
+            OrderRow selectedOrderRow = (OrderRow) orderTable.getSelectionModel().getSelectedItem();
+            FileRow selectedFileRow = (FileRow) filesTable.getSelectionModel().getSelectedItem();
+            if (selectedOrderRow != null && selectedFileRow != null) {
+                if (StringUtils.isEmpty(selectedFileRow.getStringPosNumber()) && StringUtils.isEmpty(selectedOrderRow.getRelativeFilePath())) {
+                    selectedFileRow.setPosNumber(selectedOrderRow.getPosNumber());
+                    selectedOrderRow.setRelativeFilePath(selectedFileRow.getRelativeFilePath());
+                    logMessage("Файл " + selectedFileRow.getRelativeFilePath() + " связан с позицией " + selectedOrderRow.getPosNumber());
+                    refreshTable(orderTable, Comparator.comparing(OrderRow::getPosNumber));
+                    refreshTable(filesTable, Comparator.comparing(FileRow::getPosNumber));
+                }
+            }
+        });
+    }
+
+    private static <T> void refreshTable(TableView<T> tableView, Comparator<T> comparator) {
+        final List<T> items = tableView.getItems();
+        if (items == null || items.size() == 0) {
+            return;
+        }
+
+        Collections.sort(items, comparator);
+        tableView.refresh();
     }
 
     private void initializeMenu() {
@@ -77,7 +103,7 @@ public class Controller implements Logger {
         saveItem = new MenuItem();
         saveItem.setText("Сохранить результат");
         saveItem.setDisable(true);
-//        saveItem.setOnAction(event -> orderButtonAction());
+        //        saveItem.setOnAction(event -> orderButtonAction());
 
         menu.getItems().addAll(newOrderItem, saveItem);
         menuBar.getMenus().add(menu);
@@ -110,6 +136,8 @@ public class Controller implements Logger {
     }
 
     private void initializeFilesTable() {
+        filesTable.setEditable(true);
+
         TableColumn<FileRow, String> filePathColumn = ColumnFactory.createColumn(
                 "Файл", 100, "relativeFilePath",
                 column -> new ToolTipedTextFieldTableCell<FileRow>() {
@@ -119,24 +147,26 @@ public class Controller implements Logger {
                         TableRow<FileRow> currentRow = getTableRow();
                         final FileRow fileRow = currentRow.getItem();
                         if (fileRow != null && StringUtils.isBlank(fileRow.getStringPosNumber())) {
-                            currentRow.getStyleClass().add("file-row-without-order-row");
+                            currentRow.getStyleClass().add("unbinded-table-row");
                         } else {
-                            currentRow.getStyleClass().remove("file-row-without-order-row");
+                            currentRow.getStyleClass().remove("unbinded-table-row");
                         }
                     }
                 }, FileRow::setRelativeFilePath
         );
+        filePathColumn.setEditable(false);
 
         TableColumn<FileRow, String> posNumberColumn = ColumnFactory.createColumn(
                 "№", 30, "stringPosNumber",
                 TextFieldTableCell.forTableColumn(), FileRow::setStringPosNumber
         );
 
+        posNumberColumn.setEditable(false);
         posNumberColumn.setMaxWidth(30);
         posNumberColumn.setResizable(false);
         posNumberColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
-        orderData.forEach(orderRow -> filesTable.getItems().add(orderRow.getAsFileRow()));
+        filesTable.getSelectionModel().setCellSelectionEnabled(true);
         filesTable.getColumns().addAll(filePathColumn, posNumberColumn);
     }
 
@@ -162,9 +192,9 @@ public class Controller implements Logger {
                         TableRow<OrderRow> currentRow = getTableRow();
                         final OrderRow orderRow = currentRow.getItem();
                         if (orderRow != null && StringUtils.isBlank(orderRow.getRelativeFilePath())) {
-                            currentRow.getStyleClass().add("order-row-without-file");
+                            currentRow.getStyleClass().add("unbinded-table-row");
                         } else {
-                            currentRow.getStyleClass().remove("order-row-without-file");
+                            currentRow.getStyleClass().remove("unbinded-table-row");
                         }
                     }
                 }, OrderRow::setDetailName
@@ -222,7 +252,6 @@ public class Controller implements Logger {
 
         orderTable.getSelectionModel().setCellSelectionEnabled(true);
 
-        orderTable.setItems(orderData);
         orderTable.getColumns().addAll(
                 posNumberColumn,
                 detailNameColumn,
