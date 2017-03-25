@@ -63,8 +63,6 @@ public class Controller implements Logger {
 
     @FXML
     private Button bindButton;
-    private OrderRow selectedOrderRow;
-    private FileRow selectedFileRow;
 
     @FXML
     public void initialize() {
@@ -75,8 +73,8 @@ public class Controller implements Logger {
         hideHTMLEditorToolbars(logArea);
 
         bindButton.setOnAction(event -> {
-            OrderRow selectedOrderRow = (OrderRow) orderTable.getSelectionModel().getSelectedItem();
-            FileRow selectedFileRow = (FileRow) filesTable.getSelectionModel().getSelectedItem();
+            OrderRow selectedOrderRow = orderTable.getSelectionModel().getSelectedItem();
+            FileRow selectedFileRow = filesTable.getSelectionModel().getSelectedItem();
             if (selectedOrderRow != null && selectedFileRow != null) {
                 if (StringUtils.isEmpty(selectedFileRow.getStringPosNumber()) && StringUtils.isEmpty(selectedOrderRow.getRelativeFilePath())) {
                     selectedFileRow.setPosNumber(selectedOrderRow.getPosNumber());
@@ -116,16 +114,13 @@ public class Controller implements Logger {
 
     public static void hideHTMLEditorToolbars(final HTMLEditor editor) {
         editor.setVisible(false);
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                Node[] nodes = editor.lookupAll(".tool-bar").toArray(new Node[0]);
-                for (Node node : nodes) {
-                    node.setVisible(false);
-                    node.setManaged(false);
-                }
-                editor.setVisible(true);
+        Platform.runLater(() -> {
+            Node[] nodes = editor.lookupAll(".tool-bar").toArray(new Node[0]);
+            for (Node node : nodes) {
+                node.setVisible(false);
+                node.setManaged(false);
             }
+            editor.setVisible(true);
         });
     }
 
