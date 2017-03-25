@@ -9,7 +9,7 @@ import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
-public class OrderRow {
+public class OrderRow extends FileRow {
 
     public static final Map<String, String> MATERIALS_LABELS = Collections.unmodifiableMap(new HashMap<String, String>(){{
         put("сталь_хк", "Mild Steel");
@@ -33,28 +33,25 @@ public class OrderRow {
         put("иное", "");
     }});
 
-    private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();;
-    private final SimpleStringProperty detailName = new SimpleStringProperty();;
-    private final SimpleIntegerProperty count = new SimpleIntegerProperty();;
-    private final SimpleStringProperty material = new SimpleStringProperty();;
-    private final SimpleStringProperty materialBrand = new SimpleStringProperty();;
-    private final SimpleStringProperty color = new SimpleStringProperty();;
-    private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();;
-    private final SimpleStringProperty owner = new SimpleStringProperty();;
-    private final SimpleIntegerProperty bendsCount = new SimpleIntegerProperty();;
-    private final SimpleStringProperty drawCreation = new SimpleStringProperty();;
-    private final SimpleStringProperty cleaning = new SimpleStringProperty();;
-    private final SimpleStringProperty wasteReturn = new SimpleStringProperty();;
-    private final SimpleStringProperty cuttingReturn = new SimpleStringProperty();;
-    private final SimpleStringProperty comment = new SimpleStringProperty();;
-    private final SimpleStringProperty relativeFilePath = new SimpleStringProperty();;
+    private final SimpleStringProperty detailName = new SimpleStringProperty();
+    private final SimpleIntegerProperty count = new SimpleIntegerProperty();
+    private final SimpleStringProperty material = new SimpleStringProperty();
+    private final SimpleStringProperty materialBrand = new SimpleStringProperty();
+    private final SimpleStringProperty color = new SimpleStringProperty();
+    private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();
+    private final SimpleStringProperty owner = new SimpleStringProperty();
+    private final SimpleIntegerProperty bendsCount = new SimpleIntegerProperty();
+    private final SimpleStringProperty drawCreation = new SimpleStringProperty();
+    private final SimpleStringProperty cleaning = new SimpleStringProperty();
+    private final SimpleStringProperty wasteReturn = new SimpleStringProperty();
+    private final SimpleStringProperty cuttingReturn = new SimpleStringProperty();
+    private final SimpleStringProperty comment = new SimpleStringProperty();
 
     public OrderRow() {}
 
     public OrderRow(Integer posNumber, String detailName, Integer count, String material, String materialBrand,
                     String color, String owner, Integer bendsCount, String comment, String relativeFilePath) {
-        this();
-        this.posNumber.set(posNumber);
+        super(posNumber, relativeFilePath);
         this.detailName.set(detailName);
         this.count.set(count);
         this.material.set(material);
@@ -63,19 +60,6 @@ public class OrderRow {
         this.owner.set(owner);
         this.bendsCount.set(bendsCount);
         this.comment.set(comment);
-        this.relativeFilePath.set(relativeFilePath);
-    }
-
-    public int getPosNumber() {
-        return posNumber.get();
-    }
-
-    public SimpleIntegerProperty posNumberProperty() {
-        return posNumber;
-    }
-
-    public void setPosNumber(int posNumber) {
-        this.posNumber.set(posNumber);
     }
 
     public String getDetailName() {
@@ -234,15 +218,12 @@ public class OrderRow {
         this.comment.set(comment);
     }
 
-    public String getRelativeFilePath() {
-        return relativeFilePath.get();
+    @Override
+    public String toString() {
+        return super.toString() + " | " + detailName.get();
     }
 
-    public SimpleStringProperty relativeFilePathProperty() {
-        return relativeFilePath;
-    }
-
-    public void setRelativeFilePath(String relativeFilePath) {
-        this.relativeFilePath.set(relativeFilePath);
+    public FileRow getAsFileRow() {
+        return this;
     }
 }

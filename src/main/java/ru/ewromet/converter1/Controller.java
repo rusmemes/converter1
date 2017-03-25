@@ -3,6 +3,7 @@ package ru.ewromet.converter1;
 import java.io.File;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
@@ -39,7 +40,7 @@ public class Controller implements Logger {
     private javafx.scene.control.TextField orderNumberField;
 
     @FXML
-    private TableView filesTable;
+    private TableView<FileRow> filesTable;
     @FXML
     private TableView<OrderRow> orderTable;
     private ObservableList<OrderRow> orderData = Fixtures.getOrderData();
@@ -101,14 +102,14 @@ public class Controller implements Logger {
     }
 
     private void initializeFilesTable() {
-        TableColumn<OrderRow, String> filePathColumn = ColumnFactory.createColumn(
+        TableColumn<FileRow, String> filePathColumn = ColumnFactory.createColumn(
                 "Файл", 100, "relativeFilePath",
-                TextFieldTableCell.forTableColumn(), OrderRow::setRelativeFilePath
+                TextFieldTableCell.forTableColumn(), FileRow::setRelativeFilePath
         );
 
-        TableColumn<OrderRow, Integer> posNumberColumn = ColumnFactory.createColumn(
+        TableColumn<FileRow, Integer> posNumberColumn = ColumnFactory.createColumn(
                 "№", 30, "posNumber",
-                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), OrderRow::setPosNumber
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), FileRow::setPosNumber
         );
 
         posNumberColumn.setEditable(false);
@@ -116,7 +117,7 @@ public class Controller implements Logger {
         posNumberColumn.setResizable(false);
         posNumberColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
-        filesTable.setItems(orderData);
+        orderData.forEach(orderRow -> filesTable.getItems().add(orderRow.getAsFileRow()));
         filesTable.getColumns().addAll(filePathColumn, posNumberColumn);
     }
 
@@ -237,9 +238,9 @@ public class Controller implements Logger {
         if (file != null) {
             logArea.setHtmlText(StringUtils.EMPTY);
             try {
-                final ObservableList<OrderRow> orderRows = parser.parse(file, this);
-                orderTable.setItems(orderRows);
-                filesTable.setItems(orderRows);
+                final Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parseResult = parser.parse(file, this);
+                orderTable.setItems(parseResult.getLeft());
+                filesTable.setItems(parseResult.getRight());
                 orderPathField.setText(file.getAbsolutePath());
                 selectedFile = file;
                 orderNumberField.setText(file.getParentFile().getName());

@@ -1,14 +1,23 @@
 package ru.ewromet.converter1;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -26,12 +35,12 @@ public class OrderParser {
     private static final Map<Integer, String> tableColumns = new HashMap<Integer, String>() {{
         put(1, "\u2116");
         put(2, "наименование детали");
-        put(3,"количество");
+        put(3, "количество");
         put(4, "материал");
         put(5, "марка материала");
         put(6, "толщина");
-        put(7,"для окраски");
-        put(8,"принадлежность");
+        put(7, "для окраски");
+        put(8, "принадлежность");
         put(9, "количество гибов на деталь");
         put(10, "создание чертежа");
         put(11, "зачистка");
@@ -40,7 +49,9 @@ public class OrderParser {
         put(14, "комментарий");
     }};
 
-    public ObservableList<OrderRow> parse(File orderExcelFile, Logger logger) throws Exception {
+    public Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parse(File orderExcelFile, Logger logger) throws Exception {
+
+        ObservableList<OrderRow> result = FXCollections.observableArrayList();
 
         try (FileInputStream inputStream = new FileInputStream(orderExcelFile);
              Workbook workbook = getWorkbook(inputStream, orderExcelFile.getAbsolutePath())
@@ -96,8 +107,6 @@ public class OrderParser {
 
                 logger.logMessage("Проверка шапки таблицы (строка " + (tableHeaderRowNum + 1) + ") завершена");
 
-                final ObservableList<OrderRow> orderRows = FXCollections.observableArrayList();
-
                 Set<String> addedDetailNames = new HashSet<>();
 
                 for (int l = tableHeaderRowNum + 1; l < sheet.getLastRowNum(); l++) {
@@ -128,15 +137,68 @@ public class OrderParser {
                     if (!addedDetailNames.add(cell.getStringCellValue())) {
                         throw new OrderParserException("Дублирующееся наименование детали: " + cell.getStringCellValue());
                     }
-                    orderRows.add(createOrderRowFromExcelRow(row));
+                    result.add(createOrderRowFromExcelRow(row));
                 }
 
-                return orderRows;
+                break;
             }
         }
 
-        logger.logError("Данные не найдены");
-        return FXCollections.emptyObservableList();
+        if (result.isEmpty()) {
+            logger.logError("Данные не найдены");
+        }
+
+        return Pair.of(result, searchFiles(result, orderExcelFile));
+    }
+
+    private ObservableList<FileRow> searchFiles(ObservableList<OrderRow> result, File orderExcelFile) {
+        ObservableList<FileRow> fileWithoutRows = FXCollections.observableArrayList();
+        final String parentDirPath = orderExcelFile.getParent();
+        final List<File> files = finder(parentDirPath);
+        FILES: for (Iterator<File> iterator = files.iterator(); iterator.hasNext(); ) {
+            File file = iterator.next();
+            final String fileNameLowerCased = file.getName().toLowerCase()
+                    .replace(".dxf", "")
+                    .replace(".dwg", "");
+
+            final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, "");
+
+            for (OrderRow orderRow : result) {
+                final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
+                if (fileNameLowerCased.endsWith(detailNameLowerCased)) {
+                    orderRow.setRelativeFilePath(relativeFilePath);
+                    fileWithoutRows.add(new FileRow(orderRow.getPosNumber(), relativeFilePath));
+                    continue FILES;
+                }
+            }
+
+            fileWithoutRows.add(new FileRow(relativeFilePath));
+        }
+        fileWithoutRows.sort(Comparator.comparing(FileRow::getPosNumber));
+        return fileWithoutRows;
+    }
+
+    public List<File> finder(String dirName) {
+        File dir = new File(dirName);
+
+        final BiFunction<File, FileFilter, File[]> function = File::listFiles;
+
+        final FileFilter filter = new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                if (pathname.isDirectory()) {
+                    return true;
+                }
+                final String lowerCase = pathname.getName().toLowerCase();
+                return lowerCase.endsWith(".dwg") || lowerCase.endsWith(".dxf");
+            }
+        };
+
+        return Stream.of(function.apply(dir, filter)).flatMap(file ->
+                file.isDirectory()
+                        ? Stream.of(function.apply(file, filter))
+                        : Stream.of(file)
+        ).collect(Collectors.toList());
     }
 
     private OrderRow createOrderRowFromExcelRow(Row excelRow) throws Exception {
@@ -149,7 +211,7 @@ public class OrderParser {
             switch (columnIndex) {
                 case 1:
                     try {
-                        final int posNumber = (int)cell.getNumericCellValue();
+                        final int posNumber = (int) cell.getNumericCellValue();
                         if (posNumber < 1) {
                             throw new OrderParserException(posNumber);
                         }
@@ -167,7 +229,7 @@ public class OrderParser {
                     break;
                 case 3:
                     try {
-                        final int count = (int)cell.getNumericCellValue();
+                        final int count = (int) cell.getNumericCellValue();
                         if (count < 1) {
                             throw new OrderParserException(count);
                         }
@@ -198,7 +260,7 @@ public class OrderParser {
                 case 6:
                     try {
                         final double thickness = cell.getNumericCellValue();
-                        if  (thickness < 0D) {
+                        if (thickness < 0D) {
                             throw new OrderParserException(thickness);
                         }
                         orderRow.setThickness(thickness);
@@ -231,7 +293,7 @@ public class OrderParser {
                     break;
                 case 9:
                     try {
-                        final int bendsCount = (int)cell.getNumericCellValue();
+                        final int bendsCount = (int) cell.getNumericCellValue();
                         if (bendsCount < 0) {
                             throw new OrderParserException(bendsCount);
                         }
