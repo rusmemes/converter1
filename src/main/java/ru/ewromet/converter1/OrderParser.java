@@ -40,12 +40,11 @@ public class OrderParser {
         put(14, "комментарий");
     }};
 
-    public ParseResult parse(File orderExcelFile, Logger logger) throws Exception {
+    public ObservableList<OrderRow> parse(File orderExcelFile, Logger logger) throws Exception {
 
         try (FileInputStream inputStream = new FileInputStream(orderExcelFile);
              Workbook workbook = getWorkbook(inputStream, orderExcelFile.getAbsolutePath())
         ) {
-            String clientName = StringUtils.EMPTY;
             String posColumnHeader = StringUtils.EMPTY;
             int tableHeaderRowNum = 0;
             final String posNumberHeaderRowSymbol = tableColumns.get(1);
@@ -61,28 +60,12 @@ public class OrderParser {
                             String value = StringUtils.EMPTY;
                             try {
                                 value = cell.getStringCellValue();
-                            } catch (Exception ignored) {
-                            }
-
-                            if (StringUtils.containsIgnoreCase(value, "заказчик")) {
-                                cell = row.getCell(k + 1);
-                                if (cell != null) {
-                                    try {
-                                        value = cell.getStringCellValue();
-                                        clientName = value;
-                                        if (StringUtils.isNotBlank(clientName)) {
-                                            logger.logMessage("Имя клиента: " + clientName);
-                                        }
-                                    } catch (Exception ignored) {
-                                    }
+                                if (StringUtils.containsIgnoreCase(value, posNumberHeaderRowSymbol)) {
+                                    posColumnHeader = value;
+                                    tableHeaderRowNum = j;
+                                    break SHEET;
                                 }
-                                continue SHEET;
-                            }
-
-                            if (StringUtils.containsIgnoreCase(value, posNumberHeaderRowSymbol)) {
-                                posColumnHeader = value;
-                                tableHeaderRowNum = j;
-                                break SHEET;
+                            } catch (Exception ignored) {
                             }
                         }
                     }
@@ -148,12 +131,12 @@ public class OrderParser {
                     orderRows.add(createOrderRowFromExcelRow(row));
                 }
 
-                return new ParseResult(orderRows, clientName);
+                return orderRows;
             }
         }
 
         logger.logError("Данные не найдены");
-        return new ParseResult(FXCollections.emptyObservableList(), StringUtils.EMPTY);
+        return FXCollections.emptyObservableList();
     }
 
     private OrderRow createOrderRowFromExcelRow(Row excelRow) throws Exception {

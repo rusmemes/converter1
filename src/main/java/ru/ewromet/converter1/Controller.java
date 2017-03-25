@@ -8,8 +8,10 @@ import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
@@ -28,32 +30,48 @@ public class Controller implements Logger {
     private OrderParser parser;
 
     @FXML
+    private MenuBar menuBar;
+
+    @FXML
     private javafx.scene.control.TextField orderPathField;
 
     @FXML
     private javafx.scene.control.TextField orderNumberField;
 
     @FXML
-    private javafx.scene.control.TextField clientNameField;
-
-    @FXML
     private TableView filesTable;
-    private ObservableList<FileRow> filesTableData = Fixtures.getFilesData();
-
     @FXML
     private TableView<OrderRow> orderTable;
-    private ObservableList<OrderRow> orderTableData = Fixtures.getOrderData();
+    private ObservableList<OrderRow> orderData = Fixtures.getOrderData();
 
     @FXML
     private HTMLEditor logArea;
 
+    private MenuItem saveItem;
+
     @FXML
     public void initialize() {
+        initializeMenu();
         initializeFilesTable();
         initializeOrderTable();
         parser = new OrderParser();
         hideHTMLEditorToolbars(logArea);
         logArea.setDisable(true);
+    }
+
+    private void initializeMenu() {
+        final Menu menu = new Menu();
+        menu.setText("Меню");
+        final MenuItem newOrderItem = new MenuItem();
+        newOrderItem.setText("Новая заявка");
+        newOrderItem.setOnAction(event -> orderButtonAction());
+        saveItem = new MenuItem();
+        saveItem.setText("Сохранить результат");
+        saveItem.setDisable(true);
+//        saveItem.setOnAction(event -> orderButtonAction());
+
+        menu.getItems().addAll(newOrderItem, saveItem);
+        menuBar.getMenus().add(menu);
     }
 
     public static void hideHTMLEditorToolbars(final HTMLEditor editor) {
@@ -83,12 +101,23 @@ public class Controller implements Logger {
     }
 
     private void initializeFilesTable() {
-        TableColumn<FileRow, String> fileNameColumn = ColumnFactory.createColumn(
-                "Файл", 100, "fileName",
-                TextFieldTableCell.forTableColumn(), FileRow::setFileName
+        TableColumn<OrderRow, String> filePathColumn = ColumnFactory.createColumn(
+                "Файл", 100, "relativeFilePath",
+                TextFieldTableCell.forTableColumn(), OrderRow::setRelativeFilePath
         );
-        filesTable.setItems(filesTableData);
-        filesTable.getColumns().addAll(fileNameColumn);
+
+        TableColumn<OrderRow, Integer> posNumberColumn = ColumnFactory.createColumn(
+                "№", 30, "posNumber",
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), OrderRow::setPosNumber
+        );
+
+        posNumberColumn.setEditable(false);
+        posNumberColumn.setMaxWidth(30);
+        posNumberColumn.setResizable(false);
+        posNumberColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+
+        filesTable.setItems(orderData);
+        filesTable.getColumns().addAll(filePathColumn, posNumberColumn);
     }
 
     private void initializeOrderTable() {
@@ -161,7 +190,7 @@ public class Controller implements Logger {
 
         orderTable.getSelectionModel().setCellSelectionEnabled(true);
 
-        orderTable.setItems(orderTableData);
+        orderTable.setItems(orderData);
         orderTable.getColumns().addAll(
                 posNumberColumn,
                 detailNameColumn,
@@ -208,12 +237,13 @@ public class Controller implements Logger {
         if (file != null) {
             logArea.setHtmlText(StringUtils.EMPTY);
             try {
-                ParseResult parseResult = parser.parse(file, this);
-                orderTable.setItems(parseResult.getOrderRows());
+                final ObservableList<OrderRow> orderRows = parser.parse(file, this);
+                orderTable.setItems(orderRows);
+                filesTable.setItems(orderRows);
                 orderPathField.setText(file.getAbsolutePath());
                 selectedFile = file;
                 orderNumberField.setText(file.getParentFile().getName());
-                clientNameField.setText(parseResult.getClientName());
+                saveItem.setDisable(false);
             } catch (Exception e) {
                 e.printStackTrace();
                 logError(e.getMessage());

@@ -52,7 +52,7 @@ public class OrderRow {
     public OrderRow() {}
 
     public OrderRow(Integer posNumber, String detailName, Integer count, String material, String materialBrand,
-                    String color, String owner, Integer bendsCount, String comment) {
+                    String color, String owner, Integer bendsCount, String comment, String relativeFilePath) {
         this();
         this.posNumber.set(posNumber);
         this.detailName.set(detailName);
@@ -63,6 +63,7 @@ public class OrderRow {
         this.owner.set(owner);
         this.bendsCount.set(bendsCount);
         this.comment.set(comment);
+        this.relativeFilePath.set(relativeFilePath);
     }
 
     public int getPosNumber() {
