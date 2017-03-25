@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +27,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import static ru.ewromet.converter1.OrderRow.MATERIALS_LABELS;
+import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
 public class OrderParser {
 
@@ -159,7 +158,7 @@ public class OrderParser {
         Map<FileRow, Set<OrderRow>> fileToRowMap = new HashMap<>();
         Map<OrderRow, Set<FileRow>> rowToFileMap = new HashMap<>();
 
-        final String parentDirPath = orderExcelFile.getParent();
+        final String parentDirPath = orderExcelFile.getParent() + File.separator;
         final List<File> files = finder(parentDirPath);
 
         FILES: for (Iterator<File> iterator = files.iterator(); iterator.hasNext(); ) {
@@ -273,8 +272,8 @@ public class OrderParser {
                     } catch (Exception e) {
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте материал " + e.getMessage());
                     }
-                    if (!MATERIALS_LABELS.containsKey(value)) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "некорректный Материал - '" + value + "', допустимые варианты " + MATERIALS_LABELS.keySet());
+                    if (!MATERIAL_LABELS.containsKey(value)) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "некорректный Материал - '" + value + "', допустимые варианты " + MATERIAL_LABELS.keySet());
                     }
                     orderRow.setMaterial(value);
                     break;

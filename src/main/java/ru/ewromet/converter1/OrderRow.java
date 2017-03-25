@@ -11,7 +11,7 @@ import javafx.beans.property.SimpleStringProperty;
 
 public class OrderRow extends FileRow {
 
-    public static final Map<String, String> MATERIALS_LABELS = Collections.unmodifiableMap(new HashMap<String, String>(){{
+    public static final Map<String, String> MATERIAL_LABELS = Collections.unmodifiableMap(new HashMap<String, String>(){{
         put("сталь_хк", "Mild Steel");
         put("сталь х/к", "Mild Steel");
         put("сталь_гк", "Mild Steel");

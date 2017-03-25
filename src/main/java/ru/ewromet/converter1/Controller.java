@@ -1,10 +1,14 @@
 package ru.ewromet.converter1;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -27,7 +31,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
 
-import static ru.ewromet.converter1.OrderRow.MATERIALS_LABELS;
+import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
 public class Controller implements Logger {
 
@@ -59,7 +63,6 @@ public class Controller implements Logger {
     private OrderRow selectedOrderRow;
     private FileRow selectedFileRow;
 
-
     @FXML
     public void initialize() {
         initializeMenu();
@@ -67,7 +70,6 @@ public class Controller implements Logger {
         initializeOrderTable();
         parser = new OrderParser();
         hideHTMLEditorToolbars(logArea);
-        logArea.setDisable(true);
 
         bindButton.setOnAction(event -> {
             OrderRow selectedOrderRow = (OrderRow) orderTable.getSelectionModel().getSelectedItem();
@@ -103,7 +105,7 @@ public class Controller implements Logger {
         saveItem = new MenuItem();
         saveItem.setText("Сохранить результат");
         saveItem.setDisable(true);
-        //        saveItem.setOnAction(event -> orderButtonAction());
+        saveItem.setOnAction(event -> saveAction());
 
         menu.getItems().addAll(newOrderItem, saveItem);
         menuBar.getMenus().add(menu);
@@ -123,7 +125,6 @@ public class Controller implements Logger {
             }
         });
     }
-
 
     @Override
     public void logError(String line) {
@@ -212,7 +213,7 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
                 "Материал", 50, "material",
-                ChoiceBoxTableCell.forTableColumn(MATERIALS_LABELS.keySet().toArray(new String[MATERIALS_LABELS.size()])),
+                ChoiceBoxTableCell.forTableColumn(MATERIAL_LABELS.keySet().toArray(new String[MATERIAL_LABELS.size()])),
                 OrderRow::setMaterial
         );
         materialColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
@@ -310,5 +311,115 @@ public class Controller implements Logger {
                 logError(e.getMessage());
             }
         }
+    }
+
+    private void saveAction() {
+        try {
+            final File directory = selectedFile.getParentFile();
+            final File outerDirectory = directory.getParentFile();
+            String orderNumber = orderNumberField.getText();
+            if (StringUtils.isBlank(orderNumber)) {
+                logError("Не указан номер заказа");
+                return;
+            }
+            final String orderNumberFinal = orderNumber.trim();
+            final File orderAbsTempDir = Paths.get(outerDirectory.getAbsolutePath(), orderNumberFinal + "temp" + Math.random()).toFile();
+            final File orderAbsDir = Paths.get(outerDirectory.getAbsolutePath(), orderNumberFinal).toFile();
+            final File sourceFilesDir = Paths.get(orderAbsTempDir.getAbsolutePath(), "Исходные данные").toFile();
+
+            FileUtils.copyDirectory(directory, sourceFilesDir);
+            logMessage("Исходные данные сохранены в " + sourceFilesDir.getAbsolutePath());
+
+            final List<OrderRow> orderRows = orderTable.getItems();
+            for (OrderRow orderRow : orderRows) {
+                if (StringUtils.isBlank(orderRow.getRelativeFilePath())) {
+                    logError("Для детали " + orderRow.getDetailName() + " соответствующий файл не указан");
+                    continue;
+                }
+
+                final File sourceFile = Paths.get(directory.getAbsolutePath(), orderRow.getRelativeFilePath()).toFile();
+                final String materialLabel = OrderRow.MATERIAL_LABELS.get(orderRow.getMaterial());
+                final String dirName = materialLabel + StringUtils.SPACE + orderRow.getThickness() + "mm";
+                final String destFileName = getDestFileName(orderNumberFinal, sourceFile, orderRow);
+                final File destTempFile = Paths.get(orderAbsTempDir.getAbsolutePath(), dirName, destFileName).toFile();
+                final File destFile = Paths.get(orderAbsDir.getAbsolutePath(), dirName, destFileName).toFile();
+
+                logMessage("Копирование файла " + sourceFile.getAbsolutePath() + " в " + destTempFile);
+                FileUtils.moveFile(sourceFile, destTempFile);
+                logMessage("Файл скопирован");
+
+                orderRow.setRelativeFilePath(destFile.getAbsolutePath());
+                orderRow.setMaterial(materialLabel);
+                orderRow.setDetailName(destFileName);
+            }
+
+            logMessage("Удаление старой директории " + directory.getAbsolutePath());
+            FileUtils.deleteDirectory(directory);
+            logMessage("Директория удалена");
+
+            logMessage("Перенос готовых файлов из " + orderAbsTempDir + " в " + orderAbsDir);
+            FileUtils.moveDirectory(orderAbsTempDir, orderAbsDir);
+            logMessage("Перенос завершён");
+
+            logMessage("Создание csv-файла в директории " + orderAbsDir);
+            createCsvFile(orderAbsDir, orderNumber, orderRows);
+            logMessage("csv-файл создан");
+
+            saveItem.setDisable(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logError(e.getMessage());
+        }
+    }
+
+    private static final String CSV_HEADER_ROW = "000 | ;110 | Название;119 | Материал;120 | Толщина;121 | Толщин.велич.;177 | Последнее плановое количество";
+
+    private void createCsvFile(File directory, String orderNumber, List<OrderRow> orderRows) throws IOException {
+        List<String> lines = new ArrayList<>();
+        lines.add(CSV_HEADER_ROW);
+        orderRows.forEach(row -> {
+            if (StringUtils.isBlank(row.getRelativeFilePath()));
+            lines.add(createCsvLine(row));
+        });
+        final File csvFile = Paths.get(directory.getAbsolutePath(), orderNumber + ".csv").toFile();
+        FileUtils.writeLines(csvFile, lines);
+    }
+
+    private String createCsvLine(OrderRow row) {
+        return String.format(
+                "%s;%s;%s;%s;mm;%d"
+                , row.getRelativeFilePath()
+                , row.getDetailName()
+                , row.getMaterial()
+                , row.getThickness()
+                , row.getCount()
+        );
+    }
+
+    private static final String FILENAME_TEMPLATE = "Nz-Np-Q_gK_O.f";
+    /**
+     * Nz - номер заказа,
+     * Np - номер позиции файла по спецификации,
+     * Q - количество деталей по спецификации,
+     * _g - ставится в том случае, если деталь гнётся,
+     * K - количество гибов по спецификации, ставится также только в том случае, если деталь гнётся,
+     * _O - если указана окраска в спецификации
+     * .f - сохраняется формат, в котором была изначально деталь ("*.dwg" и "*.dxf")
+     */
+    private static String getDestFileName(String orderNumber, File sourceFile, OrderRow row) {
+
+        final String sourceFileName = sourceFile.getName();
+        final int lastCommaPos = sourceFileName.lastIndexOf(".");
+        final String extension = sourceFileName.substring(lastCommaPos);
+
+        return FILENAME_TEMPLATE
+                .replace("Nz", orderNumber)
+                .replace("Np", String.valueOf(row.getPosNumber()))
+                .replace("Q", String.valueOf(row.getCount()))
+                .replace("_g", row.getBendsCount() > 0 ? "_g" : StringUtils.EMPTY)
+                .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
+                .replace("_O", StringUtils.isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
+                .replace(".f", extension)
+                ;
     }
 }
