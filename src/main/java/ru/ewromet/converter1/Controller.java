@@ -382,7 +382,7 @@ public class Controller implements Logger {
             lines.add(createCsvLine(row));
         });
         final File csvFile = Paths.get(directory.getAbsolutePath(), orderNumber + ".csv").toFile();
-        FileUtils.writeLines(csvFile, lines);
+        FileUtils.writeLines(csvFile, "UTF-8", lines);
     }
 
     private String createCsvLine(OrderRow row) {
