@@ -1,14 +1,8 @@
 package ru.ewromet.converter1;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
-
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import org.apache.commons.lang3.StringUtils;
 
 public class FileRow {
 
@@ -16,7 +10,9 @@ public class FileRow {
     private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();
     private final SimpleStringProperty relativeFilePath = new SimpleStringProperty();
 
-    public FileRow() {}
+    public FileRow() {
+    }
+
     public FileRow(String relativeFilePath) {
         this.posNumber.set(Integer.MAX_VALUE);
         this.relativeFilePath.set(relativeFilePath);
@@ -73,7 +69,7 @@ public class FileRow {
 
     @Override
     public String toString() {
-        return posNumber.get()  + " | " + relativeFilePath.get();
+        return posNumber.get() + " | " + relativeFilePath.get();
     }
 
     @Override

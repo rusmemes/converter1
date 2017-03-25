@@ -1,17 +1,16 @@
 package ru.ewromet.converter1;
 
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleFloatProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-
 public class OrderRow extends FileRow {
 
-    public static final Map<String, String> MATERIAL_LABELS = Collections.unmodifiableMap(new HashMap<String, String>(){{
+    public static final Map<String, String> MATERIAL_LABELS = Collections.unmodifiableMap(new HashMap<String, String>() {{
         put("сталь_хк", "Mild Steel");
         put("сталь х/к", "Mild Steel");
         put("сталь_гк", "Mild Steel");
@@ -47,7 +46,8 @@ public class OrderRow extends FileRow {
     private final SimpleStringProperty cuttingReturn = new SimpleStringProperty();
     private final SimpleStringProperty comment = new SimpleStringProperty();
 
-    public OrderRow() {}
+    public OrderRow() {
+    }
 
     public OrderRow(Integer posNumber, String detailName, Integer count, String material, String materialBrand,
                     String color, String owner, Integer bendsCount, String comment, String relativeFilePath) {

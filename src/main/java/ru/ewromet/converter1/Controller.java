@@ -1,23 +1,14 @@
 package ru.ewromet.converter1;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -29,7 +20,19 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.util.converter.IntegerStringConverter;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
@@ -307,7 +310,6 @@ public class Controller implements Logger {
                 orderNumberField.setText(file.getParentFile().getName());
                 saveItem.setDisable(false);
             } catch (Exception e) {
-                e.printStackTrace();
                 logError(e.getMessage());
             }
         }
@@ -378,7 +380,7 @@ public class Controller implements Logger {
         List<String> lines = new ArrayList<>();
         lines.add(CSV_HEADER_ROW);
         orderRows.forEach(row -> {
-            if (StringUtils.isBlank(row.getRelativeFilePath()));
+            if (StringUtils.isBlank(row.getRelativeFilePath())) ;
             lines.add(createCsvLine(row));
         });
         final File csvFile = Paths.get(directory.getAbsolutePath(), orderNumber + ".csv").toFile();
@@ -397,6 +399,7 @@ public class Controller implements Logger {
     }
 
     private static final String FILENAME_TEMPLATE = "Nz-Np-Q_gK_O.f";
+
     /**
      * Nz - номер заказа,
      * Np - номер позиции файла по спецификации,
@@ -421,5 +424,30 @@ public class Controller implements Logger {
                 .replace("_O", StringUtils.isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
                 .replace(".f", extension)
                 ;
+    }
+
+    public void closeApplicationAction(WindowEvent windowEvent) {
+        if (!saveItem.isDisable()) {
+            Dialog dialog = new Dialog();
+            dialog.setHeaderText("Предупреждение");
+            dialog.setContentText("Имеются несохраненные изменения. Вы действительно хотите закрыть окно программы?");
+
+            ButtonType okButtonType = new ButtonType("Да", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButtonType = new ButtonType("Нет", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
+
+            Node okButton = dialog.getDialogPane().lookupButton(okButtonType);
+            okButton.managedProperty().bind(okButton.visibleProperty());
+            okButton.setVisible(true);
+
+            Node cancelButton = dialog.getDialogPane().lookupButton(cancelButtonType);
+            cancelButton.managedProperty().bind(cancelButton.visibleProperty());
+            cancelButton.setVisible(true);
+            dialog.showAndWait();
+            if (dialog.getResult() == cancelButtonType) {
+                windowEvent.consume();
+            }
+        }
     }
 }

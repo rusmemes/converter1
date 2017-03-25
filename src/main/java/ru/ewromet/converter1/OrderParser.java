@@ -1,5 +1,16 @@
 package ru.ewromet.converter1;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -14,18 +25,6 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
@@ -161,7 +160,8 @@ public class OrderParser {
         final String parentDirPath = orderExcelFile.getParent() + File.separator;
         final List<File> files = finder(parentDirPath);
 
-        FILES: for (Iterator<File> iterator = files.iterator(); iterator.hasNext(); ) {
+        FILES:
+        for (Iterator<File> iterator = files.iterator(); iterator.hasNext(); ) {
             File file = iterator.next();
 
             final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, StringUtils.EMPTY);
