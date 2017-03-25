@@ -1,0 +1,6 @@
+.order-row-without-file {
+    -fx-background-color:lightcoral;
+}
+.file-row-without-order-row {
+    -fx-background-color: lightgrey;
+}

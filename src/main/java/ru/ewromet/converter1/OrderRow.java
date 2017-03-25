@@ -226,4 +226,80 @@ public class OrderRow extends FileRow {
     public FileRow getAsFileRow() {
         return this;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        OrderRow orderRow = (OrderRow) o;
+
+        if (detailName != null ? !detailName.equals(orderRow.detailName) : orderRow.detailName != null) {
+            return false;
+        }
+        if (count != null ? !count.equals(orderRow.count) : orderRow.count != null) {
+            return false;
+        }
+        if (material != null ? !material.equals(orderRow.material) : orderRow.material != null) {
+            return false;
+        }
+        if (materialBrand != null ? !materialBrand.equals(orderRow.materialBrand) : orderRow.materialBrand != null) {
+            return false;
+        }
+        if (color != null ? !color.equals(orderRow.color) : orderRow.color != null) {
+            return false;
+        }
+        if (thickness != null ? !thickness.equals(orderRow.thickness) : orderRow.thickness != null) {
+            return false;
+        }
+        if (owner != null ? !owner.equals(orderRow.owner) : orderRow.owner != null) {
+            return false;
+        }
+        if (bendsCount != null ? !bendsCount.equals(orderRow.bendsCount) : orderRow.bendsCount != null) {
+            return false;
+        }
+        if (drawCreation != null ? !drawCreation.equals(orderRow.drawCreation) : orderRow.drawCreation != null) {
+            return false;
+        }
+        if (cleaning != null ? !cleaning.equals(orderRow.cleaning) : orderRow.cleaning != null) {
+            return false;
+        }
+        if (wasteReturn != null ? !wasteReturn.equals(orderRow.wasteReturn) : orderRow.wasteReturn != null) {
+            return false;
+        }
+        if (cuttingReturn != null ? !cuttingReturn.equals(orderRow.cuttingReturn) : orderRow.cuttingReturn != null) {
+            return false;
+        }
+        if (comment != null ? !comment.equals(orderRow.comment) : orderRow.comment != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (detailName != null ? detailName.hashCode() : 0);
+        result = 31 * result + (count != null ? count.hashCode() : 0);
+        result = 31 * result + (material != null ? material.hashCode() : 0);
+        result = 31 * result + (materialBrand != null ? materialBrand.hashCode() : 0);
+        result = 31 * result + (color != null ? color.hashCode() : 0);
+        result = 31 * result + (thickness != null ? thickness.hashCode() : 0);
+        result = 31 * result + (owner != null ? owner.hashCode() : 0);
+        result = 31 * result + (bendsCount != null ? bendsCount.hashCode() : 0);
+        result = 31 * result + (drawCreation != null ? drawCreation.hashCode() : 0);
+        result = 31 * result + (cleaning != null ? cleaning.hashCode() : 0);
+        result = 31 * result + (wasteReturn != null ? wasteReturn.hashCode() : 0);
+        result = 31 * result + (cuttingReturn != null ? cuttingReturn.hashCode() : 0);
+        result = 31 * result + (comment != null ? comment.hashCode() : 0);
+        return result;
+    }
 }

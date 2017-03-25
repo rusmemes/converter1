@@ -13,13 +13,18 @@ import javafx.scene.Node;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Callback;
+import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
 import static ru.ewromet.converter1.OrderRow.MATERIALS_LABELS;
@@ -49,6 +54,9 @@ public class Controller implements Logger {
     private HTMLEditor logArea;
 
     private MenuItem saveItem;
+
+    private OrderRow selectedOrderRow;
+    private FileRow selectedFileRow;
 
     @FXML
     public void initialize() {
@@ -104,15 +112,26 @@ public class Controller implements Logger {
     private void initializeFilesTable() {
         TableColumn<FileRow, String> filePathColumn = ColumnFactory.createColumn(
                 "Файл", 100, "relativeFilePath",
-                TextFieldTableCell.forTableColumn(), FileRow::setRelativeFilePath
+                column -> new ToolTipedTextFieldTableCell<FileRow>() {
+                    @Override
+                    public void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        TableRow<FileRow> currentRow = getTableRow();
+                        final FileRow fileRow = currentRow.getItem();
+                        if (fileRow != null && StringUtils.isBlank(fileRow.getStringPosNumber())) {
+                            currentRow.getStyleClass().add("file-row-without-order-row");
+                        } else {
+                            currentRow.getStyleClass().remove("file-row-without-order-row");
+                        }
+                    }
+                }, FileRow::setRelativeFilePath
         );
 
-        TableColumn<FileRow, Integer> posNumberColumn = ColumnFactory.createColumn(
-                "№", 30, "posNumber",
-                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), FileRow::setPosNumber
+        TableColumn<FileRow, String> posNumberColumn = ColumnFactory.createColumn(
+                "№", 30, "stringPosNumber",
+                TextFieldTableCell.forTableColumn(), FileRow::setStringPosNumber
         );
 
-        posNumberColumn.setEditable(false);
         posNumberColumn.setMaxWidth(30);
         posNumberColumn.setResizable(false);
         posNumberColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
@@ -136,7 +155,19 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> detailNameColumn = ColumnFactory.createColumn(
                 "Наименование детали", 100, "detailName",
-                TextFieldTableCell.forTableColumn(), OrderRow::setDetailName
+                column -> new ToolTipedTextFieldTableCell<OrderRow>() {
+                    @Override
+                    public void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        TableRow<OrderRow> currentRow = getTableRow();
+                        final OrderRow orderRow = currentRow.getItem();
+                        if (orderRow != null && StringUtils.isBlank(orderRow.getRelativeFilePath())) {
+                            currentRow.getStyleClass().add("order-row-without-file");
+                        } else {
+                            currentRow.getStyleClass().remove("order-row-without-file");
+                        }
+                    }
+                }, OrderRow::setDetailName
         );
         detailNameColumn.setStyle("-fx-alignment: CENTER-LEFT;");
 
@@ -158,7 +189,7 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> materialBrandColumn = ColumnFactory.createColumn(
                 "Марка материала", 50, "materialBrand",
-                TextFieldTableCell.forTableColumn(), OrderRow::setMaterialBrand
+                column -> new ToolTipedTextFieldTableCell<>(), OrderRow::setMaterialBrand
         );
         materialBrandColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
@@ -185,7 +216,7 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> commentColumn = ColumnFactory.createColumn(
                 "Комментарий", 50, "comment",
-                TextFieldTableCell.forTableColumn(), OrderRow::setComment
+                column -> new ToolTipedTextFieldTableCell<>(), OrderRow::setComment
         );
         commentColumn.setStyle("-fx-alignment: CENTER-LEFT;");
 

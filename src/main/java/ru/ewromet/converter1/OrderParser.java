@@ -32,6 +32,9 @@ import static ru.ewromet.converter1.OrderRow.MATERIALS_LABELS;
 
 public class OrderParser {
 
+    private static final String DWG_EXTENSION = ".dwg";
+    private static final String DXF_EXTENSION = ".dxf";
+
     private static final Map<Integer, String> tableColumns = new HashMap<Integer, String>() {{
         put(1, "\u2116");
         put(2, "наименование детали");
@@ -152,30 +155,54 @@ public class OrderParser {
     }
 
     private ObservableList<FileRow> searchFiles(ObservableList<OrderRow> result, File orderExcelFile) {
-        ObservableList<FileRow> fileWithoutRows = FXCollections.observableArrayList();
+
+        Map<FileRow, Set<OrderRow>> fileToRowMap = new HashMap<>();
+        Map<OrderRow, Set<FileRow>> rowToFileMap = new HashMap<>();
+
         final String parentDirPath = orderExcelFile.getParent();
         final List<File> files = finder(parentDirPath);
+
         FILES: for (Iterator<File> iterator = files.iterator(); iterator.hasNext(); ) {
             File file = iterator.next();
-            final String fileNameLowerCased = file.getName().toLowerCase()
-                    .replace(".dxf", "")
-                    .replace(".dwg", "");
 
-            final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, "");
+            final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, StringUtils.EMPTY);
+            final FileRow fileRow = new FileRow(relativeFilePath);
+            final Set<OrderRow> fileOrderRows = fileToRowMap.computeIfAbsent(fileRow, row -> new HashSet<>());
+
+            final String fileNameLowerCased = file.getName().toLowerCase()
+                    .replace(DXF_EXTENSION, StringUtils.EMPTY)
+                    .replace(DWG_EXTENSION, StringUtils.EMPTY);
 
             for (OrderRow orderRow : result) {
+
+                final Set<FileRow> fileRows = rowToFileMap.computeIfAbsent(orderRow, row -> new HashSet<>());
+
                 final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
+
                 if (fileNameLowerCased.endsWith(detailNameLowerCased)) {
                     orderRow.setRelativeFilePath(relativeFilePath);
-                    fileWithoutRows.add(new FileRow(orderRow.getPosNumber(), relativeFilePath));
+                    fileRow.setPosNumber(orderRow.getPosNumber());
+                    fileOrderRows.add(orderRow);
+                    fileRows.add(fileRow);
                     continue FILES;
                 }
             }
-
-            fileWithoutRows.add(new FileRow(relativeFilePath));
         }
-        fileWithoutRows.sort(Comparator.comparing(FileRow::getPosNumber));
-        return fileWithoutRows;
+
+        fileToRowMap.forEach(((fileRow, orderRows) -> {
+            if (orderRows.size() != 1) {
+                fileRow.setStringPosNumber("");
+            }
+        }));
+        rowToFileMap.forEach((orderRow, fileRows) -> {
+            if (fileRows.size() != 1) {
+                orderRow.setRelativeFilePath(null);
+            }
+        });
+
+        final ObservableList<FileRow> fileRows = FXCollections.observableArrayList(fileToRowMap.keySet());
+        fileRows.sort(Comparator.comparing(FileRow::getPosNumber));
+        return fileRows;
     }
 
     public List<File> finder(String dirName) {
@@ -190,7 +217,8 @@ public class OrderParser {
                     return true;
                 }
                 final String lowerCase = pathname.getName().toLowerCase();
-                return lowerCase.endsWith(".dwg") || lowerCase.endsWith(".dxf");
+
+                return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
             }
         };
 
