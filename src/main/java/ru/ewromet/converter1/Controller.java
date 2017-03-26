@@ -156,7 +156,7 @@ public class Controller implements Logger {
 
         TableColumn<FileRow, String> filePathColumn = ColumnFactory.createColumn(
                 "Файл", 100, "relativeFilePath",
-                column -> new ToolTipedTextFieldTableCell<FileRow>() {
+                column -> new TooltipTextFieldTableCell<FileRow>() {
                     @Override
                     public void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
@@ -201,7 +201,7 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> detailNameColumn = ColumnFactory.createColumn(
                 "Наименование детали", 100, "detailName",
-                column -> new ToolTipedTextFieldTableCell<OrderRow>() {
+                column -> new TooltipTextFieldTableCell<OrderRow>() {
                     @Override
                     public void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
@@ -235,7 +235,7 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> materialBrandColumn = ColumnFactory.createColumn(
                 "Марка материала", 50, "materialBrand",
-                column -> new ToolTipedTextFieldTableCell<>(), OrderRow::setMaterialBrand
+                column -> new TooltipTextFieldTableCell<>(), OrderRow::setMaterialBrand
         );
         materialBrandColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
@@ -262,7 +262,7 @@ public class Controller implements Logger {
 
         TableColumn<OrderRow, String> commentColumn = ColumnFactory.createColumn(
                 "Комментарий", 50, "comment",
-                column -> new ToolTipedTextFieldTableCell<>(), OrderRow::setComment
+                column -> new TooltipTextFieldTableCell<>(), OrderRow::setComment
         );
         commentColumn.setStyle("-fx-alignment: CENTER-LEFT;");
 

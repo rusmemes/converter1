@@ -4,11 +4,11 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.util.converter.DefaultStringConverter;
 
-public class ToolTipedTextFieldTableCell<S> extends TextFieldTableCell<S, String> {
+public class TooltipTextFieldTableCell<S> extends TextFieldTableCell<S, String> {
 
     private Tooltip tooltip = new Tooltip();
 
-    public ToolTipedTextFieldTableCell() {
+    public TooltipTextFieldTableCell() {
         super(new DefaultStringConverter());
     }
 
