@@ -32,6 +32,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
@@ -59,6 +60,9 @@ public class Controller implements Logger {
     private MenuBar menuBar;
 
     @FXML
+    private ProgressBar progressBar;
+
+    @FXML
     private javafx.scene.control.TextField orderPathField;
 
     @FXML
@@ -77,15 +81,12 @@ public class Controller implements Logger {
     @FXML
     private Button bindButton;
 
-    private Popup popup;
-
     private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
     private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(FileRow::getPosNumber);
 
     @FXML
     public void initialize() {
         initializeMenu();
-        initializeProcessPopup();
         initializeFilesTable();
         initializeOrderTable();
         parser = new OrderParser();
@@ -107,22 +108,6 @@ public class Controller implements Logger {
                     refreshTable(orderTable, ORDER_ROW_COMPARATOR);
                     refreshTable(filesTable, FILE_ROW_COMPARATOR);
                 }
-            }
-        });
-    }
-
-    private void initializeProcessPopup() {
-        popup = new Popup();
-        popup.setAutoFix(true);
-        Label label = new Label("идет обработка...");
-        label.getStylesheets().add("/styles/style.css");
-        label.getStyleClass().add("popup");
-        popup.getContent().add(label);
-        popup.setOnShown(new EventHandler<WindowEvent>() {
-            @Override
-            public void handle(WindowEvent e) {
-                popup.setX(primaryStage.getX() + primaryStage.getWidth()/2 - popup.getWidth()/2);
-                popup.setY(primaryStage.getY() + primaryStage.getHeight()/2 - popup.getHeight()/2);
             }
         });
     }
@@ -334,6 +319,7 @@ public class Controller implements Logger {
      * */
 
     public void orderButtonAction() {
+        progressBar.setProgress(0);
         logArea.setHtmlText(StringUtils.EMPTY);
         final FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"));
@@ -366,6 +352,7 @@ public class Controller implements Logger {
                 selectedFile = file;
                 orderNumberField.setText(file.getParentFile().getName());
                 saveItem.setDisable(false);
+                progressBar.setProgress(0.5);
             } catch (Exception e) {
                 logError(e.getMessage());
             }
@@ -380,7 +367,6 @@ public class Controller implements Logger {
     }
 
     private void saveAction() {
-        popup.show(primaryStage);
         try {
             final File directory = selectedFile.getParentFile();
             final File outerDirectory = directory.getParentFile();
@@ -417,9 +403,8 @@ public class Controller implements Logger {
                 final String destFileName = getDestFileName(orderNumberFinal, sourceFile, orderRow);
                 final File destFile = Paths.get(orderAbsDir.getAbsolutePath(), dirName, destFileName).toFile();
 
-                logMessage("Перенос файла " + sourceFile.getAbsolutePath() + " в " + destFile);
+                logMessage("Копирование " + sourceFile.getAbsolutePath() + " в " + destFile);
                 FileUtils.copyFile(sourceFile, destFile);
-                logMessage("Файл перенесён");
 
                 orderRow.setRelativeFilePath(destFile.getAbsolutePath());
                 orderRow.setMaterial(materialLabel);
@@ -432,10 +417,9 @@ public class Controller implements Logger {
 
             logMessage("ДАННЫЕ СОХРАНЕНЫ");
             saveItem.setDisable(true);
+            progressBar.setProgress(1);
         } catch (Exception e) {
             logError(e.getMessage());
-        } finally {
-            popup.hide();
         }
     }
 

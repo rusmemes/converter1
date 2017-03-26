@@ -39,6 +39,11 @@
                   <Insets left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </AnchorPane>
+            <ProgressBar fx:id="progressBar" maxWidth="1.7976931348623157E308" progress="0.0">
+               <VBox.margin>
+                  <Insets left="10.0" right="10.0" top="10.0" />
+               </VBox.margin>
+            </ProgressBar>
             <SplitPane dividerPositions="0.703125" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL">
               <items>
                 <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">
