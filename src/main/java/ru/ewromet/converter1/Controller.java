@@ -10,9 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -28,7 +25,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -38,15 +34,11 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
-import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.IntegerStringConverter;
-
-import com.sun.javafx.tk.Toolkit;
 
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
@@ -312,11 +304,11 @@ public class Controller implements Logger {
     }
 
     /**
-     2. В момент нажатия кнопки Сохранить, хотелось бы, чтобы что-то в программе происходило,
-     а именно в окне, где отображается статус обработки заявки, выводилось бы сообщение,
-     что заказ сохранён или что-то такое, потому что я сначала ничего не понял, пока не посмотрел в папку,
-     хотел даже повторно нажать "Сохранить".
-     * */
+     * 2. В момент нажатия кнопки Сохранить, хотелось бы, чтобы что-то в программе происходило,
+     * а именно в окне, где отображается статус обработки заявки, выводилось бы сообщение,
+     * что заказ сохранён или что-то такое, потому что я сначала ничего не понял, пока не посмотрел в папку,
+     * хотел даже повторно нажать "Сохранить".
+     */
 
     public void orderButtonAction() {
         progressBar.setProgress(0);
@@ -429,7 +421,9 @@ public class Controller implements Logger {
         List<String> lines = new ArrayList<>();
         lines.add(CSV_HEADER_ROW);
         orderRows.forEach(row -> {
-            if (StringUtils.isBlank(row.getRelativeFilePath())) ;
+            if (StringUtils.isBlank(row.getRelativeFilePath())) {
+                ;
+            }
             lines.add(createCsvLine(row));
         });
         final File csvFile = Paths.get(directory.getAbsolutePath(), orderNumber + ".csv").toFile();

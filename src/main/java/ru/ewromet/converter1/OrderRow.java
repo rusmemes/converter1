@@ -1,12 +1,12 @@
 package ru.ewromet.converter1;
 
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 
 public class OrderRow extends FileRow {
 

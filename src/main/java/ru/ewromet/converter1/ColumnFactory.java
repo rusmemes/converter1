@@ -1,11 +1,11 @@
 package ru.ewromet.converter1;
 
+import java.util.function.BiConsumer;
+
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.Callback;
-
-import java.util.function.BiConsumer;
 
 public interface ColumnFactory {
 

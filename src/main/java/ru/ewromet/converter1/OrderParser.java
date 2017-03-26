@@ -1,18 +1,5 @@
 package ru.ewromet.converter1;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.control.ProgressBar;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -27,6 +14,18 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
@@ -223,11 +222,15 @@ public class OrderParser {
             }
         };
 
-        return Stream.of(function.apply(dir, filter)).flatMap(file ->
-                file.isDirectory()
-                        ? Stream.of(function.apply(file, filter))
-                        : Stream.of(file)
-        ).collect(Collectors.toList());
+        return getRecursiveStream(dir, filter, function).collect(Collectors.toList());
+    }
+
+    private Stream<File> getRecursiveStream(File file, FileFilter filter, BiFunction<File, FileFilter, File[]> function) {
+        return Stream.of(function.apply(file, filter)).flatMap(f ->
+                f.isDirectory()
+                        ? getRecursiveStream(f, filter, function)
+                        : Stream.of(f)
+        );
     }
 
     private OrderRow createOrderRowFromExcelRow(Row excelRow) throws Exception {
