@@ -1,33 +1,5 @@
 package ru.ewromet.converter1;
 
-import javafx.application.Platform;
-import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
-import javafx.fxml.FXML;
-import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.ChoiceBoxTableCell;
-import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.web.HTMLEditor;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import javafx.util.converter.IntegerStringConverter;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -40,6 +12,40 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.ChoiceBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.web.HTMLEditor;
+import javafx.stage.FileChooser;
+import javafx.stage.Popup;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
+import javafx.util.converter.IntegerStringConverter;
+
+import com.sun.javafx.tk.Toolkit;
 
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
@@ -48,8 +54,6 @@ public class Controller implements Logger {
     private Stage primaryStage;
     private File selectedFile;
     private OrderParser parser;
-
-    private final Executor asyncExecutor = Executors.newSingleThreadExecutor();
 
     @FXML
     private MenuBar menuBar;
@@ -73,12 +77,15 @@ public class Controller implements Logger {
     @FXML
     private Button bindButton;
 
+    private Popup popup;
+
     private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
     private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(FileRow::getPosNumber);
 
     @FXML
     public void initialize() {
         initializeMenu();
+        initializeProcessPopup();
         initializeFilesTable();
         initializeOrderTable();
         parser = new OrderParser();
@@ -100,6 +107,22 @@ public class Controller implements Logger {
                     refreshTable(orderTable, ORDER_ROW_COMPARATOR);
                     refreshTable(filesTable, FILE_ROW_COMPARATOR);
                 }
+            }
+        });
+    }
+
+    private void initializeProcessPopup() {
+        popup = new Popup();
+        popup.setAutoFix(true);
+        Label label = new Label("идет обработка...");
+        label.getStylesheets().add("/styles/style.css");
+        label.getStyleClass().add("popup");
+        popup.getContent().add(label);
+        popup.setOnShown(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent e) {
+                popup.setX(primaryStage.getX() + primaryStage.getWidth()/2 - popup.getWidth()/2);
+                popup.setY(primaryStage.getY() + primaryStage.getHeight()/2 - popup.getHeight()/2);
             }
         });
     }
@@ -304,8 +327,10 @@ public class Controller implements Logger {
     }
 
     /**
-     2. В момент нажатия кнопки Сохранить, хотелось бы, чтобы что-то в программе происходило, а именно в окне, где отображается статус обработки заявки, выводилось бы сообщение, что заказ сохранён или что-то такое, потому что я сначала ничего не понял, пока не посмотрел в папку, хотел даже повторно нажать "Сохранить".
-     4. Ещё хотелось бы, чтобы программа запоминала последний путь, то есть когда я первый раз выбрал заявку и в ней был косяк, я его исправил, нажимаю вновь загрузить и мне снова надо искать тот каталог. И надо бы, чтобы программа запоминала последний путь не только в текущей сессии, но и даже после закрытия и повторного запуска.
+     2. В момент нажатия кнопки Сохранить, хотелось бы, чтобы что-то в программе происходило,
+     а именно в окне, где отображается статус обработки заявки, выводилось бы сообщение,
+     что заказ сохранён или что-то такое, потому что я сначала ничего не понял, пока не посмотрел в папку,
+     хотел даже повторно нажать "Сохранить".
      * */
 
     public void orderButtonAction() {
@@ -355,6 +380,7 @@ public class Controller implements Logger {
     }
 
     private void saveAction() {
+        popup.show(primaryStage);
         try {
             final File directory = selectedFile.getParentFile();
             final File outerDirectory = directory.getParentFile();
@@ -404,10 +430,12 @@ public class Controller implements Logger {
             createCsvFile(orderAbsDir, orderNumber, orderRows);
             logMessage("csv-файл создан");
 
+            logMessage("ДАННЫЕ СОХРАНЕНЫ");
             saveItem.setDisable(true);
         } catch (Exception e) {
-            e.printStackTrace();
             logError(e.getMessage());
+        } finally {
+            popup.hide();
         }
     }
 
