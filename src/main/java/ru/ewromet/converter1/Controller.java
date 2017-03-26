@@ -22,17 +22,24 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.IntegerStringConverter;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
@@ -41,6 +48,8 @@ public class Controller implements Logger {
     private Stage primaryStage;
     private File selectedFile;
     private OrderParser parser;
+
+    private final Executor asyncExecutor = Executors.newSingleThreadExecutor();
 
     @FXML
     private MenuBar menuBar;
@@ -64,6 +73,9 @@ public class Controller implements Logger {
     @FXML
     private Button bindButton;
 
+    private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
+    private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(FileRow::getPosNumber);
+
     @FXML
     public void initialize() {
         initializeMenu();
@@ -73,15 +85,20 @@ public class Controller implements Logger {
         hideHTMLEditorToolbars(logArea);
 
         bindButton.setOnAction(event -> {
-            OrderRow selectedOrderRow = orderTable.getSelectionModel().getSelectedItem();
-            FileRow selectedFileRow = filesTable.getSelectionModel().getSelectedItem();
-            if (selectedOrderRow != null && selectedFileRow != null) {
-                if (StringUtils.isEmpty(selectedFileRow.getStringPosNumber()) && StringUtils.isEmpty(selectedOrderRow.getRelativeFilePath())) {
-                    selectedFileRow.setPosNumber(selectedOrderRow.getPosNumber());
-                    selectedOrderRow.setRelativeFilePath(selectedFileRow.getRelativeFilePath());
-                    logMessage("Файл " + selectedFileRow.getRelativeFilePath() + " связан с позицией " + selectedOrderRow.getPosNumber());
-                    refreshTable(orderTable, Comparator.comparing(OrderRow::getPosNumber));
-                    refreshTable(filesTable, Comparator.comparing(FileRow::getPosNumber));
+            OrderRow orderRow = orderTable.getSelectionModel().getSelectedItem();
+            FileRow fileRow = filesTable.getSelectionModel().getSelectedItem();
+            if (orderRow != null && fileRow != null) {
+                if (StringUtils.isEmpty(orderRow.getRelativeFilePath())) {
+                    if (!StringUtils.isBlank(fileRow.getStringPosNumber())) {
+                        fileRow = new FileRow(fileRow.getRelativeFilePath());
+                        filesTable.getItems().add(fileRow);
+                    }
+                    fileRow.setPosNumber(orderRow.getPosNumber());
+                    orderRow.setRelativeFilePath(fileRow.getRelativeFilePath());
+                    logMessage("Файл " + fileRow.getRelativeFilePath() + " связан с позицией " + orderRow.getPosNumber());
+
+                    refreshTable(orderTable, ORDER_ROW_COMPARATOR);
+                    refreshTable(filesTable, FILE_ROW_COMPARATOR);
                 }
             }
         });
@@ -126,12 +143,12 @@ public class Controller implements Logger {
 
     @Override
     public void logError(String line) {
-        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:red;'>" + line + "</span><br />");
+        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:red;font-family: monospace;'>" + line + "</span><br />");
     }
 
     @Override
     public void logMessage(String line) {
-        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:blue;'>" + line + "</span><br />");
+        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:blue;font-family: monospace;'>" + line + "</span><br />");
     }
 
     private void initializeFilesTable() {
@@ -286,16 +303,36 @@ public class Controller implements Logger {
         this.primaryStage = primaryStage;
     }
 
+    /**
+     2. В момент нажатия кнопки Сохранить, хотелось бы, чтобы что-то в программе происходило, а именно в окне, где отображается статус обработки заявки, выводилось бы сообщение, что заказ сохранён или что-то такое, потому что я сначала ничего не понял, пока не посмотрел в папку, хотел даже повторно нажать "Сохранить".
+     4. Ещё хотелось бы, чтобы программа запоминала последний путь, то есть когда я первый раз выбрал заявку и в ней был косяк, я его исправил, нажимаю вновь загрузить и мне снова надо искать тот каталог. И надо бы, чтобы программа запоминала последний путь не только в текущей сессии, но и даже после закрытия и повторного запуска.
+     * */
+
     public void orderButtonAction() {
+        logArea.setHtmlText(StringUtils.EMPTY);
         final FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"));
         fileChooser.setTitle("Укажите файл с заявкой");
-        fileChooser.setInitialDirectory(
-                new File(System.getProperty("user.home"))
-        );
+        final File homeUserDir = new File(System.getProperty("user.home"));
+        File dirToOpen = homeUserDir;
+        final File converter1File = Paths.get(homeUserDir.getAbsolutePath(), "converter1.txt").toFile();
+        if (converter1File.exists()) {
+            try {
+                final List<String> list = Files.readAllLines(converter1File.toPath(), Charset.forName("UTF-8"));
+                if (CollectionUtils.isNotEmpty(list)) {
+                    File file = new File(list.get(0));
+                    while (!file.exists()) {
+                        file = file.getParentFile();
+                    }
+                    dirToOpen = file;
+                }
+            } catch (IOException e) {
+                logError("Ошибка при чтении предыдущего пути");
+            }
+        }
+        fileChooser.setInitialDirectory(dirToOpen);
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
-            logArea.setHtmlText(StringUtils.EMPTY);
             try {
                 final Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parseResult = parser.parse(file, this);
                 orderTable.setItems(parseResult.getLeft());
@@ -307,6 +344,13 @@ public class Controller implements Logger {
             } catch (Exception e) {
                 logError(e.getMessage());
             }
+            try {
+                FileUtils.writeStringToFile(converter1File, file.getParent(), Charset.forName("UTF-8"));
+            } catch (IOException e) {
+                logError("Ошибка при записи последнего пути");
+            }
+        } else {
+            logMessage("Файл не был выбран");
         }
     }
 
@@ -320,11 +364,18 @@ public class Controller implements Logger {
                 return;
             }
             final String orderNumberFinal = orderNumber.trim();
-            final File orderAbsTempDir = Paths.get(outerDirectory.getAbsolutePath(), orderNumberFinal + "temp" + Math.random()).toFile();
             final File orderAbsDir = Paths.get(outerDirectory.getAbsolutePath(), orderNumberFinal).toFile();
-            final File sourceFilesDir = Paths.get(orderAbsTempDir.getAbsolutePath(), "Исходные данные").toFile();
+            final File sourceFilesDir = Paths.get(orderAbsDir.getAbsolutePath(), "Исходные данные").toFile();
 
-            FileUtils.copyDirectory(directory, sourceFilesDir);
+            final File[] files = directory.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return !file.equals(selectedFile) && !file.equals(sourceFilesDir);
+                }
+            });
+            for (File file : files) {
+                FileUtils.moveToDirectory(file, sourceFilesDir, true);
+            }
             logMessage("Исходные данные сохранены в " + sourceFilesDir.getAbsolutePath());
 
             final List<OrderRow> orderRows = orderTable.getItems();
@@ -334,29 +385,20 @@ public class Controller implements Logger {
                     continue;
                 }
 
-                final File sourceFile = Paths.get(directory.getAbsolutePath(), orderRow.getRelativeFilePath()).toFile();
+                final File sourceFile = Paths.get(sourceFilesDir.getAbsolutePath(), orderRow.getRelativeFilePath()).toFile();
                 final String materialLabel = OrderRow.MATERIAL_LABELS.get(orderRow.getMaterial());
                 final String dirName = materialLabel + StringUtils.SPACE + orderRow.getThickness() + "mm";
                 final String destFileName = getDestFileName(orderNumberFinal, sourceFile, orderRow);
-                final File destTempFile = Paths.get(orderAbsTempDir.getAbsolutePath(), dirName, destFileName).toFile();
                 final File destFile = Paths.get(orderAbsDir.getAbsolutePath(), dirName, destFileName).toFile();
 
-                logMessage("Копирование файла " + sourceFile.getAbsolutePath() + " в " + destTempFile);
-                FileUtils.moveFile(sourceFile, destTempFile);
-                logMessage("Файл скопирован");
+                logMessage("Перенос файла " + sourceFile.getAbsolutePath() + " в " + destFile);
+                FileUtils.copyFile(sourceFile, destFile);
+                logMessage("Файл перенесён");
 
                 orderRow.setRelativeFilePath(destFile.getAbsolutePath());
                 orderRow.setMaterial(materialLabel);
                 orderRow.setDetailName(destFileName);
             }
-
-            logMessage("Удаление старой директории " + directory.getAbsolutePath());
-            FileUtils.deleteDirectory(directory);
-            logMessage("Директория удалена");
-
-            logMessage("Перенос готовых файлов из " + orderAbsTempDir + " в " + orderAbsDir);
-            FileUtils.moveDirectory(orderAbsTempDir, orderAbsDir);
-            logMessage("Перенос завершён");
 
             logMessage("Создание csv-файла в директории " + orderAbsDir);
             createCsvFile(orderAbsDir, orderNumber, orderRows);
