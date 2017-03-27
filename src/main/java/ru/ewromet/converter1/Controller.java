@@ -156,8 +156,8 @@ public class Controller implements Logger {
                         options.set(1, String.valueOf(Boolean.valueOf(renameFiles)));
                     }
                 }
-            } catch (IOException e) {
-                logError("Ошибка при чтении файла настроек");
+            } catch (Exception e) {
+                logError("Ошибка при чтении файла настроек " + e.getMessage());
             }
         }
     }
@@ -172,8 +172,8 @@ public class Controller implements Logger {
 
         try {
             FileUtils.writeLines(Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.txt").toFile(), "UTF-8", options);
-        } catch (IOException e) {
-            logError("Ошибка при записи настроек");
+        } catch (Exception e) {
+            logError("Ошибка при записи настроек " + e.getMessage());
         }
     }
 
