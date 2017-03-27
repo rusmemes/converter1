@@ -24,6 +24,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -40,6 +41,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.IntegerStringConverter;
 
+import static java.util.Arrays.asList;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
 public class Controller implements Logger {
@@ -69,15 +71,19 @@ public class Controller implements Logger {
     private HTMLEditor logArea;
 
     private MenuItem saveItem;
+    private CheckMenuItem renameFilesItem;
 
     @FXML
     private Button bindButton;
+
+    private List<String> options = asList(System.getProperty("user.home"), "true");
 
     private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
     private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(FileRow::getPosNumber);
 
     @FXML
     public void initialize() {
+        initializeOptionsFromFile();
         initializeMenu();
         initializeFilesTable();
         initializeOrderTable();
@@ -125,8 +131,50 @@ public class Controller implements Logger {
         saveItem.setDisable(true);
         saveItem.setOnAction(event -> saveAction());
 
-        menu.getItems().addAll(newOrderItem, saveItem);
+        renameFilesItem = new CheckMenuItem("Переименовывать файлы");
+        renameFilesItem.setSelected(Boolean.valueOf(options.get(1)));
+        renameFilesItem.setOnAction(event -> {
+            updateOption(1, String.valueOf(((CheckMenuItem)event.getSource()).isSelected()));
+        });
+
+        menu.getItems().addAll(newOrderItem, saveItem, renameFilesItem);
         menuBar.getMenus().add(menu);
+    }
+
+    private void initializeOptionsFromFile() {
+        final File converter1File = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.txt").toFile();
+        if (converter1File.exists()) {
+            try {
+                final List<String> list = Files.readAllLines(converter1File.toPath(), Charset.forName("UTF-8"));
+                if (CollectionUtils.isNotEmpty(list)) {
+                    final String path = list.get(0);
+                    if (StringUtils.isNotBlank(path)) {
+                        options.set(0, path);
+                    }
+                    if (list.size() > 1) {
+                        final String renameFiles = list.get(1);
+                        options.set(1, String.valueOf(Boolean.valueOf(renameFiles)));
+                    }
+                }
+            } catch (IOException e) {
+                logError("Ошибка при чтении файла настроек");
+            }
+        }
+    }
+
+    private void updateOption(int pos, String value) {
+        if (options.size() < pos) {
+            for (int i = options.size(); i < pos + 1; i++) {
+                options.add(StringUtils.EMPTY);
+            }
+        }
+        options.set(pos, value);
+
+        try {
+            FileUtils.writeLines(Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.txt").toFile(), "UTF-8", options);
+        } catch (IOException e) {
+            logError("Ошибка при записи настроек");
+        }
     }
 
     public static void hideHTMLEditorToolbars(final HTMLEditor editor) {
@@ -318,21 +366,11 @@ public class Controller implements Logger {
         fileChooser.setTitle("Укажите файл с заявкой");
         final File homeUserDir = new File(System.getProperty("user.home"));
         File dirToOpen = homeUserDir;
-        final File converter1File = Paths.get(homeUserDir.getAbsolutePath(), "converter1.txt").toFile();
-        if (converter1File.exists()) {
-            try {
-                final List<String> list = Files.readAllLines(converter1File.toPath(), Charset.forName("UTF-8"));
-                if (CollectionUtils.isNotEmpty(list)) {
-                    File file = new File(list.get(0));
-                    while (!file.exists()) {
-                        file = file.getParentFile();
-                    }
-                    dirToOpen = file;
-                }
-            } catch (IOException e) {
-                logError("Ошибка при чтении предыдущего пути");
-            }
+        File dirFromCOnfig = new File(options.get(0));
+        while (!dirFromCOnfig.exists()) {
+            dirFromCOnfig = dirFromCOnfig.getParentFile();
         }
+        dirToOpen = dirFromCOnfig;
         fileChooser.setInitialDirectory(dirToOpen);
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
@@ -348,11 +386,7 @@ public class Controller implements Logger {
             } catch (Exception e) {
                 logError(e.getMessage());
             }
-            try {
-                FileUtils.writeStringToFile(converter1File, file.getParent(), Charset.forName("UTF-8"));
-            } catch (IOException e) {
-                logError("Ошибка при записи последнего пути");
-            }
+            updateOption(0, file.getParent());
         } else {
             logMessage("Файл не был выбран");
         }
@@ -395,12 +429,16 @@ public class Controller implements Logger {
                 final String destFileName = getDestFileName(orderNumberFinal, sourceFile, orderRow);
                 final File destFile = Paths.get(orderAbsDir.getAbsolutePath(), dirName, destFileName).toFile();
 
-                logMessage("Копирование " + sourceFile.getAbsolutePath() + " в " + destFile);
-                FileUtils.copyFile(sourceFile, destFile);
+                if (!destFile.exists()) {
+                    logMessage("Копирование " + sourceFile.getAbsolutePath() + " в " + destFile);
+                    FileUtils.copyFile(sourceFile, destFile);
+                }
 
                 orderRow.setRelativeFilePath(destFile.getAbsolutePath());
                 orderRow.setMaterial(materialLabel);
-                orderRow.setDetailName(destFileName);
+                if (renameFilesItem.isSelected()) {
+                    orderRow.setDetailName(destFileName.replace(getExtension(destFile), StringUtils.EMPTY));
+                }
             }
 
             logMessage("Создание csv-файла в директории " + orderAbsDir);
@@ -452,21 +490,27 @@ public class Controller implements Logger {
      * _O - если указана окраска в спецификации
      * .f - сохраняется формат, в котором была изначально деталь ("*.dwg" и "*.dxf")
      */
-    private static String getDestFileName(String orderNumber, File sourceFile, OrderRow row) {
+    private String getDestFileName(String orderNumber, File sourceFile, OrderRow row) {
 
-        final String sourceFileName = sourceFile.getName();
+        if (renameFilesItem.isSelected()) {
+            return FILENAME_TEMPLATE
+                    .replace("Nz", orderNumber)
+                    .replace("Np", String.valueOf(row.getPosNumber()))
+                    .replace("Q", String.valueOf(row.getCount()))
+                    .replace("_g", row.getBendsCount() > 0 ? "_g" : StringUtils.EMPTY)
+                    .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
+                    .replace("_O", StringUtils.isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
+                    .replace(".f", getExtension(sourceFile))
+                    ;
+        }
+
+        return sourceFile.getName();
+    }
+
+    private String getExtension(File file) {
+        final String sourceFileName = file.getName();
         final int lastCommaPos = sourceFileName.lastIndexOf(".");
-        final String extension = sourceFileName.substring(lastCommaPos);
-
-        return FILENAME_TEMPLATE
-                .replace("Nz", orderNumber)
-                .replace("Np", String.valueOf(row.getPosNumber()))
-                .replace("Q", String.valueOf(row.getCount()))
-                .replace("_g", row.getBendsCount() > 0 ? "_g" : StringUtils.EMPTY)
-                .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
-                .replace("_O", StringUtils.isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
-                .replace(".f", extension)
-                ;
+        return sourceFileName.substring(lastCommaPos);
     }
 
     public void closeApplicationAction(WindowEvent windowEvent) {
