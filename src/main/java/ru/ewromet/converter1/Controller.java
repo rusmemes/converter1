@@ -143,12 +143,12 @@ public class Controller implements Logger {
 
     @Override
     public void logError(String line) {
-        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:red;font-family: monospace;'>" + line + "</span><br />");
+        logArea.setHtmlText("<span style='color:red;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
     }
 
     @Override
     public void logMessage(String line) {
-        logArea.setHtmlText(logArea.getHtmlText() + "<span style='color:blue;font-family: monospace;'>" + line + "</span><br />");
+        logArea.setHtmlText("<span style='color:blue;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
     }
 
     private void initializeFilesTable() {

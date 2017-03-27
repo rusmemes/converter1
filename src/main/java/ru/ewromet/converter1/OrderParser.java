@@ -222,13 +222,13 @@ public class OrderParser {
             }
         };
 
-        return getRecursiveStream(dir, filter, function).collect(Collectors.toList());
+        return getFilesStreamRecursively(dir, filter, function).collect(Collectors.toList());
     }
 
-    private Stream<File> getRecursiveStream(File file, FileFilter filter, BiFunction<File, FileFilter, File[]> function) {
+    private Stream<File> getFilesStreamRecursively(File file, FileFilter filter, BiFunction<File, FileFilter, File[]> function) {
         return Stream.of(function.apply(file, filter)).flatMap(f ->
                 f.isDirectory()
-                        ? getRecursiveStream(f, filter, function)
+                        ? getFilesStreamRecursively(f, filter, function)
                         : Stream.of(f)
         );
     }
