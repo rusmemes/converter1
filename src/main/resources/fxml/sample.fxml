@@ -7,12 +7,12 @@
 <?import javafx.scene.text.*?>
 <?import javafx.scene.layout.*?>
 
-<ScrollPane fitToWidth="true" prefWidth="1350.0" stylesheets="/styles/style.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.ewromet.converter1.Controller">
+<ScrollPane fitToHeight="true" fitToWidth="true" stylesheets="/styles/style.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.ewromet.converter1.Controller">
    <content>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">
+      <VBox>
          <children>
-            <MenuBar fx:id="menuBar" />
-            <AnchorPane>
+            <MenuBar fx:id="menuBar" maxWidth="1.7976931348623157E308" />
+            <AnchorPane maxWidth="1.7976931348623157E308">
                <children>
                   <Label alignment="CENTER" text="ФАЙЛ ЗАЯВКИ:" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <font>
@@ -46,9 +46,9 @@
             </ProgressBar>
             <SplitPane dividerPositions="0.703125" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL">
               <items>
-                <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">
+                <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                      <children>
-                        <SplitPane dividerPositions="0.1" maxHeight="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <SplitPane dividerPositions="0.1" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <items>
                               <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="500.0">
                                  <children>
@@ -66,7 +66,7 @@
                               </AnchorPane>
                               <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity">
                                  <children>
-                                    <TableView fx:id="orderTable" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="-Infinity" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                    <TableView fx:id="orderTable" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                        <columnResizePolicy>
                                           <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
                                        </columnResizePolicy>
@@ -77,9 +77,9 @@
                         </SplitPane>
                      </children>
                   </AnchorPane>
-                <AnchorPane centerShape="false" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="-Infinity" prefHeight="480.0" scaleShape="false">
+                <AnchorPane centerShape="false" maxHeight="500.0" maxWidth="1.7976931348623157E308" minHeight="100.0" scaleShape="false">
                      <children>
-                        <HTMLEditor fx:id="logArea" htmlText="" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        <ListView fx:id="logArea" maxHeight="500.0" maxWidth="1.7976931348623157E308" minHeight="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                      </children>
                   </AnchorPane>
               </items>

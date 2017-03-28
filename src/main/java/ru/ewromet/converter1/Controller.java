@@ -26,6 +26,8 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -35,6 +37,8 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -68,7 +72,7 @@ public class Controller implements Logger {
     private TableView<OrderRow> orderTable;
 
     @FXML
-    private HTMLEditor logArea;
+    private ListView<Text> logArea;
 
     private MenuItem saveItem;
     private CheckMenuItem renameFilesItem;
@@ -88,7 +92,7 @@ public class Controller implements Logger {
         initializeFilesTable();
         initializeOrderTable();
         parser = new OrderParser();
-        hideHTMLEditorToolbars(logArea);
+//        hideHTMLEditorToolbars(logArea);
 
         bindButton.setOnAction(event -> {
             OrderRow orderRow = orderTable.getSelectionModel().getSelectedItem();
@@ -191,12 +195,20 @@ public class Controller implements Logger {
 
     @Override
     public void logError(String line) {
-        logArea.setHtmlText("<span style='color:red;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
+        Text text = new Text(line);
+        text.setFill(Color.RED);
+        logArea.getItems().add(text);
+        logArea.scrollTo(logArea.getItems().size() - 1);
+//        logArea.setHtmlText("<span style='color:red;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
     }
 
     @Override
     public void logMessage(String line) {
-        logArea.setHtmlText("<span style='color:blue;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
+        Text text = new Text(line + line + line);
+        text.setFill(Color.BLUE);
+        logArea.getItems().add(text);
+        logArea.scrollTo(logArea.getItems().size() - 1);
+//        logArea.setHtmlText("<span style='color:blue;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
     }
 
     private void initializeFilesTable() {
@@ -360,7 +372,8 @@ public class Controller implements Logger {
 
     public void orderButtonAction() {
         progressBar.setProgress(0);
-        logArea.setHtmlText(StringUtils.EMPTY);
+//        logArea.setHtmlText(StringUtils.EMPTY);
+        logArea.getItems().clear();
         final FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"));
         fileChooser.setTitle("Укажите файл с заявкой");
