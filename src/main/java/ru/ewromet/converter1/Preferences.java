@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -20,16 +21,20 @@ public class Preferences {
     private static final File file = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.ini").toFile();
 
     public enum Key {
-        LAST_PATH(String.class), RENAME_FILES(Boolean.class);
+        LAST_PATH(System.getProperty("user.home"))
+        , RENAME_FILES(true)
+        ;
 
         private Method valueOfMethod;
+        private Object defaultValue;
 
-        Key(Class<?> klass) {
+        Key(Object defaultValue) {
+            this.defaultValue = defaultValue;
             try {
-                valueOfMethod = klass.getMethod("valueOf", String.class);
+                valueOfMethod = defaultValue.getClass().getMethod("valueOf", String.class);
             } catch (NoSuchMethodException e) {
                 try {
-                    valueOfMethod = klass.getMethod("valueOf", Object.class);
+                    valueOfMethod = defaultValue.getClass().getMethod("valueOf", Object.class);
                 } catch (NoSuchMethodException e1) {
                     e1.addSuppressed(e);
                     throw new RuntimeException(e1);
@@ -39,8 +44,9 @@ public class Preferences {
     }
 
     private Map<Key, Object> options = new EnumMap<Key, Object>(Key.class) {{
-        put(Key.LAST_PATH, System.getProperty("user.home"));
-        put(Key.RENAME_FILES, true);
+        for (Key key : Key.values()) {
+            put(key, key.defaultValue);
+        }
     }};
 
     public Preferences() throws IOException, InvocationTargetException, IllegalAccessException {
@@ -49,10 +55,13 @@ public class Preferences {
                 Properties properties = new Properties();
                 properties.load(in);
                 for (Key key : Key.values()) {
-                    String value = properties.getProperty(key.name());
-                    if (StringUtils.isNotBlank(value)) {
-                        options.put(key, key.valueOfMethod.invoke(null, value));
+                    Object value;
+                    try {
+                        value = key.valueOfMethod.invoke(null, properties.getProperty(key.name()));
+                    } catch (Exception ignored) {
+                        value = key.defaultValue;
                     }
+                    options.put(key, value);
                 }
             }
         } else {

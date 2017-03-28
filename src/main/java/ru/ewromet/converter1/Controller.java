@@ -156,16 +156,14 @@ public class Controller implements Logger {
     public void logError(String line) {
         Text text = new Text(line);
         text.setFill(Color.RED);
-        logArea.getItems().add(text);
-        logArea.scrollTo(logArea.getItems().size() - 1);
+        logArea.getItems().add(0, text);
     }
 
     @Override
     public void logMessage(String line) {
         Text text = new Text(line);
         text.setFill(Color.BLUE);
-        logArea.getItems().add(text);
-        logArea.scrollTo(logArea.getItems().size() - 1);
+        logArea.getItems().add(0, text);
     }
 
     private void initializeFilesTable() {
