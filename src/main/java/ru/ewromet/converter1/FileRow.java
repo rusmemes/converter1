@@ -9,21 +9,21 @@ public class FileRow {
 
     private final SimpleStringProperty stringPosNumber = new SimpleStringProperty(StringUtils.EMPTY);
     private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();
-    private final SimpleStringProperty relativeFilePath = new SimpleStringProperty();
+    private final SimpleStringProperty filePath = new SimpleStringProperty();
 
     public FileRow() {
     }
 
-    public FileRow(String relativeFilePath) {
+    public FileRow(String filePath) {
         this.posNumber.set(Integer.MAX_VALUE);
-        this.relativeFilePath.set(relativeFilePath);
+        this.filePath.set(filePath);
     }
 
-    public FileRow(Integer posNumber, String relativeFilePath) {
+    public FileRow(Integer posNumber, String filePath) {
         this();
         this.posNumber.set(posNumber);
         this.stringPosNumber.set(posNumber == null ? "" : posNumber.toString());
-        this.relativeFilePath.set(relativeFilePath);
+        this.filePath.set(filePath);
     }
 
     public String getStringPosNumber() {
@@ -56,21 +56,21 @@ public class FileRow {
         this.stringPosNumber.set(String.valueOf(posNumber));
     }
 
-    public String getRelativeFilePath() {
-        return relativeFilePath.get();
+    public String getFilePath() {
+        return filePath.get();
     }
 
-    public SimpleStringProperty relativeFilePathProperty() {
-        return relativeFilePath;
+    public SimpleStringProperty filePathProperty() {
+        return filePath;
     }
 
-    public void setRelativeFilePath(String relativeFilePath) {
-        this.relativeFilePath.set(relativeFilePath);
+    public void setFilePath(String filePath) {
+        this.filePath.set(filePath);
     }
 
     @Override
     public String toString() {
-        return posNumber.get() + " | " + relativeFilePath.get();
+        return posNumber.get() + " | " + filePath.get();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class FileRow {
         if (posNumber != null ? !posNumber.equals(fileRow.posNumber) : fileRow.posNumber != null) {
             return false;
         }
-        if (relativeFilePath != null ? !relativeFilePath.equals(fileRow.relativeFilePath) : fileRow.relativeFilePath != null) {
+        if (filePath != null ? !filePath.equals(fileRow.filePath) : fileRow.filePath != null) {
             return false;
         }
 
@@ -101,7 +101,7 @@ public class FileRow {
     public int hashCode() {
         int result = stringPosNumber != null ? stringPosNumber.hashCode() : 0;
         result = 31 * result + (posNumber != null ? posNumber.hashCode() : 0);
-        result = 31 * result + (relativeFilePath != null ? relativeFilePath.hashCode() : 0);
+        result = 31 * result + (filePath != null ? filePath.hashCode() : 0);
         return result;
     }
 }

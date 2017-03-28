@@ -15,7 +15,7 @@ public class Main extends Application {
         Controller controller = loader.getController();
         controller.setPrimaryStage(primaryStage);
         primaryStage.setTitle("Конвертер заявки");
-        primaryStage.setScene(new Scene(root, 1350, 700));
+        primaryStage.setScene(new Scene(root));
         primaryStage.setMaximized(true);
         primaryStage.setOnCloseRequest(controller::closeApplicationAction);
         primaryStage.show();

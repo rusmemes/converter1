@@ -3,20 +3,16 @@ package ru.ewromet.converter1;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -26,7 +22,6 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -39,14 +34,14 @@ import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.IntegerStringConverter;
 
-import static java.util.Arrays.asList;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
+import static ru.ewromet.converter1.Preferences.Key.LAST_PATH;
+import static ru.ewromet.converter1.Preferences.Key.RENAME_FILES;
 
 public class Controller implements Logger {
 
@@ -68,6 +63,7 @@ public class Controller implements Logger {
 
     @FXML
     private TableView<FileRow> filesTable;
+
     @FXML
     private TableView<OrderRow> orderTable;
 
@@ -80,32 +76,31 @@ public class Controller implements Logger {
     @FXML
     private Button bindButton;
 
-    private List<String> options = asList(System.getProperty("user.home"), "true");
+    private Preferences preferences;
 
     private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
     private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(FileRow::getPosNumber);
 
     @FXML
     public void initialize() {
-        initializeOptionsFromFile();
+        initializePreferences();
         initializeMenu();
         initializeFilesTable();
         initializeOrderTable();
         parser = new OrderParser();
-//        hideHTMLEditorToolbars(logArea);
 
         bindButton.setOnAction(event -> {
             OrderRow orderRow = orderTable.getSelectionModel().getSelectedItem();
             FileRow fileRow = filesTable.getSelectionModel().getSelectedItem();
             if (orderRow != null && fileRow != null) {
-                if (StringUtils.isEmpty(orderRow.getRelativeFilePath())) {
+                if (StringUtils.isEmpty(orderRow.getFilePath())) {
                     if (!StringUtils.isBlank(fileRow.getStringPosNumber())) {
-                        fileRow = new FileRow(fileRow.getRelativeFilePath());
+                        fileRow = new FileRow(fileRow.getFilePath());
                         filesTable.getItems().add(fileRow);
                     }
                     fileRow.setPosNumber(orderRow.getPosNumber());
-                    orderRow.setRelativeFilePath(fileRow.getRelativeFilePath());
-                    logMessage("Файл " + fileRow.getRelativeFilePath() + " связан с позицией " + orderRow.getPosNumber());
+                    orderRow.setFilePath(fileRow.getFilePath());
+                    logMessage("Файл " + fileRow.getFilePath() + " связан с позицией " + orderRow.getPosNumber());
 
                     refreshTable(orderTable, ORDER_ROW_COMPARATOR);
                     refreshTable(filesTable, FILE_ROW_COMPARATOR);
@@ -136,61 +131,25 @@ public class Controller implements Logger {
         saveItem.setOnAction(event -> saveAction());
 
         renameFilesItem = new CheckMenuItem("Переименовывать файлы");
-        renameFilesItem.setSelected(Boolean.valueOf(options.get(1)));
+        renameFilesItem.setSelected(preferences.get(RENAME_FILES));
         renameFilesItem.setOnAction(event -> {
-            updateOption(1, String.valueOf(((CheckMenuItem)event.getSource()).isSelected()));
+            try {
+                preferences.update(RENAME_FILES, ((CheckMenuItem) event.getSource()).isSelected());
+            } catch (IOException e) {
+                logError("Ошибка записи настроек " + e.getMessage());
+            }
         });
 
         menu.getItems().addAll(newOrderItem, saveItem, renameFilesItem);
         menuBar.getMenus().add(menu);
     }
 
-    private void initializeOptionsFromFile() {
-        final File converter1File = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.txt").toFile();
-        if (converter1File.exists()) {
-            try {
-                final List<String> list = Files.readAllLines(converter1File.toPath(), Charset.forName("UTF-8"));
-                if (CollectionUtils.isNotEmpty(list)) {
-                    final String path = list.get(0);
-                    if (StringUtils.isNotBlank(path)) {
-                        options.set(0, path);
-                    }
-                    if (list.size() > 1) {
-                        final String renameFiles = list.get(1);
-                        options.set(1, String.valueOf(Boolean.valueOf(renameFiles)));
-                    }
-                }
-            } catch (Exception e) {
-                logError("Ошибка при чтении файла настроек " + e.getMessage());
-            }
-        }
-    }
-
-    private void updateOption(int pos, String value) {
-        if (options.size() < pos) {
-            for (int i = options.size(); i < pos + 1; i++) {
-                options.add(StringUtils.EMPTY);
-            }
-        }
-        options.set(pos, value);
-
+    private void initializePreferences() {
         try {
-            FileUtils.writeLines(Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.txt").toFile(), "UTF-8", options);
+            preferences = new Preferences();
         } catch (Exception e) {
-            logError("Ошибка при записи настроек " + e.getMessage());
+            logError("Ошибка при чтении файла настроек " + e.getMessage());
         }
-    }
-
-    public static void hideHTMLEditorToolbars(final HTMLEditor editor) {
-        editor.setVisible(false);
-        Platform.runLater(() -> {
-            Node[] nodes = editor.lookupAll(".tool-bar").toArray(new Node[0]);
-            for (Node node : nodes) {
-                node.setVisible(false);
-                node.setManaged(false);
-            }
-            editor.setVisible(true);
-        });
     }
 
     @Override
@@ -199,23 +158,21 @@ public class Controller implements Logger {
         text.setFill(Color.RED);
         logArea.getItems().add(text);
         logArea.scrollTo(logArea.getItems().size() - 1);
-//        logArea.setHtmlText("<span style='color:red;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
     }
 
     @Override
     public void logMessage(String line) {
-        Text text = new Text(line + line + line);
+        Text text = new Text(line);
         text.setFill(Color.BLUE);
         logArea.getItems().add(text);
         logArea.scrollTo(logArea.getItems().size() - 1);
-//        logArea.setHtmlText("<span style='color:blue;font-family: monospace;'>" + line + "</span><br />" + logArea.getHtmlText());
     }
 
     private void initializeFilesTable() {
         filesTable.setEditable(true);
 
         TableColumn<FileRow, String> filePathColumn = ColumnFactory.createColumn(
-                "Файл", 100, "relativeFilePath",
+                "Файл", 100, "filePath",
                 column -> new TooltipTextFieldTableCell<FileRow>() {
                     @Override
                     public void updateItem(String item, boolean empty) {
@@ -228,7 +185,7 @@ public class Controller implements Logger {
                             currentRow.getStyleClass().remove("unbinded-table-row");
                         }
                     }
-                }, FileRow::setRelativeFilePath
+                }, FileRow::setFilePath
         );
         filePathColumn.setEditable(false);
 
@@ -267,7 +224,7 @@ public class Controller implements Logger {
                         super.updateItem(item, empty);
                         TableRow<OrderRow> currentRow = getTableRow();
                         final OrderRow orderRow = currentRow.getItem();
-                        if (orderRow != null && StringUtils.isBlank(orderRow.getRelativeFilePath())) {
+                        if (orderRow != null && StringUtils.isBlank(orderRow.getFilePath())) {
                             currentRow.getStyleClass().add("unbinded-table-row");
                         } else {
                             currentRow.getStyleClass().remove("unbinded-table-row");
@@ -363,27 +320,19 @@ public class Controller implements Logger {
         this.primaryStage = primaryStage;
     }
 
-    /**
-     * 2. В момент нажатия кнопки Сохранить, хотелось бы, чтобы что-то в программе происходило,
-     * а именно в окне, где отображается статус обработки заявки, выводилось бы сообщение,
-     * что заказ сохранён или что-то такое, потому что я сначала ничего не понял, пока не посмотрел в папку,
-     * хотел даже повторно нажать "Сохранить".
-     */
-
     public void orderButtonAction() {
         progressBar.setProgress(0);
-//        logArea.setHtmlText(StringUtils.EMPTY);
         logArea.getItems().clear();
         final FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"));
         fileChooser.setTitle("Укажите файл с заявкой");
         final File homeUserDir = new File(System.getProperty("user.home"));
         File dirToOpen = homeUserDir;
-        File dirFromCOnfig = new File(options.get(0));
-        while (!dirFromCOnfig.exists()) {
-            dirFromCOnfig = dirFromCOnfig.getParentFile();
+        File dirFromConfig = new File((String) preferences.get(LAST_PATH));
+        while (!dirFromConfig.exists()) {
+            dirFromConfig = dirFromConfig.getParentFile();
         }
-        dirToOpen = dirFromCOnfig;
+        dirToOpen = dirFromConfig;
         fileChooser.setInitialDirectory(dirToOpen);
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
@@ -399,7 +348,11 @@ public class Controller implements Logger {
             } catch (Exception e) {
                 logError(e.getMessage());
             }
-            updateOption(0, file.getParent());
+            try {
+                preferences.update(LAST_PATH, file.getParent());
+            } catch (IOException e) {
+                logError("Ошибка записи настроек " + e.getMessage());
+            }
         } else {
             logMessage("Файл не был выбран");
         }
@@ -431,12 +384,12 @@ public class Controller implements Logger {
 
             final List<OrderRow> orderRows = orderTable.getItems();
             for (OrderRow orderRow : orderRows) {
-                if (StringUtils.isBlank(orderRow.getRelativeFilePath())) {
+                if (StringUtils.isBlank(orderRow.getFilePath())) {
                     logError("Для детали " + orderRow.getDetailName() + " соответствующий файл не указан");
                     continue;
                 }
 
-                final File sourceFile = Paths.get(sourceFilesDir.getAbsolutePath(), orderRow.getRelativeFilePath()).toFile();
+                final File sourceFile = Paths.get(sourceFilesDir.getAbsolutePath(), orderRow.getFilePath()).toFile();
                 final String materialLabel = OrderRow.MATERIAL_LABELS.get(orderRow.getMaterial());
                 final String dirName = materialLabel + StringUtils.SPACE + orderRow.getThickness() + "mm";
                 final String destFileName = getDestFileName(orderNumberFinal, sourceFile, orderRow);
@@ -447,7 +400,7 @@ public class Controller implements Logger {
                     FileUtils.copyFile(sourceFile, destFile);
                 }
 
-                orderRow.setRelativeFilePath(destFile.getAbsolutePath());
+                orderRow.setFilePath(destFile.getAbsolutePath());
                 orderRow.setMaterial(materialLabel);
                 if (renameFilesItem.isSelected()) {
                     orderRow.setDetailName(destFileName.replace(getExtension(destFile), StringUtils.EMPTY));
@@ -472,10 +425,9 @@ public class Controller implements Logger {
         List<String> lines = new ArrayList<>();
         lines.add(CSV_HEADER_ROW);
         orderRows.forEach(row -> {
-            if (StringUtils.isBlank(row.getRelativeFilePath())) {
-                ;
+            if (StringUtils.isNotBlank(row.getFilePath())) {
+                lines.add(createCsvLine(row));
             }
-            lines.add(createCsvLine(row));
         });
         final File csvFile = Paths.get(directory.getAbsolutePath(), orderNumber + ".csv").toFile();
         FileUtils.writeLines(csvFile, "UTF-8", lines);
@@ -484,7 +436,7 @@ public class Controller implements Logger {
     private String createCsvLine(OrderRow row) {
         return String.format(
                 "%s;%s;%s;%s;mm;%d"
-                , row.getRelativeFilePath()
+                , row.getFilePath()
                 , row.getDetailName()
                 , row.getMaterial()
                 , row.getThickness()

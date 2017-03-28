@@ -180,7 +180,7 @@ public class OrderParser {
                 final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
 
                 if (fileNameLowerCased.endsWith(detailNameLowerCased)) {
-                    orderRow.setRelativeFilePath(relativeFilePath);
+                    orderRow.setFilePath(relativeFilePath);
                     fileRow.setPosNumber(orderRow.getPosNumber());
                     fileOrderRows.add(orderRow);
                     fileRows.add(fileRow);
@@ -196,7 +196,7 @@ public class OrderParser {
         }));
         rowToFileMap.forEach((orderRow, fileRows) -> {
             if (fileRows.size() != 1) {
-                orderRow.setRelativeFilePath(null);
+                orderRow.setFilePath(null);
             }
         });
 
