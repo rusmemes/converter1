@@ -115,7 +115,8 @@ public class OrderParser {
                     final Row row = sheet.getRow(l);
                     Cell cell = row.getCell(firstCellNum);
                     if (cell == null) {
-                        continue;
+                        logger.logMessage("Окончание таблицы - строка " + l);
+                        break;
                     } else {
                         try {
                             cell.getNumericCellValue();
