@@ -70,7 +70,7 @@ public class OrderParser {
                     for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
                         Cell cell = row.getCell(k);
                         if (cell != null) {
-                            String value = StringUtils.EMPTY;
+                            String value;
                             try {
                                 value = cell.getStringCellValue();
                                 if (StringUtils.containsIgnoreCase(value, posNumberHeaderRowSymbol)) {
@@ -163,9 +163,7 @@ public class OrderParser {
         final List<File> files = finder(parentDirPath);
 
         FILES:
-        for (Iterator<File> iterator = files.iterator(); iterator.hasNext(); ) {
-            File file = iterator.next();
-
+        for (File file : files) {
             final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, StringUtils.EMPTY);
             final FileRow fileRow = new FileRow(relativeFilePath);
             final Set<OrderRow> fileOrderRows = fileToRowMap.computeIfAbsent(fileRow, row -> new HashSet<>());
@@ -211,16 +209,13 @@ public class OrderParser {
 
         final BiFunction<File, FileFilter, File[]> function = File::listFiles;
 
-        final FileFilter filter = new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.isDirectory()) {
-                    return true;
-                }
-                final String lowerCase = pathname.getName().toLowerCase();
-
-                return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
+        final FileFilter filter = pathname -> {
+            if (pathname.isDirectory()) {
+                return true;
             }
+            final String lowerCase = pathname.getName().toLowerCase();
+
+            return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
         };
 
         return getFilesStreamRecursively(dir, filter, function).collect(Collectors.toList());
