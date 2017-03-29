@@ -32,6 +32,9 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ChoiceBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
@@ -125,10 +128,12 @@ public class Controller implements Logger {
         final MenuItem newOrderItem = new MenuItem();
         newOrderItem.setText("Новая заявка");
         newOrderItem.setOnAction(event -> orderButtonAction());
+        newOrderItem.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_ANY));
         saveItem = new MenuItem();
         saveItem.setText("Сохранить результат");
         saveItem.setDisable(true);
         saveItem.setOnAction(event -> saveAction());
+        saveItem.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_ANY));
 
         renameFilesItem = new CheckMenuItem("Переименовывать файлы");
         renameFilesItem.setSelected(preferences.get(RENAME_FILES));
