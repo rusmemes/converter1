@@ -83,9 +83,7 @@ public class Preferences {
         options.forEach((key, value) -> {
             properties.setProperty(key.name(), value.toString());
         });
-        if (!file.exists()) {
-            file.createNewFile();
-        }
+        file.createNewFile();
         try (OutputStream os = new FileOutputStream(file)) {
             properties.store(os, "настройки конвертера");
         }
