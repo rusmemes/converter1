@@ -128,12 +128,12 @@ public class Controller implements Logger {
         final MenuItem newOrderItem = new MenuItem();
         newOrderItem.setText("Новая заявка");
         newOrderItem.setOnAction(event -> orderButtonAction());
-        newOrderItem.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_ANY));
+        newOrderItem.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
         saveItem = new MenuItem();
         saveItem.setText("Сохранить результат");
         saveItem.setDisable(true);
         saveItem.setOnAction(event -> saveAction());
-        saveItem.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_ANY));
+        saveItem.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN));
 
         renameFilesItem = new CheckMenuItem("Переименовывать файлы");
         renameFilesItem.setSelected(preferences.get(RENAME_FILES));
