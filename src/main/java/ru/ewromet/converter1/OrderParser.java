@@ -245,7 +245,7 @@ public class OrderParser {
                         }
                         orderRow.setPosNumber(posNumber);
                     } catch (Exception e) {
-                        throw new OrderParserException("Некорректная позиция: " + e.getMessage());
+                        throw new OrderParserException("некорректная позиция: " + e.getMessage());
                     }
                     break;
                 case 2:
@@ -274,7 +274,7 @@ public class OrderParser {
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте материал " + e.getMessage());
                     }
                     if (!MATERIAL_LABELS.containsKey(value)) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "некорректный Материал - '" + value + "', допустимые варианты " + MATERIAL_LABELS.keySet());
+                        throw new OrderParserException(orderRow.getPosNumber(), "некорректный материал - '" + value + "', допустимые варианты " + MATERIAL_LABELS.keySet());
                     }
                     orderRow.setMaterial(value);
                     break;
@@ -362,7 +362,7 @@ public class OrderParser {
                     try {
                         orderRow.setComment(cell.getStringCellValue());
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат комментарий " + e.getMessage());
+                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте комментарий " + e.getMessage());
                     }
                     break;
             }
