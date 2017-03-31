@@ -381,7 +381,12 @@ public class Controller implements Logger {
                 }
             });
             for (File file : files) {
-                FileUtils.moveToDirectory(file, sourceFilesDir, true);
+                if (file.getName().equalsIgnoreCase("thumbs.db")) {continue;}
+                try {
+                    FileUtils.moveToDirectory(file, sourceFilesDir, true);
+                } catch (Exception e) {
+                    logError("Не удалось перенести " + file.getAbsolutePath() + " в " + sourceFilesDir.getAbsolutePath());
+                }
             }
             logMessage("Исходные данные сохранены в " + sourceFilesDir.getAbsolutePath());
 
