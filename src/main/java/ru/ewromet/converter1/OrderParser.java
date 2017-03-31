@@ -27,6 +27,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
+import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
 public class OrderParser {
@@ -160,7 +161,10 @@ public class OrderParser {
         Map<OrderRow, Set<FileRow>> rowToFileMap = new HashMap<>();
 
         final String parentDirPath = orderExcelFile.getParent() + File.separator;
-        final List<File> files = finder(parentDirPath);
+        final List<File> files = findRecursively(new File(parentDirPath), pathname -> {
+            final String lowerCase = pathname.getName().toLowerCase();
+            return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
+        });
 
         FILES:
         for (File file : files) {
@@ -202,31 +206,6 @@ public class OrderParser {
         final ObservableList<FileRow> fileRows = FXCollections.observableArrayList(fileToRowMap.keySet());
         fileRows.sort(Comparator.comparing(FileRow::getPosNumber));
         return fileRows;
-    }
-
-    public List<File> finder(String dirName) {
-        File dir = new File(dirName);
-
-        final BiFunction<File, FileFilter, File[]> function = File::listFiles;
-
-        final FileFilter filter = pathname -> {
-            if (pathname.isDirectory()) {
-                return true;
-            }
-            final String lowerCase = pathname.getName().toLowerCase();
-
-            return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
-        };
-
-        return getFileStreamRecursively(dir, filter, function).collect(Collectors.toList());
-    }
-
-    private Stream<File> getFileStreamRecursively(File file, FileFilter filter, BiFunction<File, FileFilter, File[]> function) {
-        return Stream.of(function.apply(file, filter)).flatMap(f ->
-                f.isDirectory()
-                        ? getFileStreamRecursively(f, filter, function)
-                        : Stream.of(f)
-        );
     }
 
     private OrderRow createOrderRowFromExcelRow(Row excelRow) throws Exception {
