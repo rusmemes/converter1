@@ -3,13 +3,17 @@ package ru.ewromet.converter1;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -42,6 +46,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.IntegerStringConverter;
 
+import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 import static ru.ewromet.converter1.Preferences.Key.LAST_PATH;
 import static ru.ewromet.converter1.Preferences.Key.RENAME_FILES;
@@ -372,13 +377,17 @@ public class Controller implements Logger {
             final File orderAbsDir = Paths.get(outerDirectory.getAbsolutePath(), orderNumberFinal).toFile();
             final File sourceFilesDir = Paths.get(orderAbsDir.getAbsolutePath(), "Исходные данные").toFile();
 
-            final File[] files = directory.listFiles(file -> !file.equals(selectedFile) && !file.equals(sourceFilesDir));
-            for (File file : files) {
+            List<File> fileList = findRecursively(directory, file -> !file.equals(selectedFile) && !file.equals(sourceFilesDir));
+            List<File> filesToDeleteInFuture = new LinkedList<>();
+
+            for (File file : fileList) {
                 if (file.getName().equalsIgnoreCase("thumbs.db")) {continue;}
+                File dst = Paths.get(file.getAbsolutePath().replace(directory.getAbsolutePath(), sourceFilesDir.getAbsolutePath())).toFile();
                 try {
-                    FileUtils.moveToDirectory(file, sourceFilesDir, true);
+                    FileUtils.copyFile(file, dst);
+                    filesToDeleteInFuture.add(file);
                 } catch (Exception e) {
-                    logError("Не удалось перенести " + file.getAbsolutePath() + " в " + sourceFilesDir.getAbsolutePath() + ": " + e.getMessage());
+                    logError("Ошибка при копировании " + file.getAbsolutePath() + " в " + dst.getParentFile().getAbsolutePath() + ": " + e.getMessage());
                 }
             }
             logMessage("Исходные данные сохранены в " + sourceFilesDir.getAbsolutePath());
@@ -397,8 +406,33 @@ public class Controller implements Logger {
                 final File destFile = Paths.get(orderAbsDir.getAbsolutePath(), dirName, destFileName).toFile();
 
                 if (!destFile.exists()) {
-                    logMessage("Копирование " + sourceFile.getAbsolutePath() + " в " + destFile);
-                    FileUtils.copyFile(sourceFile, destFile);
+                    if (sourceFile.exists()) {
+                        logMessage("Копирование " + sourceFile.getAbsolutePath() + " в " + destFile);
+                        FileUtils.copyFile(sourceFile, destFile);
+                    } else {
+                        logError("Файл " + sourceFile.getAbsolutePath() + " не найден, попробуем найти его на старом месте");
+                        File old = Paths.get(sourceFile.getAbsolutePath().replace(sourceFilesDir.getAbsolutePath(), directory.getAbsolutePath())).toFile();
+                        if (old.exists()) {
+                            logMessage("Файл " + old.getAbsolutePath() + " найден, копируем его в " + destFile.getParent());
+                            try {
+                                FileUtils.copyFile(old, destFile);
+                                logMessage("Файл " + old.getAbsolutePath() + " успешно скопирован в " + destFile.getParent());
+                                logMessage("Попытка сохранить " + old.getAbsolutePath() + " в папку исходных данных");
+                                File path = Paths.get(old.getAbsolutePath().replace(directory.getAbsolutePath(), sourceFilesDir.getAbsolutePath())).toFile();
+                                try {
+                                    FileUtils.copyFile(old, path);
+                                } catch (Exception e) {
+                                    filesToDeleteInFuture.remove(old);
+                                    logMessage("Попытка не удалась");
+                                }
+                            } catch (Exception e) {
+                                logError("Ошибка при копировании " + old.getAbsolutePath() + " в " + destFile.getParent() + ": " + e.getMessage());
+                                throw new Exception("Проверьте, не заблокирован ли файл " + old.getAbsolutePath() + " какой-либо программой");
+                            }
+                        } else {
+                            throw new Exception("Файл " + old.getAbsolutePath() + " не найден");
+                        }
+                    }
                 }
 
                 orderRow.setFilePath(destFile.getAbsolutePath());
@@ -407,6 +441,18 @@ public class Controller implements Logger {
                     orderRow.setDetailName(destFileName.replace(getExtension(destFile), StringUtils.EMPTY));
                 }
             }
+
+            logMessage("Удаление старых файлов");
+            for (File oldFile : filesToDeleteInFuture) {
+                FileUtils.deleteQuietly(oldFile);
+            }
+            File[] emptyDirs = directory.listFiles(Controller::isEmptyDirectory);
+            if (ArrayUtils.isNotEmpty(emptyDirs)) {
+                for (File emptyDir : emptyDirs) {
+                    FileUtils.deleteQuietly(emptyDir);
+                }
+            }
+            logMessage("Старые файлы удалены");
 
             logMessage("Создание csv-файла в директории " + orderAbsDir);
             createCsvFile(orderAbsDir, orderNumber, orderRows);
@@ -418,6 +464,17 @@ public class Controller implements Logger {
         } catch (Exception e) {
             logError(e.getMessage());
         }
+    }
+
+    private static boolean isEmptyDirectory(File directory) {
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (ArrayUtils.isEmpty(files)) {
+                return true;
+            }
+            return Arrays.stream(files).allMatch(Controller::isEmptyDirectory);
+        }
+        return false;
     }
 
     private static final String CSV_HEADER_ROW = "000 | ;110 | Название;119 | Материал;120 | Толщина;121 | Толщин.велич.;177 | Последнее плановое количество";

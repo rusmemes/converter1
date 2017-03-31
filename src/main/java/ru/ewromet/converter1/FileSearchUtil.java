@@ -11,15 +11,6 @@ public class FileSearchUtil {
 
     public static List<File> findRecursively(File dir, FileFilter filter) {
         final BiFunction<File, FileFilter, File[]> function = File::listFiles;
-        FileFilter fileFilter = new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.isDirectory()) {
-                    return true;
-                }
-                return filter.accept(pathname);
-            }
-        };
         return getFileStreamRecursively(dir, filter, function).collect(Collectors.toList());
     }
 

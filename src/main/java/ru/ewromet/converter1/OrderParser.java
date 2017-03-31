@@ -162,6 +162,9 @@ public class OrderParser {
 
         final String parentDirPath = orderExcelFile.getParent() + File.separator;
         final List<File> files = findRecursively(new File(parentDirPath), pathname -> {
+            if (pathname.isDirectory()) {
+                return true;
+            }
             final String lowerCase = pathname.getName().toLowerCase();
             return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
         });
