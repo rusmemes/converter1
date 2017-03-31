@@ -66,20 +66,12 @@ public class OrderRow extends FileRow {
         return detailName.get();
     }
 
-    public SimpleStringProperty detailNameProperty() {
-        return detailName;
-    }
-
     public void setDetailName(String detailName) {
         this.detailName.set(detailName);
     }
 
     public int getCount() {
         return count.get();
-    }
-
-    public SimpleIntegerProperty countProperty() {
-        return count;
     }
 
     public void setCount(int count) {
@@ -90,20 +82,12 @@ public class OrderRow extends FileRow {
         return material.get();
     }
 
-    public SimpleStringProperty materialProperty() {
-        return material;
-    }
-
     public void setMaterial(String material) {
         this.material.set(material);
     }
 
     public String getMaterialBrand() {
         return materialBrand.get();
-    }
-
-    public SimpleStringProperty materialBrandProperty() {
-        return materialBrand;
     }
 
     public void setMaterialBrand(String materialBrand) {
@@ -114,20 +98,12 @@ public class OrderRow extends FileRow {
         return color.get();
     }
 
-    public SimpleStringProperty colorProperty() {
-        return color;
-    }
-
     public void setColor(String color) {
         this.color.set(color);
     }
 
     public double getThickness() {
         return thickness.get();
-    }
-
-    public SimpleDoubleProperty thicknessProperty() {
-        return thickness;
     }
 
     public void setThickness(double thickness) {
@@ -138,20 +114,12 @@ public class OrderRow extends FileRow {
         return owner.get();
     }
 
-    public SimpleStringProperty ownerProperty() {
-        return owner;
-    }
-
     public void setOwner(String owner) {
         this.owner.set(owner);
     }
 
     public int getBendsCount() {
         return bendsCount.get();
-    }
-
-    public SimpleIntegerProperty bendsCountProperty() {
-        return bendsCount;
     }
 
     public void setBendsCount(int bendsCount) {
@@ -162,20 +130,12 @@ public class OrderRow extends FileRow {
         return drawCreation.get();
     }
 
-    public SimpleStringProperty drawCreationProperty() {
-        return drawCreation;
-    }
-
     public void setDrawCreation(String drawCreation) {
         this.drawCreation.set(drawCreation);
     }
 
     public String getCleaning() {
         return cleaning.get();
-    }
-
-    public SimpleStringProperty cleaningProperty() {
-        return cleaning;
     }
 
     public void setCleaning(String cleaning) {
@@ -186,20 +146,12 @@ public class OrderRow extends FileRow {
         return wasteReturn.get();
     }
 
-    public SimpleStringProperty wasteReturnProperty() {
-        return wasteReturn;
-    }
-
     public void setWasteReturn(String wasteReturn) {
         this.wasteReturn.set(wasteReturn);
     }
 
     public String getCuttingReturn() {
         return cuttingReturn.get();
-    }
-
-    public SimpleStringProperty cuttingReturnProperty() {
-        return cuttingReturn;
     }
 
     public void setCuttingReturn(String cuttingReturn) {
@@ -210,10 +162,6 @@ public class OrderRow extends FileRow {
         return comment.get();
     }
 
-    public SimpleStringProperty commentProperty() {
-        return comment;
-    }
-
     public void setComment(String comment) {
         this.comment.set(comment);
     }
@@ -221,10 +169,6 @@ public class OrderRow extends FileRow {
     @Override
     public String toString() {
         return super.toString() + " | " + detailName.get();
-    }
-
-    public FileRow getAsFileRow() {
-        return this;
     }
 
     @Override

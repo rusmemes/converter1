@@ -329,13 +329,11 @@ public class Controller implements Logger {
         final FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"));
         fileChooser.setTitle("Укажите файл с заявкой");
-        final File homeUserDir = new File(System.getProperty("user.home"));
-        File dirToOpen = homeUserDir;
         File dirFromConfig = new File((String) preferences.get(LAST_PATH));
         while (!dirFromConfig.exists()) {
             dirFromConfig = dirFromConfig.getParentFile();
         }
-        dirToOpen = dirFromConfig;
+        File dirToOpen = dirFromConfig;
         fileChooser.setInitialDirectory(dirToOpen);
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
@@ -374,12 +372,7 @@ public class Controller implements Logger {
             final File orderAbsDir = Paths.get(outerDirectory.getAbsolutePath(), orderNumberFinal).toFile();
             final File sourceFilesDir = Paths.get(orderAbsDir.getAbsolutePath(), "Исходные данные").toFile();
 
-            final File[] files = directory.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File file) {
-                    return !file.equals(selectedFile) && !file.equals(sourceFilesDir);
-                }
-            });
+            final File[] files = directory.listFiles(file -> !file.equals(selectedFile) && !file.equals(sourceFilesDir));
             for (File file : files) {
                 if (file.getName().equalsIgnoreCase("thumbs.db")) {continue;}
                 try {

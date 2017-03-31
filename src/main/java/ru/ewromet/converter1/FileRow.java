@@ -30,10 +30,6 @@ public class FileRow {
         return stringPosNumber.get();
     }
 
-    public SimpleStringProperty stringPosNumberProperty() {
-        return stringPosNumber;
-    }
-
     public void setStringPosNumber(String stringPosNumber) {
         this.stringPosNumber.set(stringPosNumber);
         try {
@@ -47,10 +43,6 @@ public class FileRow {
         return posNumber.get();
     }
 
-    public SimpleIntegerProperty posNumberProperty() {
-        return posNumber;
-    }
-
     public void setPosNumber(int posNumber) {
         this.posNumber.set(posNumber);
         this.stringPosNumber.set(String.valueOf(posNumber));
@@ -58,10 +50,6 @@ public class FileRow {
 
     public String getFilePath() {
         return filePath.get();
-    }
-
-    public SimpleStringProperty filePathProperty() {
-        return filePath;
     }
 
     public void setFilePath(String filePath) {
