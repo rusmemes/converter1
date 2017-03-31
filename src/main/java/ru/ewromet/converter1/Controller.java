@@ -378,7 +378,7 @@ public class Controller implements Logger {
                 try {
                     FileUtils.moveToDirectory(file, sourceFilesDir, true);
                 } catch (Exception e) {
-                    logError("Не удалось перенести " + file.getAbsolutePath() + " в " + sourceFilesDir.getAbsolutePath());
+                    logError("Не удалось перенести " + file.getAbsolutePath() + " в " + sourceFilesDir.getAbsolutePath() + ": " + e.getMessage());
                 }
             }
             logMessage("Исходные данные сохранены в " + sourceFilesDir.getAbsolutePath());
