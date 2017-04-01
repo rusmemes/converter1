@@ -18,7 +18,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -43,13 +46,14 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.IntegerStringConverter;
+import ru.ewromet.converter2.Controller2;
 
 import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 import static ru.ewromet.converter1.Preferences.Key.LAST_PATH;
 import static ru.ewromet.converter1.Preferences.Key.RENAME_FILES;
 
-public class Controller implements Logger {
+public class Controller1 implements Logger {
 
     private Stage primaryStage;
     private File selectedFile;
@@ -78,6 +82,7 @@ public class Controller implements Logger {
 
     private MenuItem saveItem;
     private CheckMenuItem renameFilesItem;
+    public MenuItem continueWork;
 
     @FXML
     private Button bindButton;
@@ -148,8 +153,28 @@ public class Controller implements Logger {
             }
         });
 
-        menu.getItems().addAll(newOrderItem, saveItem, renameFilesItem);
+        continueWork = new MenuItem();
+        continueWork.setText("Продолжить работу");
+        continueWork.setDisable(true);
+        continueWork.setOnAction(event -> openConverter2Window());
+        continueWork.setAccelerator(KeyCombination.keyCombination("F2"));
+
+        menu.getItems().addAll(newOrderItem, saveItem, renameFilesItem, continueWork);
         menuBar.getMenus().add(menu);
+    }
+
+    private void openConverter2Window() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
+            Parent root = (Parent) loader.load();
+            Controller2 controller = loader.getController();
+            controller.setOrderRows(orderTable.getItems());
+            Stage stage = new Stage();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void initializePreferences() {
@@ -449,7 +474,7 @@ public class Controller implements Logger {
             for (File oldFile : filesToDeleteInFuture) {
                 FileUtils.deleteQuietly(oldFile);
             }
-            File[] emptyDirs = directory.listFiles(Controller::isEmptyDirectory);
+            File[] emptyDirs = directory.listFiles(Controller1::isEmptyDirectory);
             if (ArrayUtils.isNotEmpty(emptyDirs)) {
                 for (File emptyDir : emptyDirs) {
                     FileUtils.deleteQuietly(emptyDir);
@@ -463,6 +488,7 @@ public class Controller implements Logger {
 
             logMessage("ДАННЫЕ СОХРАНЕНЫ");
             saveItem.setDisable(true);
+            continueWork.setDisable(false);
             progressBar.setProgress(1);
         } catch (Exception e) {
             logError(e.getMessage());
@@ -475,7 +501,7 @@ public class Controller implements Logger {
             if (ArrayUtils.isEmpty(files)) {
                 return true;
             }
-            return Arrays.stream(files).allMatch(Controller::isEmptyDirectory);
+            return Arrays.stream(files).allMatch(Controller1::isEmptyDirectory);
         }
         return false;
     }

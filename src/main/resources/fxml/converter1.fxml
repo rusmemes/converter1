@@ -7,7 +7,7 @@
 <?import javafx.scene.text.*?>
 <?import javafx.scene.layout.*?>
 
-<ScrollPane fitToHeight="true" fitToWidth="true" stylesheets="/styles/style.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.ewromet.converter1.Controller">
+<ScrollPane fitToHeight="true" fitToWidth="true" stylesheets="/styles/style.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.ewromet.converter1.Controller1">
    <content>
       <VBox>
          <children>
