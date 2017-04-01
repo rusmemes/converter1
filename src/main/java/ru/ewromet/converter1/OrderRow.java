@@ -33,6 +33,7 @@ public class OrderRow extends FileRow {
     }});
 
     private final SimpleStringProperty detailName = new SimpleStringProperty();
+    private final SimpleStringProperty detailResultName = new SimpleStringProperty();
     private final SimpleIntegerProperty count = new SimpleIntegerProperty();
     private final SimpleStringProperty material = new SimpleStringProperty();
     private final SimpleStringProperty materialBrand = new SimpleStringProperty();
@@ -46,28 +47,20 @@ public class OrderRow extends FileRow {
     private final SimpleStringProperty cuttingReturn = new SimpleStringProperty();
     private final SimpleStringProperty comment = new SimpleStringProperty();
 
-    public OrderRow() {
-    }
-
-    public OrderRow(Integer posNumber, String detailName, Integer count, String material, String materialBrand,
-                    String color, String owner, Integer bendsCount, String comment, String relativeFilePath) {
-        super(posNumber, relativeFilePath);
-        this.detailName.set(detailName);
-        this.count.set(count);
-        this.material.set(material);
-        this.materialBrand.set(materialBrand);
-        this.color.set(color);
-        this.owner.set(owner);
-        this.bendsCount.set(bendsCount);
-        this.comment.set(comment);
-    }
-
     public String getDetailName() {
         return detailName.get();
     }
 
     public void setDetailName(String detailName) {
         this.detailName.set(detailName);
+    }
+
+    public String getDetailResultName() {
+        return detailResultName.get();
+    }
+
+    public void setDetailResultName(String detailResultName) {
+        this.detailResultName.set(detailResultName);
     }
 
     public int getCount() {
@@ -188,6 +181,9 @@ public class OrderRow extends FileRow {
         if (detailName != null ? !detailName.equals(orderRow.detailName) : orderRow.detailName != null) {
             return false;
         }
+        if (detailResultName != null ? !detailResultName.equals(orderRow.detailResultName) : orderRow.detailResultName != null) {
+            return false;
+        }
         if (count != null ? !count.equals(orderRow.count) : orderRow.count != null) {
             return false;
         }
@@ -232,6 +228,7 @@ public class OrderRow extends FileRow {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (detailName != null ? detailName.hashCode() : 0);
+        result = 31 * result + (detailResultName != null ? detailResultName.hashCode() : 0);
         result = 31 * result + (count != null ? count.hashCode() : 0);
         result = 31 * result + (material != null ? material.hashCode() : 0);
         result = 31 * result + (materialBrand != null ? materialBrand.hashCode() : 0);

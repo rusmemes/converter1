@@ -1,9 +1,7 @@
 package ru.ewromet.converter1;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -381,7 +379,9 @@ public class Controller implements Logger {
             List<File> filesToDeleteInFuture = new LinkedList<>();
 
             for (File file : fileList) {
-                if (file.getName().equalsIgnoreCase("thumbs.db")) {continue;}
+                if (file.getName().equalsIgnoreCase("thumbs.db")) {
+                    continue;
+                }
                 File dst = Paths.get(file.getAbsolutePath().replace(directory.getAbsolutePath(), sourceFilesDir.getAbsolutePath())).toFile();
                 try {
                     FileUtils.copyFile(file, dst);
@@ -437,9 +437,12 @@ public class Controller implements Logger {
 
                 orderRow.setFilePath(destFile.getAbsolutePath());
                 orderRow.setMaterial(materialLabel);
-                if (renameFilesItem.isSelected()) {
-                    orderRow.setDetailName(destFileName.replace(getExtension(destFile), StringUtils.EMPTY));
-                }
+
+                orderRow.setDetailResultName(
+                        renameFilesItem.isSelected()
+                                ? destFileName.replace(getExtension(destFile), StringUtils.EMPTY)
+                                : orderRow.getDetailName()
+                );
             }
 
             logMessage("Удаление старых файлов");
@@ -495,7 +498,7 @@ public class Controller implements Logger {
         return String.format(
                 "%s;%s;%s;%s;mm;%d"
                 , row.getFilePath()
-                , row.getDetailName()
+                , row.getDetailResultName()
                 , row.getMaterial()
                 , row.getThickness()
                 , row.getCount()
