@@ -173,7 +173,7 @@ public class Controller1 implements Logger {
             stage.setScene(new Scene(root));
             stage.show();
         } catch(Exception e) {
-            e.printStackTrace();
+            logError("Ошибка при открытии окна " + e.getMessage());
         }
     }
 
