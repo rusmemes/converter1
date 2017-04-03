@@ -45,6 +45,7 @@ import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import ru.ewromet.converter2.Controller2;
 
@@ -287,6 +288,15 @@ public class Controller1 implements Logger {
         );
         materialBrandColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
 
+        TableColumn<OrderRow, Double> thicknessColumn = ColumnFactory.createColumn(
+                "Толщина", 70, "thickness",
+                TextFieldTableCell.forTableColumn(new DoubleStringConverter()), OrderRow::setThickness
+        );
+
+        thicknessColumn.setMaxWidth(70);
+        thicknessColumn.setResizable(false);
+        thicknessColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+
         TableColumn<OrderRow, String> colorColumn = ColumnFactory.createColumn(
                 "Окраска", 50, "color",
                 TextFieldTableCell.forTableColumn(), OrderRow::setColor
@@ -322,6 +332,7 @@ public class Controller1 implements Logger {
                 countColumn,
                 materialColumn,
                 materialBrandColumn,
+                thicknessColumn,
                 colorColumn,
                 ownerColumn,
                 bendsCountColumn,
