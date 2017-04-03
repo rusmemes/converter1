@@ -12,9 +12,6 @@ import java.nio.file.Paths;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Executor;
-
-import org.apache.commons.lang3.StringUtils;
 
 public class Preferences {
 
@@ -69,7 +66,7 @@ public class Preferences {
         }
     }
 
-    public <T extends Object> T get(Key key) {
+    public <T> T get(Key key) {
         return (T) options.get(key);
     }
 

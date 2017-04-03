@@ -56,6 +56,9 @@ import static ru.ewromet.converter1.Preferences.Key.RENAME_FILES;
 
 public class Controller1 implements Logger {
 
+    private static final String ALIGNMENT_BASELINE_CENTER = "-fx-alignment: BASELINE-CENTER;";
+    private static final String ALIGNMENT_CENTER_LEFT = "-fx-alignment: CENTER-LEFT;";
+
     private Stage primaryStage;
     private File selectedFile;
     private OrderParser parser;
@@ -167,7 +170,7 @@ public class Controller1 implements Logger {
     private void openConverter2Window() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
-            Parent root = (Parent) loader.load();
+            Parent root = loader.load();
             Controller2 controller = loader.getController();
             controller.setOrderRows(orderTable.getItems());
             Stage stage = new Stage();
@@ -229,7 +232,7 @@ public class Controller1 implements Logger {
         posNumberColumn.setEditable(false);
         posNumberColumn.setMaxWidth(30);
         posNumberColumn.setResizable(false);
-        posNumberColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        posNumberColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         filesTable.getSelectionModel().setCellSelectionEnabled(true);
         filesTable.getColumns().addAll(filePathColumn, posNumberColumn);
@@ -246,7 +249,7 @@ public class Controller1 implements Logger {
         posNumberColumn.setEditable(false);
         posNumberColumn.setMaxWidth(30);
         posNumberColumn.setResizable(false);
-        posNumberColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        posNumberColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> detailNameColumn = ColumnFactory.createColumn(
                 "Наименование детали", 100, "detailName",
@@ -264,7 +267,8 @@ public class Controller1 implements Logger {
                     }
                 }, OrderRow::setDetailName
         );
-        detailNameColumn.setStyle("-fx-alignment: CENTER-LEFT;");
+
+        detailNameColumn.setStyle(ALIGNMENT_CENTER_LEFT);
 
         TableColumn<OrderRow, Integer> countColumn = ColumnFactory.createColumn(
                 "Кол-во", 50, "count",
@@ -273,20 +277,20 @@ public class Controller1 implements Logger {
 
         countColumn.setMaxWidth(50);
         countColumn.setResizable(false);
-        countColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        countColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
                 "Материал", 50, "material",
                 ChoiceBoxTableCell.forTableColumn(MATERIAL_LABELS.keySet().toArray(new String[MATERIAL_LABELS.size()])),
                 OrderRow::setMaterial
         );
-        materialColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        materialColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> materialBrandColumn = ColumnFactory.createColumn(
                 "Марка материала", 50, "materialBrand",
                 column -> new TooltipTextFieldTableCell<>(), OrderRow::setMaterialBrand
         );
-        materialBrandColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        materialBrandColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, Double> thicknessColumn = ColumnFactory.createColumn(
                 "Толщина", 70, "thickness",
@@ -295,19 +299,19 @@ public class Controller1 implements Logger {
 
         thicknessColumn.setMaxWidth(70);
         thicknessColumn.setResizable(false);
-        thicknessColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        thicknessColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> colorColumn = ColumnFactory.createColumn(
                 "Окраска", 50, "color",
                 TextFieldTableCell.forTableColumn(), OrderRow::setColor
         );
-        colorColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        colorColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> ownerColumn = ColumnFactory.createColumn(
                 "Принадлежность", 50, "owner",
                 TextFieldTableCell.forTableColumn(), OrderRow::setOwner
         );
-        ownerColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        ownerColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, Integer> bendsCountColumn = ColumnFactory.createColumn(
                 "Кол-во гибов", 85, "bendsCount",
@@ -316,13 +320,13 @@ public class Controller1 implements Logger {
 
         bendsCountColumn.setMaxWidth(85);
         bendsCountColumn.setResizable(false);
-        bendsCountColumn.setStyle("-fx-alignment: BASELINE-CENTER;");
+        bendsCountColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> commentColumn = ColumnFactory.createColumn(
                 "Комментарий", 50, "comment",
                 column -> new TooltipTextFieldTableCell<>(), OrderRow::setComment
         );
-        commentColumn.setStyle("-fx-alignment: CENTER-LEFT;");
+        commentColumn.setStyle(ALIGNMENT_CENTER_LEFT);
 
         orderTable.getSelectionModel().setCellSelectionEnabled(true);
 
@@ -366,7 +370,11 @@ public class Controller1 implements Logger {
         progressBar.setProgress(0);
         logArea.getItems().clear();
         final FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"));
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(
+                        "Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"
+                )
+        );
         fileChooser.setTitle("Укажите файл с заявкой");
         File dirFromConfig = new File((String) preferences.get(LAST_PATH));
         while (!dirFromConfig.exists()) {

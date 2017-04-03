@@ -19,13 +19,6 @@ public class FileRow {
         this.filePath.set(filePath);
     }
 
-    public FileRow(Integer posNumber, String filePath) {
-        this();
-        this.posNumber.set(posNumber);
-        this.stringPosNumber.set(posNumber == null ? "" : posNumber.toString());
-        this.filePath.set(filePath);
-    }
-
     public String getStringPosNumber() {
         return stringPosNumber.get();
     }
