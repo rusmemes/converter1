@@ -8,8 +8,18 @@ import javafx.stage.Stage;
 
 public abstract class Controller implements Logger {
 
+    protected static Preferences preferences;
+    static {
+        try {
+            preferences = new Preferences();
+        } catch (Exception e) {
+            System.out.println("Ошибка при чтении файла настроек");
+            e.printStackTrace();
+        }
+    }
+
     protected Stage stage;
-    protected Preferences preferences;
+
     protected OrderParser parser;
 
     @FXML
@@ -17,17 +27,8 @@ public abstract class Controller implements Logger {
 
     @FXML
     protected final void initialize() {
-        initializePreferences();
         parser = new OrderParser();
         initController();
-    }
-
-    private void initializePreferences() {
-        try {
-            preferences = new Preferences();
-        } catch (Exception e) {
-            logError("Ошибка при чтении файла настроек " + e.getMessage());
-        }
     }
 
     protected abstract void initController();
