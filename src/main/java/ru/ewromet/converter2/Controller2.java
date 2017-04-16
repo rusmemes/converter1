@@ -8,10 +8,15 @@ import org.apache.commons.lang3.StringUtils;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.stage.FileChooser;
 import ru.ewromet.Controller;
 import ru.ewromet.converter1.Controller1;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 
@@ -31,6 +36,9 @@ public class Controller2 extends Controller {
     @FXML
     private TextField templateField;
 
+    @FXML
+    public Button calcButton;
+
     public void setController1(Controller1 controller1) {
         this.controller1 = controller1;
 
@@ -44,7 +52,7 @@ public class Controller2 extends Controller {
     protected void initController() {
 
         String templatePath = preferences.get(SPECIFICATION_TEMPLATE_PATH);
-        if (StringUtils.isNotBlank(templatePath)) {
+        if (isNotBlank(templatePath)) {
             File file = new File(templatePath);
             if (file.exists()) {
                 templateField.setText("<ПРЕДЫДУЩИЙ ШАБЛОН>");
@@ -53,6 +61,18 @@ public class Controller2 extends Controller {
 
         orderFilePathButton.setOnAction(event -> changePathAction(orderFilePathField));
         templateButton.setOnAction(event -> changePathAction(templateField));
+
+        calcButton.setOnAction(event -> runCalc());
+    }
+
+    public void setFocus() {
+        if (isBlank(orderFilePathField.getText())) {
+            orderFilePathField.requestLayout();
+        } else if (isBlank(templateField.getText())) {
+            templateField.requestFocus();
+        } else {
+            calcButton.requestFocus();
+        }
     }
 
     public void changePathAction(TextField field) {
@@ -87,5 +107,10 @@ public class Controller2 extends Controller {
         } else {
             logMessage("Файл не был выбран");
         }
+    }
+
+    private void runCalc() {
+        logMessage("Начало работы...");
+        // TODO
     }
 }

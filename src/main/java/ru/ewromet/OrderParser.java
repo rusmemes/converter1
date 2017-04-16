@@ -25,6 +25,9 @@ import ru.ewromet.converter1.FileRow;
 import ru.ewromet.converter1.OrderParserException;
 import ru.ewromet.converter1.OrderRow;
 
+import static org.apache.commons.lang3.StringUtils.contains;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 
@@ -72,7 +75,7 @@ public class OrderParser {
                             String value;
                             try {
                                 value = cell.getStringCellValue();
-                                if (StringUtils.containsIgnoreCase(value, posNumberHeaderRowSymbol)) {
+                                if (containsIgnoreCase(value, posNumberHeaderRowSymbol)) {
                                     posColumnHeader = value;
                                     tableHeaderRowNum = j;
                                     break SHEET;
@@ -83,7 +86,7 @@ public class OrderParser {
                     }
                 }
 
-                if (!StringUtils.contains(posColumnHeader, posNumberHeaderRowSymbol)) {
+                if (!contains(posColumnHeader, posNumberHeaderRowSymbol)) {
                     throw new OrderParserException("Ошибка при попытке найти колонку с позициями деталей по подстроке '" + posNumberHeaderRowSymbol + "'");
                 }
 
@@ -100,7 +103,7 @@ public class OrderParser {
                 for (int l = firstCellNum; l < lastCellNum; l++) {
                     Cell cell = tableHeadRow.getCell(l);
                     final String label = tableColumns.get(l);
-                    if (cell == null || !StringUtils.containsIgnoreCase(cell.getStringCellValue(), label)) {
+                    if (cell == null || !containsIgnoreCase(cell.getStringCellValue(), label)) {
                         throw new OrderParserException("Ожидается, что в строке шапки таблицы (строка " + (tableHeaderRowNum + 1) + ") " +
                                 "в ячейке " + "№" + (l + 1) + " будет содержаться подстрока '" + label + "'");
                     }
@@ -129,7 +132,7 @@ public class OrderParser {
                         continue;
                     } else {
                         try {
-                            if (StringUtils.isBlank(cell.getStringCellValue())) {
+                            if (isBlank(cell.getStringCellValue())) {
                                 continue;
                             }
                         } catch (Exception e) {

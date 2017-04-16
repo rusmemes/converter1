@@ -47,6 +47,8 @@ import javafx.util.converter.IntegerStringConverter;
 import ru.ewromet.Controller;
 import ru.ewromet.converter2.Controller2;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
@@ -102,7 +104,7 @@ public class Controller1 extends Controller {
             FileRow fileRow = filesTable.getSelectionModel().getSelectedItem();
             if (orderRow != null && fileRow != null) {
                 if (StringUtils.isEmpty(orderRow.getFilePath())) {
-                    if (!StringUtils.isBlank(fileRow.getStringPosNumber())) {
+                    if (!isBlank(fileRow.getStringPosNumber())) {
                         fileRow = new FileRow(fileRow.getFilePath());
                         filesTable.getItems().add(fileRow);
                     }
@@ -167,9 +169,15 @@ public class Controller1 extends Controller {
             controller.setController1(this);
             Stage stage = new Stage();
             controller.setStage(stage);
+            root.setOnKeyReleased(event -> {
+                if (event.getCode() == KeyCode.R && event.isControlDown()) {
+                    controller.calcButton.fire();
+                }
+            });
             stage.setTitle("Окно расчёта");
             stage.setScene(new Scene(root));
             stage.show();
+            controller.setFocus();
         } catch(Exception e) {
             logError("Ошибка при открытии окна " + e.getMessage());
         }
@@ -186,7 +194,7 @@ public class Controller1 extends Controller {
                         super.updateItem(item, empty);
                         TableRow<FileRow> currentRow = getTableRow();
                         final FileRow fileRow = currentRow.getItem();
-                        if (fileRow != null && StringUtils.isBlank(fileRow.getStringPosNumber())) {
+                        if (fileRow != null && isBlank(fileRow.getStringPosNumber())) {
                             currentRow.getStyleClass().add("unbinded-table-row");
                         } else {
                             currentRow.getStyleClass().remove("unbinded-table-row");
@@ -231,7 +239,7 @@ public class Controller1 extends Controller {
                         super.updateItem(item, empty);
                         TableRow<OrderRow> currentRow = getTableRow();
                         final OrderRow orderRow = currentRow.getItem();
-                        if (orderRow != null && StringUtils.isBlank(orderRow.getFilePath())) {
+                        if (orderRow != null && isBlank(orderRow.getFilePath())) {
                             currentRow.getStyleClass().add("unbinded-table-row");
                         } else {
                             currentRow.getStyleClass().remove("unbinded-table-row");
@@ -379,7 +387,7 @@ public class Controller1 extends Controller {
             final File directory = selectedFile.getParentFile();
             final File outerDirectory = directory.getParentFile();
             String orderNumber = orderNumberField.getText();
-            if (StringUtils.isBlank(orderNumber)) {
+            if (isBlank(orderNumber)) {
                 logError("Не указан номер заказа");
                 return;
             }
@@ -406,7 +414,7 @@ public class Controller1 extends Controller {
 
             final List<OrderRow> orderRows = orderTable.getItems();
             for (OrderRow orderRow : orderRows) {
-                if (StringUtils.isBlank(orderRow.getFilePath())) {
+                if (isBlank(orderRow.getFilePath())) {
                     logError("Для детали " + orderRow.getDetailName() + " соответствующий файл не указан");
                     continue;
                 }
@@ -498,7 +506,7 @@ public class Controller1 extends Controller {
         List<String> lines = new ArrayList<>();
         lines.add(CSV_HEADER_ROW);
         orderRows.forEach(row -> {
-            if (StringUtils.isNotBlank(row.getFilePath())) {
+            if (isNotBlank(row.getFilePath())) {
                 lines.add(createCsvLine(row));
             }
         });
@@ -537,7 +545,7 @@ public class Controller1 extends Controller {
                     .replace("Q", String.valueOf(row.getCount()))
                     .replace("_g", row.getBendsCount() > 0 ? "_g" : StringUtils.EMPTY)
                     .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
-                    .replace("_O", StringUtils.isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
+                    .replace("_O", isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
                     .replace(".f", getExtension(sourceFile))
                     ;
         }
