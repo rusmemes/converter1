@@ -1,4 +1,4 @@
-package ru.ewromet.converter1;
+package ru.ewromet;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,6 +20,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import ru.ewromet.Logger;
+import ru.ewromet.converter1.FileRow;
+import ru.ewromet.converter1.OrderParserException;
+import ru.ewromet.converter1.OrderRow;
 
 import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;

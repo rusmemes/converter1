@@ -1,4 +1,4 @@
-package ru.ewromet.converter1;
+package ru.ewromet;
 
 public interface Logger {
 

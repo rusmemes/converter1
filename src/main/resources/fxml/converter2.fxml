@@ -13,17 +13,17 @@
          <children>
             <AnchorPane maxWidth="1.7976931348623157E308">
                <children>
-                  <Label alignment="CENTER" text="ДИРЕКТОРИЯ ЗАЯВКИ:" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                  <Label alignment="CENTER" text="ФАЙЛ ЗАЯВКИ:" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <font>
                         <Font name="Arial" size="15.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="orderDirField" maxWidth="-Infinity" minHeight="-Infinity" prefHeight="26.0" AnchorPane.leftAnchor="180.0" AnchorPane.rightAnchor="150.0">
+                  <TextField fx:id="orderFilePathField" maxWidth="-Infinity" minHeight="-Infinity" prefHeight="26.0" AnchorPane.leftAnchor="120.0" AnchorPane.rightAnchor="150.0">
                      <font>
                         <Font size="14.0" />
                      </font>
                   </TextField>
-                  <Button fx:id="orderDirButton" mnemonicParsing="false" prefWidth="135.0" text="ИЗМЕНИТЬ" AnchorPane.rightAnchor="0.0" />
+                  <Button fx:id="orderFilePathButton" mnemonicParsing="false" prefWidth="135.0" text="ИЗМЕНИТЬ" AnchorPane.rightAnchor="0.0" />
                </children>
                <VBox.margin>
                   <Insets left="10.0" right="10.0" top="10.0" />
@@ -31,30 +31,12 @@
             </AnchorPane>
             <AnchorPane maxWidth="1.7976931348623157E308">
                <children>
-                  <Label alignment="CENTER" text="ФАЙЛ ОТЧЕТА:" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="59.0" AnchorPane.topAnchor="0.0">
+                  <Label alignment="CENTER" text="ШАБЛОН:" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="0.0">
                      <font>
                         <Font name="Arial" size="15.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="radanReportField" maxWidth="-Infinity" minHeight="-Infinity" prefHeight="26.0" AnchorPane.leftAnchor="180.0" AnchorPane.rightAnchor="150.0">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </TextField>
-                  <Button fx:id="radanReportButton" mnemonicParsing="false" prefWidth="135.0" text="ИЗМЕНИТЬ" AnchorPane.rightAnchor="0.0" />
-               </children>
-               <VBox.margin>
-                  <Insets left="10.0" right="10.0" top="10.0" />
-               </VBox.margin>
-            </AnchorPane>
-            <AnchorPane maxWidth="1.7976931348623157E308">
-               <children>
-                  <Label alignment="CENTER" text="ШАБЛОН:" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="98.0" AnchorPane.topAnchor="0.0">
-                     <font>
-                        <Font name="Arial" size="15.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="templateField" maxWidth="-Infinity" minHeight="-Infinity" prefHeight="26.0" AnchorPane.leftAnchor="180.0" AnchorPane.rightAnchor="150.0">
+                  <TextField fx:id="templateField" maxWidth="-Infinity" minHeight="-Infinity" prefHeight="26.0" AnchorPane.leftAnchor="120.0" AnchorPane.rightAnchor="150.0">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -66,17 +48,18 @@
                </VBox.margin>
             </AnchorPane>
             <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
-               <children>
-                  <TableView fx:id="resultTable" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                     <columnResizePolicy>
-                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                     </columnResizePolicy>
-                  </TableView>
-               </children>
                <VBox.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
+               <children>
+                  <ListView fx:id="logArea" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
             </AnchorPane>
+            <Button fx:id="calcButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Расчёт">
+               <VBox.margin>
+                  <Insets bottom="10.0" left="10.0" right="10.0" />
+               </VBox.margin>
+            </Button>
          </children>
       </VBox>
    </content>

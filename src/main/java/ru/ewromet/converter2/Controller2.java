@@ -1,14 +1,108 @@
 package ru.ewromet.converter2;
 
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
 
-import ru.ewromet.converter1.OrderRow;
+import org.apache.commons.lang3.StringUtils;
 
-public class Controller2 {
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.stage.FileChooser;
+import ru.ewromet.Controller;
+import ru.ewromet.converter1.Controller1;
 
-    private List<OrderRow> orderRows;
+import static ru.ewromet.Preferences.Key.LAST_PATH;
+import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 
-    public void setOrderRows(List<OrderRow> orderRows) {
-        this.orderRows = orderRows;
+public class Controller2 extends Controller {
+
+    private Controller1 controller1;
+    private String templatePath;
+    private String orderFilePath;
+
+    @FXML
+    private Button orderFilePathButton;
+
+    @FXML
+    private TextField orderFilePathField;
+
+    @FXML
+    private Button templateButton;
+
+    @FXML
+    private TextField templateField;
+
+    public void setController1(Controller1 controller1) {
+        this.controller1 = controller1;
+
+        File orderFile = controller1.getSelectedFile();
+        if (orderFile != null) {
+            orderFilePathField.setText(orderFile.getAbsolutePath());
+        }
+    }
+
+    @Override
+    protected void initController() {
+        templatePath = preferences.get(SPECIFICATION_TEMPLATE_PATH);
+        if (StringUtils.isNotBlank(templatePath)) {
+            File file = new File(templatePath);
+            if (file.exists()) {
+                templateField.setText("<ПРЕДЫДУЩИЙ ШАБЛОН>");
+            }
+        }
+
+        orderFilePathButton.setOnAction(event -> {
+            changePathAction(orderFilePathField);
+            String orderFilePathFieldText = orderFilePathField.getText();
+            if (StringUtils.isNotBlank(orderFilePathFieldText)) {
+                orderFilePath = orderFilePathFieldText;
+            }
+        });
+        templateButton.setOnAction(event -> {
+            changePathAction(templateField);
+            String templateFieldText = templateField.getText();
+            if (StringUtils.isNotBlank(templateFieldText)) {
+                templatePath = templateField.getText();
+                try {
+                    preferences.update(SPECIFICATION_TEMPLATE_PATH, templateFieldText);
+                } catch (IOException e) {
+                    logError("Ошибка записи настроек " + e.getMessage());
+                }
+            }
+        });
+
+    }
+
+    public void changePathAction(TextField field) {
+        logArea.getItems().clear();
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(
+                        "Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"
+                )
+        );
+        fileChooser.setTitle("Выбор файла");
+        File dirFromConfig = new File((String) preferences.get(LAST_PATH));
+        while (!dirFromConfig.exists()) {
+            dirFromConfig = dirFromConfig.getParentFile();
+        }
+        File dirToOpen = dirFromConfig;
+        fileChooser.setInitialDirectory(dirToOpen);
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            try {
+                field.setText(file.getAbsolutePath());
+            } catch (Exception e) {
+                logError(e.getMessage());
+            }
+            try {
+                preferences.update(LAST_PATH, file.getParent());
+            } catch (IOException e) {
+                logError("Ошибка записи настроек " + e.getMessage());
+            }
+        } else {
+            logMessage("Файл не был выбран");
+        }
     }
 }

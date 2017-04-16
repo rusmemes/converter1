@@ -27,7 +27,6 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Dialog;
-import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -40,28 +39,25 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import ru.ewromet.Controller;
 import ru.ewromet.converter2.Controller2;
 
 import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
 import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
-import static ru.ewromet.converter1.Preferences.Key.LAST_PATH;
-import static ru.ewromet.converter1.Preferences.Key.RENAME_FILES;
+import static ru.ewromet.Preferences.Key.LAST_PATH;
+import static ru.ewromet.Preferences.Key.RENAME_FILES;
 
-public class Controller1 implements Logger {
+public class Controller1 extends Controller {
 
     private static final String ALIGNMENT_BASELINE_CENTER = "-fx-alignment: BASELINE-CENTER;";
     private static final String ALIGNMENT_CENTER_LEFT = "-fx-alignment: CENTER-LEFT;";
 
-    private Stage primaryStage;
     private File selectedFile;
-    private OrderParser parser;
 
     @FXML
     private MenuBar menuBar;
@@ -81,9 +77,6 @@ public class Controller1 implements Logger {
     @FXML
     private TableView<OrderRow> orderTable;
 
-    @FXML
-    private ListView<Text> logArea;
-
     private MenuItem saveItem;
     private CheckMenuItem renameFilesItem;
     public MenuItem continueWork;
@@ -91,18 +84,18 @@ public class Controller1 implements Logger {
     @FXML
     private Button bindButton;
 
-    private Preferences preferences;
-
     private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
     private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(FileRow::getPosNumber);
 
-    @FXML
-    public void initialize() {
-        initializePreferences();
+    public File getSelectedFile() {
+        return selectedFile;
+    }
+
+    @Override
+    protected void initController() {
         initializeMenu();
         initializeFilesTable();
         initializeOrderTable();
-        parser = new OrderParser();
 
         bindButton.setOnAction(event -> {
             OrderRow orderRow = orderTable.getSelectionModel().getSelectedItem();
@@ -139,7 +132,7 @@ public class Controller1 implements Logger {
         menu.setText("Меню");
         final MenuItem newOrderItem = new MenuItem();
         newOrderItem.setText("Новая заявка");
-        newOrderItem.setOnAction(event -> orderButtonAction());
+        newOrderItem.setOnAction(event -> newOrderMenuItemAction());
         newOrderItem.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
         saveItem = new MenuItem();
         saveItem.setText("Сохранить результат");
@@ -158,8 +151,7 @@ public class Controller1 implements Logger {
         });
 
         continueWork = new MenuItem();
-        continueWork.setText("Продолжить работу");
-        continueWork.setDisable(true);
+        continueWork.setText("Продолжить расчёт");
         continueWork.setOnAction(event -> openConverter2Window());
         continueWork.setAccelerator(KeyCombination.keyCombination("F2"));
 
@@ -172,35 +164,15 @@ public class Controller1 implements Logger {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
             Parent root = loader.load();
             Controller2 controller = loader.getController();
-            controller.setOrderRows(orderTable.getItems());
+            controller.setController1(this);
             Stage stage = new Stage();
+            controller.setStage(stage);
+            stage.setTitle("Окно расчёта");
             stage.setScene(new Scene(root));
             stage.show();
         } catch(Exception e) {
             logError("Ошибка при открытии окна " + e.getMessage());
         }
-    }
-
-    private void initializePreferences() {
-        try {
-            preferences = new Preferences();
-        } catch (Exception e) {
-            logError("Ошибка при чтении файла настроек " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void logError(String line) {
-        Text text = new Text(line);
-        text.setFill(Color.RED);
-        logArea.getItems().add(0, text);
-    }
-
-    @Override
-    public void logMessage(String line) {
-        Text text = new Text(line);
-        text.setFill(Color.BLUE);
-        logArea.getItems().add(0, text);
     }
 
     private void initializeFilesTable() {
@@ -362,11 +334,7 @@ public class Controller1 implements Logger {
         });
     }
 
-    public void setPrimaryStage(Stage primaryStage) {
-        this.primaryStage = primaryStage;
-    }
-
-    public void orderButtonAction() {
+    public void newOrderMenuItemAction() {
         progressBar.setProgress(0);
         logArea.getItems().clear();
         final FileChooser fileChooser = new FileChooser();
@@ -382,7 +350,7 @@ public class Controller1 implements Logger {
         }
         File dirToOpen = dirFromConfig;
         fileChooser.setInitialDirectory(dirToOpen);
-        File file = fileChooser.showOpenDialog(primaryStage);
+        File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
             try {
                 final Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parseResult = parser.parse(file, this);
@@ -507,7 +475,6 @@ public class Controller1 implements Logger {
 
             logMessage("ДАННЫЕ СОХРАНЕНЫ");
             saveItem.setDisable(true);
-            continueWork.setDisable(false);
             progressBar.setProgress(1);
         } catch (Exception e) {
             logError(e.getMessage());

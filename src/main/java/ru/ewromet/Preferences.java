@@ -1,4 +1,4 @@
-package ru.ewromet.converter1;
+package ru.ewromet;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,6 +20,7 @@ public class Preferences {
     public enum Key {
         LAST_PATH(System.getProperty("user.home"))
         , RENAME_FILES(true)
+        , SPECIFICATION_TEMPLATE_PATH("")
         ;
 
         private Method valueOfMethod;

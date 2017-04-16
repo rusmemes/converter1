@@ -1,4 +1,4 @@
-package ru.ewromet.converter1;
+package ru.ewromet;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -6,6 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
+import ru.ewromet.converter1.Controller1;
 
 public class Main extends Application {
 
@@ -14,7 +15,7 @@ public class Main extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter1.fxml"));
         Parent root = loader.load();
         Controller1 controller = loader.getController();
-        controller.setPrimaryStage(primaryStage);
+        controller.setStage(primaryStage);
         root.setOnKeyReleased(event -> {
             if (event.getCode() == KeyCode.F2 && !controller.continueWork.isDisable()) {
                 controller.continueWork.fire();
