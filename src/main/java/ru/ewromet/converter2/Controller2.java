@@ -18,8 +18,6 @@ import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 public class Controller2 extends Controller {
 
     private Controller1 controller1;
-    private String templatePath;
-    private String orderFilePath;
 
     @FXML
     private Button orderFilePathButton;
@@ -44,7 +42,8 @@ public class Controller2 extends Controller {
 
     @Override
     protected void initController() {
-        templatePath = preferences.get(SPECIFICATION_TEMPLATE_PATH);
+
+        String templatePath = preferences.get(SPECIFICATION_TEMPLATE_PATH);
         if (StringUtils.isNotBlank(templatePath)) {
             File file = new File(templatePath);
             if (file.exists()) {
@@ -52,30 +51,13 @@ public class Controller2 extends Controller {
             }
         }
 
-        orderFilePathButton.setOnAction(event -> {
-            changePathAction(orderFilePathField);
-            String orderFilePathFieldText = orderFilePathField.getText();
-            if (StringUtils.isNotBlank(orderFilePathFieldText)) {
-                orderFilePath = orderFilePathFieldText;
-            }
-        });
-        templateButton.setOnAction(event -> {
-            changePathAction(templateField);
-            String templateFieldText = templateField.getText();
-            if (StringUtils.isNotBlank(templateFieldText)) {
-                templatePath = templateField.getText();
-                try {
-                    preferences.update(SPECIFICATION_TEMPLATE_PATH, templateFieldText);
-                } catch (IOException e) {
-                    logError("Ошибка записи настроек " + e.getMessage());
-                }
-            }
-        });
-
+        orderFilePathButton.setOnAction(event -> changePathAction(orderFilePathField));
+        templateButton.setOnAction(event -> changePathAction(templateField));
     }
 
     public void changePathAction(TextField field) {
         logArea.getItems().clear();
+
         final FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(
@@ -89,6 +71,7 @@ public class Controller2 extends Controller {
         }
         File dirToOpen = dirFromConfig;
         fileChooser.setInitialDirectory(dirToOpen);
+
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
             try {
