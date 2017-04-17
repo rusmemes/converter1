@@ -546,7 +546,7 @@ public class Controller1 extends Controller {
                     .replace("_g", row.getBendsCount() > 0 ? "_g" : StringUtils.EMPTY)
                     .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
                     .replace("_O", isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
-                    .replace(".f", getExtension(sourceFile))
+                    .replace(".f", sourceFile == null ? StringUtils.EMPTY : getExtension(sourceFile))
                     ;
         }
 

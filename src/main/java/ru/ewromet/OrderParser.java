@@ -54,6 +54,10 @@ public class OrderParser {
     }};
 
     public Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parse(File orderExcelFile, Logger logger) throws Exception {
+        return parse(orderExcelFile, logger, true);
+    }
+
+    public Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parse(File orderExcelFile, Logger logger, boolean withFiles) throws Exception {
 
         ObservableList<OrderRow> result = FXCollections.observableArrayList();
 
@@ -153,7 +157,7 @@ public class OrderParser {
             logger.logError("Данные не найдены");
         }
 
-        return Pair.of(result, searchFiles(result, orderExcelFile));
+        return Pair.of(result, withFiles ? searchFiles(result, orderExcelFile) : FXCollections.emptyObservableList());
     }
 
     private ObservableList<FileRow> searchFiles(ObservableList<OrderRow> result, File orderExcelFile) {
