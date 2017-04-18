@@ -2,12 +2,17 @@ package ru.ewromet.converter2;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import ru.ewromet.Controller;
+import ru.ewromet.OrderRow;
+import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter1.Controller1;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -18,6 +23,7 @@ import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 public class Controller2 extends Controller {
 
     private Controller1 controller1;
+    private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
 
     @FXML
     private Button orderFilePathButton;
@@ -106,6 +112,25 @@ public class Controller2 extends Controller {
 
     private void runCalc() {
         logMessage("Начало работы...");
+        String text = orderFilePathField.getText();
+        if (StringUtils.isBlank(text)) {
+            logError("Укажите файл заявки");
+            return;
+        }
+        File orderFile = new File(text);
+        if (!orderFile.exists()) {
+            logError("Файл заявки не найден");
+            return;
+        }
+        String orderNumber = orderFile.getParentFile().getName();
+        List<OrderRow> orderRows;
+        try {
+            orderRows = orderRowsFileUtil.restoreOrderRows(orderNumber);
+        } catch (IOException e) {
+            logError("Ошибка при выгрузке информации по заявке из временного файла: " + e.getMessage());
+            return;
+        }
+        orderRows.forEach(row -> logMessage(row.toString()));
         // TODO
     }
 }

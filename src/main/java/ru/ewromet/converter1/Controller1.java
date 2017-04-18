@@ -45,14 +45,17 @@ import javafx.stage.WindowEvent;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import ru.ewromet.Controller;
+import ru.ewromet.FileRow;
+import ru.ewromet.OrderRow;
+import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter2.Controller2;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.RENAME_FILES;
-import static ru.ewromet.converter1.FileSearchUtil.findRecursively;
-import static ru.ewromet.converter1.OrderRow.MATERIAL_LABELS;
+import static ru.ewromet.FileSearchUtil.findRecursively;
+import static ru.ewromet.OrderRow.MATERIAL_LABELS;
 
 public class Controller1 extends Controller {
 
@@ -480,6 +483,10 @@ public class Controller1 extends Controller {
             logMessage("Создание csv-файла в директории " + orderAbsDir);
             createCsvFile(orderAbsDir, orderNumber, orderRows);
             logMessage("csv-файл создан");
+
+            logMessage("Сохранение файла соответствий " + orderAbsDir);
+            new OrderRowsFileUtil().saveOrderRows(orderRows, orderNumberFinal);
+            logMessage("файл соответствий создан");
 
             logMessage("ДАННЫЕ СОХРАНЕНЫ");
             saveItem.setDisable(true);

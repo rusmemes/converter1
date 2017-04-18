@@ -1,4 +1,4 @@
-package ru.ewromet.converter1;
+package ru.ewromet;
 
 import java.io.File;
 import java.io.FileFilter;

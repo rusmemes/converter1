@@ -1,4 +1,4 @@
-package ru.ewromet.converter1;
+package ru.ewromet;
 
 import java.util.Collections;
 import java.util.HashMap;
