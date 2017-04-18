@@ -18,10 +18,7 @@ public class Preferences {
     private static final File file = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.ini").toFile();
 
     public enum Key {
-        LAST_PATH(System.getProperty("user.home"))
-        , RENAME_FILES(true)
-        , SPECIFICATION_TEMPLATE_PATH("")
-        ;
+        LAST_PATH(System.getProperty("user.home")), RENAME_FILES(true), SPECIFICATION_TEMPLATE_PATH("");
 
         private Method valueOfMethod;
         private Object defaultValue;

@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 public abstract class Controller implements Logger {
 
     protected static Preferences preferences;
+
     static {
         try {
             preferences = new Preferences();

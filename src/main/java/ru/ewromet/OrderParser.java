@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -20,7 +21,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import ru.ewromet.Logger;
 import ru.ewromet.converter1.FileRow;
 import ru.ewromet.converter1.OrderParserException;
 import ru.ewromet.converter1.OrderRow;

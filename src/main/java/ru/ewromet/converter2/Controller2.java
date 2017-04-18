@@ -3,14 +3,9 @@ package ru.ewromet.converter2;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.commons.lang3.StringUtils;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
 import javafx.stage.FileChooser;
 import ru.ewromet.Controller;
 import ru.ewromet.converter1.Controller1;
