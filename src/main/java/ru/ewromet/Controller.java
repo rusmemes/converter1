@@ -22,18 +22,8 @@ public abstract class Controller implements Logger {
 
     protected Stage stage;
 
-    protected OrderParser parser;
-
     @FXML
     protected ListView<Text> logArea;
-
-    @FXML
-    protected final void initialize() {
-        parser = new OrderParser();
-        initController();
-    }
-
-    protected abstract void initController();
 
     @Override
     public void logError(String line) {

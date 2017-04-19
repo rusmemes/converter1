@@ -50,9 +50,8 @@ public class Controller2 extends Controller {
         }
     }
 
-    @Override
-    protected void initController() {
-
+    @FXML
+    private void initialize() {
         String templatePath = preferences.get(SPECIFICATION_TEMPLATE_PATH);
         if (isNotBlank(templatePath)) {
             File file = new File(templatePath);

@@ -63,6 +63,8 @@ public class Controller1 extends Controller {
     private static final String ALIGNMENT_CENTER_LEFT = "-fx-alignment: CENTER-LEFT;";
 
     private File selectedFile;
+    private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
+    protected OrderParser parser = new OrderParser();
 
     @FXML
     private MenuBar menuBar;
@@ -96,8 +98,8 @@ public class Controller1 extends Controller {
         return selectedFile;
     }
 
-    @Override
-    protected void initController() {
+    @FXML
+    private void initialize() {
         initializeMenu();
         initializeFilesTable();
         initializeOrderTable();
@@ -485,7 +487,7 @@ public class Controller1 extends Controller {
             logMessage("csv-файл создан");
 
             logMessage("Сохранение файла соответствий " + orderAbsDir);
-            new OrderRowsFileUtil().saveOrderRows(orderRows, orderNumberFinal);
+            orderRowsFileUtil.saveOrderRows(orderRows, orderNumberFinal);
             logMessage("файл соответствий создан");
 
             logMessage("ДАННЫЕ СОХРАНЕНЫ");
