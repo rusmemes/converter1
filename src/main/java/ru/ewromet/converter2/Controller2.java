@@ -24,6 +24,7 @@ public class Controller2 extends Controller {
 
     private Controller1 controller1;
     private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
+    private File template;
 
     @FXML
     private Button orderFilePathButton;
@@ -57,11 +58,21 @@ public class Controller2 extends Controller {
             File file = new File(templatePath);
             if (file.exists()) {
                 templateField.setText("<ПРЕДЫДУЩИЙ ШАБЛОН>");
+                template = file;
             }
         }
 
         orderFilePathButton.setOnAction(event -> changePathAction(orderFilePathField));
-        templateButton.setOnAction(event -> changePathAction(templateField));
+        templateButton.setOnAction(event -> {
+            changePathAction(templateField);
+            String text = templateField.getText();
+            if (StringUtils.isNotEmpty(text)) {
+                File file = new File(text);
+                if (file.exists()) {
+                    template = file;
+                }
+            }
+        });
 
         calcButton.setOnAction(event -> runCalc());
     }
@@ -120,6 +131,14 @@ public class Controller2 extends Controller {
         File orderFile = new File(text);
         if (!orderFile.exists()) {
             logError("Файл заявки не найден");
+            return;
+        }
+        if (template == null) {
+            logError("Укажите файл шаблона");
+            return;
+        }
+        if (!template.exists()) {
+            logError("Файл шаблона не найден по адресу " + template.getAbsolutePath());
             return;
         }
         String orderNumber = orderFile.getParentFile().getName();
