@@ -52,10 +52,10 @@ import ru.ewromet.converter2.Controller2;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static ru.ewromet.Preferences.Key.LAST_PATH;
-import static ru.ewromet.Preferences.Key.RENAME_FILES;
 import static ru.ewromet.FileSearchUtil.findRecursively;
 import static ru.ewromet.OrderRow.MATERIAL_LABELS;
+import static ru.ewromet.Preferences.Key.LAST_PATH;
+import static ru.ewromet.Preferences.Key.RENAME_FILES;
 
 public class Controller1 extends Controller {
 
