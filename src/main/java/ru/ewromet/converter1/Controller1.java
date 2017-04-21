@@ -15,6 +15,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -92,7 +94,8 @@ public class Controller1 extends Controller {
     private Button bindButton;
 
     private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
-    private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(FileRow::getPosNumber);
+    private static final Comparator<FileRow> FILE_ROW_COMPARATOR
+            = Comparator.comparing(FileRow::getPosNumber).thenComparing(Comparator.comparing(FileRow::getFilePath));
 
     public File getSelectedFile() {
         return selectedFile;
@@ -369,6 +372,8 @@ public class Controller1 extends Controller {
                 final Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parseResult = parser.parse(file, this);
                 orderTable.setItems(parseResult.getLeft());
                 filesTable.setItems(parseResult.getRight());
+                refreshTable(filesTable, FILE_ROW_COMPARATOR);
+                refreshTable(orderTable, ORDER_ROW_COMPARATOR);
                 orderPathField.setText(file.getAbsolutePath());
                 selectedFile = file;
                 orderNumberField.setText(file.getParentFile().getName());
