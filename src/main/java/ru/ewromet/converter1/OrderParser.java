@@ -162,8 +162,8 @@ public class OrderParser {
 
     private ObservableList<FileRow> searchFiles(ObservableList<OrderRow> result, File orderExcelFile) {
 
-        Map<FileRow, Set<OrderRow>> fileToRowMap = new HashMap<>();
-        Map<OrderRow, Set<FileRow>> rowToFileMap = new HashMap<>();
+        Map<FileRow, Set<OrderRow>> file2RowMap = new HashMap<>();
+        Map<OrderRow, Set<FileRow>> row2FileMap = new HashMap<>();
 
         final String parentDirPath = orderExcelFile.getParent() + File.separator;
         final List<File> files = findRecursively(new File(parentDirPath), pathname -> {
@@ -178,7 +178,7 @@ public class OrderParser {
         for (File file : files) {
             final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, StringUtils.EMPTY);
             final FileRow fileRow = new FileRow(relativeFilePath);
-            final Set<OrderRow> fileOrderRows = fileToRowMap.computeIfAbsent(fileRow, row -> new HashSet<>());
+            final Set<OrderRow> fileOrderRows = file2RowMap.computeIfAbsent(fileRow, row -> new HashSet<>());
 
             final String fileNameLowerCased = file.getName().toLowerCase()
                     .replace(DXF_EXTENSION, StringUtils.EMPTY)
@@ -186,7 +186,7 @@ public class OrderParser {
 
             for (OrderRow orderRow : result) {
 
-                final Set<FileRow> fileRows = rowToFileMap.computeIfAbsent(orderRow, row -> new HashSet<>());
+                final Set<FileRow> fileRows = row2FileMap.computeIfAbsent(orderRow, row -> new HashSet<>());
 
                 final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
 
@@ -200,18 +200,18 @@ public class OrderParser {
             }
         }
 
-        fileToRowMap.forEach((fileRow, orderRows) -> {
+        file2RowMap.forEach((fileRow, orderRows) -> {
             if (orderRows.size() != 1) {
                 fileRow.setPosNumber(0);
             }
         });
-        rowToFileMap.forEach((orderRow, fileRows) -> {
+        row2FileMap.forEach((orderRow, fileRows) -> {
             if (fileRows.size() != 1) {
                 orderRow.setFilePath(null);
             }
         });
 
-        final ObservableList<FileRow> fileRows = FXCollections.observableArrayList(fileToRowMap.keySet());
+        final ObservableList<FileRow> fileRows = FXCollections.observableArrayList(file2RowMap.keySet());
         fileRows.sort(Comparator.comparing(FileRow::getPosNumber));
         return fileRows;
     }

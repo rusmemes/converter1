@@ -3,7 +3,11 @@ package ru.ewromet.converter2;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +21,8 @@ import ru.ewromet.OrderRow;
 import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter1.Controller1;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.FileUtil.getExtension;
@@ -99,8 +105,8 @@ public class Controller2 extends Controller {
         while (!dirFromConfig.exists()) {
             dirFromConfig = dirFromConfig.getParentFile();
         }
-        File dirToOpen = dirFromConfig;
-        fileChooser.setInitialDirectory(dirToOpen);
+        File dir2Open = dirFromConfig;
+        fileChooser.setInitialDirectory(dir2Open);
 
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
@@ -158,7 +164,15 @@ public class Controller2 extends Controller {
             logError("Ошибка при выгрузке информации по заявке из временного файла: " + e.getMessage());
             return;
         }
-        orderRows.forEach(row -> logMessage(row.toString()));
+
+        Map<OrderRow, SymFileInfo> row2SymInfo = orderRows.stream().collect(toMap(identity(), this::symFileOf));
+
+
         // TODO
+    }
+
+    private SymFileInfo symFileOf(OrderRow orderRow) {
+        // TODO
+        return null;
     }
 }

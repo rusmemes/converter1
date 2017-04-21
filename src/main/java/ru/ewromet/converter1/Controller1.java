@@ -364,8 +364,8 @@ public class Controller1 extends Controller {
         while (!dirFromConfig.exists()) {
             dirFromConfig = dirFromConfig.getParentFile();
         }
-        File dirToOpen = dirFromConfig;
-        fileChooser.setInitialDirectory(dirToOpen);
+        File dir2Open = dirFromConfig;
+        fileChooser.setInitialDirectory(dir2Open);
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
             try {
@@ -406,7 +406,7 @@ public class Controller1 extends Controller {
             final File sourceFilesDir = Paths.get(orderAbsDir.getAbsolutePath(), "Исходные данные").toFile();
 
             List<File> fileList = findRecursively(directory, file -> !file.equals(selectedFile) && !file.equals(sourceFilesDir));
-            List<File> filesToDeleteInFuture = new LinkedList<>();
+            List<File> files2DeleteInFuture = new LinkedList<>();
 
             for (File file : fileList) {
                 if (file.getName().equalsIgnoreCase("thumbs.db")) {
@@ -415,7 +415,7 @@ public class Controller1 extends Controller {
                 File dst = Paths.get(file.getAbsolutePath().replace(directory.getAbsolutePath(), sourceFilesDir.getAbsolutePath())).toFile();
                 try {
                     FileUtils.copyFile(file, dst);
-                    filesToDeleteInFuture.add(file);
+                    files2DeleteInFuture.add(file);
                 } catch (Exception e) {
                     logError("Ошибка при копировании " + file.getAbsolutePath() + " в " + dst.getParentFile().getAbsolutePath() + ": " + e.getMessage());
                 }
@@ -452,7 +452,7 @@ public class Controller1 extends Controller {
                                 try {
                                     FileUtils.copyFile(old, path);
                                 } catch (Exception e) {
-                                    filesToDeleteInFuture.remove(old);
+                                    files2DeleteInFuture.remove(old);
                                     logMessage("Попытка не удалась");
                                 }
                             } catch (Exception e) {
@@ -476,7 +476,7 @@ public class Controller1 extends Controller {
             }
 
             logMessage("Удаление старых файлов");
-            for (File oldFile : filesToDeleteInFuture) {
+            for (File oldFile : files2DeleteInFuture) {
                 FileUtils.deleteQuietly(oldFile);
             }
             File[] emptyDirs = directory.listFiles(Controller1::isEmptyDirectory);
