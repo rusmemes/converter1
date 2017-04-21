@@ -2,8 +2,10 @@ package ru.ewromet.converter2;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javafx.fxml.FXML;
@@ -17,6 +19,7 @@ import ru.ewromet.converter1.Controller1;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static ru.ewromet.FileUtil.getExtension;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 
@@ -24,7 +27,6 @@ public class Controller2 extends Controller {
 
     private Controller1 controller1;
     private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
-    private File template;
 
     @FXML
     private Button orderFilePathButton;
@@ -54,21 +56,18 @@ public class Controller2 extends Controller {
     private void initialize() {
         String templatePath = preferences.get(SPECIFICATION_TEMPLATE_PATH);
         if (isNotBlank(templatePath)) {
-            File file = new File(templatePath);
-            if (file.exists()) {
-                templateField.setText("<ПРЕДЫДУЩИЙ ШАБЛОН>");
-                template = file;
-            }
+            templateField.setText(templatePath);
         }
 
         orderFilePathButton.setOnAction(event -> changePathAction(orderFilePathField));
         templateButton.setOnAction(event -> {
             changePathAction(templateField);
             String text = templateField.getText();
-            if (StringUtils.isNotEmpty(text)) {
-                File file = new File(text);
-                if (file.exists()) {
-                    template = file;
+            if (StringUtils.isNotBlank(text)) {
+                try {
+                    preferences.update(SPECIFICATION_TEMPLATE_PATH, text);
+                } catch (IOException e) {
+                    logError("Не удалось сохранить путь к шаблону спецификации для будущего использования " + e.getMessage());
                 }
             }
         });
@@ -122,25 +121,36 @@ public class Controller2 extends Controller {
 
     private void runCalc() {
         logMessage("Начало работы...");
-        String text = orderFilePathField.getText();
-        if (StringUtils.isBlank(text)) {
+        logMessage("Проверка доступности заявки и шаблона спецификации...");
+        String path = orderFilePathField.getText();
+        if (StringUtils.isBlank(path)) {
             logError("Укажите файл заявки");
             return;
         }
-        File orderFile = new File(text);
-        if (!orderFile.exists()) {
+        File orderFile = new File(path);
+        if (!orderFile.exists() || !orderFile.isFile()) {
             logError("Файл заявки не найден");
             return;
         }
-        if (template == null) {
-            logError("Укажите файл шаблона");
+        File template;
+        path = templateField.getText();
+        if (isBlank(path) || !(template = new File(path)).exists() || !template.isFile()) {
+            logError("Не найден или не указан файл шаблона спецификации");
             return;
         }
-        if (!template.exists()) {
-            logError("Файл шаблона не найден по адресу " + template.getAbsolutePath());
-            return;
-        }
+        logMessage("Нужные файлы найдены");
+
         String orderNumber = orderFile.getParentFile().getName();
+        File specFile = Paths.get(orderFile.getParent(), orderNumber + getExtension(template)).toFile();
+        if (!specFile.exists()) {
+            try {
+                FileUtils.copyFile(template, specFile);
+            } catch (IOException e) {
+                logError("Не удалось скопировать шаблон спецификации в " + specFile.getAbsolutePath() + " " + e.getMessage());
+                return;
+            }
+        }
+
         List<OrderRow> orderRows;
         try {
             orderRows = orderRowsFileUtil.restoreOrderRows(orderNumber);

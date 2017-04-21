@@ -53,6 +53,7 @@ import ru.ewromet.converter2.Controller2;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.FileSearchUtil.findRecursively;
+import static ru.ewromet.FileUtil.getExtension;
 import static ru.ewromet.OrderRow.MATERIAL_LABELS;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.RENAME_FILES;
@@ -564,12 +565,6 @@ public class Controller1 extends Controller {
         }
 
         return sourceFile.getName();
-    }
-
-    private String getExtension(File file) {
-        final String sourceFileName = file.getName();
-        final int lastCommaPos = sourceFileName.lastIndexOf(".");
-        return sourceFileName.substring(lastCommaPos);
     }
 
     public void closeApplicationAction(WindowEvent windowEvent) {

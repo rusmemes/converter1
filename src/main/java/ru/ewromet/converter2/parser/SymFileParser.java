@@ -13,17 +13,17 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class XmlParser {
+public class SymFileParser {
 
     private static SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 
-    public static RadanCompoundDocument parse(String xmlFilePath) throws ParserConfigurationException, SAXException, IOException {
+    public static RadanCompoundDocument parse(String symFilePath) throws ParserConfigurationException, SAXException, IOException {
 
         SAXParser saxParser = saxParserFactory.newSAXParser();
         XMLReader xmlReader = saxParser.getXMLReader();
         XmlReaderHandler handler = new XmlReaderHandler();
         xmlReader.setContentHandler(handler);
-        xmlReader.parse(xmlFilePath);
+        xmlReader.parse(symFilePath);
 
         return handler.getRadanCompoundDocument();
     }
