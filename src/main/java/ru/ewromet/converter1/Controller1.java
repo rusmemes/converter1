@@ -15,8 +15,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -112,7 +110,7 @@ public class Controller1 extends Controller {
             FileRow fileRow = filesTable.getSelectionModel().getSelectedItem();
             if (orderRow != null && fileRow != null) {
                 if (StringUtils.isEmpty(orderRow.getFilePath())) {
-                    if (!isBlank(fileRow.getStringPosNumber())) {
+                    if (fileRow.getPosNumber() > 0) {
                         fileRow = new FileRow(fileRow.getFilePath());
                         filesTable.getItems().add(fileRow);
                     }
@@ -120,8 +118,8 @@ public class Controller1 extends Controller {
                     orderRow.setFilePath(fileRow.getFilePath());
                     logMessage("Файл " + fileRow.getFilePath() + " связан с позицией " + orderRow.getPosNumber());
 
-                    refreshTable(orderTable, ORDER_ROW_COMPARATOR);
-                    refreshTable(filesTable, FILE_ROW_COMPARATOR);
+                    refreshTable(orderTable, null);
+                    refreshTable(filesTable, null);
                 }
             }
         });
@@ -132,8 +130,9 @@ public class Controller1 extends Controller {
         if (items == null || items.size() == 0) {
             return;
         }
-
-        Collections.sort(items, comparator);
+        if (comparator != null) {
+            Collections.sort(items, comparator);
+        }
         tableView.refresh();
     }
 
@@ -202,7 +201,7 @@ public class Controller1 extends Controller {
                         super.updateItem(item, empty);
                         TableRow<FileRow> currentRow = getTableRow();
                         final FileRow fileRow = currentRow.getItem();
-                        if (fileRow != null && isBlank(fileRow.getStringPosNumber())) {
+                        if (fileRow != null && fileRow.getPosNumber() < 1) {
                             currentRow.getStyleClass().add("unbinded-table-row");
                         } else {
                             currentRow.getStyleClass().remove("unbinded-table-row");
@@ -212,9 +211,9 @@ public class Controller1 extends Controller {
         );
         filePathColumn.setEditable(false);
 
-        TableColumn<FileRow, String> posNumberColumn = ColumnFactory.createColumn(
-                "№", 30, "stringPosNumber",
-                TextFieldTableCell.forTableColumn(), FileRow::setStringPosNumber
+        TableColumn<FileRow, Integer> posNumberColumn = ColumnFactory.createColumn(
+                "№", 30, "posNumber",
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()), FileRow::setPosNumber
         );
 
         posNumberColumn.setEditable(false);

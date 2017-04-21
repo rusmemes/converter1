@@ -18,7 +18,6 @@ public interface ColumnFactory {
         column.setMinWidth(minWidth);
         column.setCellValueFactory(new PropertyValueFactory<>(property));
         column.setCellFactory(cellFactory);
-        column.setSortable(false);
         column.setOnEditCommit(event -> setter.accept(event.getRowValue(), event.getNewValue()));
         return column;
     }

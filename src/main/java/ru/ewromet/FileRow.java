@@ -1,13 +1,10 @@
 package ru.ewromet;
 
-import org.apache.commons.lang3.StringUtils;
-
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class FileRow {
 
-    private final SimpleStringProperty stringPosNumber = new SimpleStringProperty(StringUtils.EMPTY);
     private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();
     private final SimpleStringProperty filePath = new SimpleStringProperty();
 
@@ -15,21 +12,7 @@ public class FileRow {
     }
 
     public FileRow(String filePath) {
-        this.posNumber.set(Integer.MAX_VALUE);
         this.filePath.set(filePath);
-    }
-
-    public String getStringPosNumber() {
-        return stringPosNumber.get();
-    }
-
-    public void setStringPosNumber(String stringPosNumber) {
-        this.stringPosNumber.set(stringPosNumber);
-        try {
-            this.posNumber.set(Integer.valueOf(stringPosNumber));
-        } catch (NumberFormatException e) {
-            this.posNumber.set(Integer.MAX_VALUE);
-        }
     }
 
     public int getPosNumber() {
@@ -38,7 +21,6 @@ public class FileRow {
 
     public void setPosNumber(int posNumber) {
         this.posNumber.set(posNumber);
-        this.stringPosNumber.set(String.valueOf(posNumber));
     }
 
     public String getFilePath() {
@@ -65,9 +47,6 @@ public class FileRow {
 
         FileRow fileRow = (FileRow) o;
 
-        if (stringPosNumber != null ? !stringPosNumber.equals(fileRow.stringPosNumber) : fileRow.stringPosNumber != null) {
-            return false;
-        }
         if (posNumber != null ? !posNumber.equals(fileRow.posNumber) : fileRow.posNumber != null) {
             return false;
         }
@@ -80,8 +59,7 @@ public class FileRow {
 
     @Override
     public int hashCode() {
-        int result = stringPosNumber != null ? stringPosNumber.hashCode() : 0;
-        result = 31 * result + (posNumber != null ? posNumber.hashCode() : 0);
+        int result = posNumber != null ? posNumber.hashCode() : 0;
         result = 31 * result + (filePath != null ? filePath.hashCode() : 0);
         return result;
     }
