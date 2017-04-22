@@ -53,7 +53,7 @@ import ru.ewromet.converter2.Controller2;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.FileSearchUtil.findRecursively;
-import static ru.ewromet.FileUtil.getExtension;
+import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.OrderRow.MATERIAL_LABELS;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.RENAME_FILES;
@@ -470,7 +470,7 @@ public class Controller1 extends Controller {
 
                 orderRow.setDetailResultName(
                         renameFilesItem.isSelected()
-                                ? destFileName.replace(getExtension(destFile), StringUtils.EMPTY)
+                                ? destFileName.replace(getFileExtension(destFile), StringUtils.EMPTY)
                                 : orderRow.getDetailName()
                 );
             }
@@ -560,7 +560,7 @@ public class Controller1 extends Controller {
                     .replace("_g", row.getBendsCount() > 0 ? "_g" : StringUtils.EMPTY)
                     .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
                     .replace("_O", isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
-                    .replace(".f", getExtension(sourceFile))
+                    .replace(".f", getFileExtension(sourceFile))
                     ;
         }
 

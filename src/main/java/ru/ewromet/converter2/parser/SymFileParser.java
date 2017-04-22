@@ -234,6 +234,7 @@ public class SymFileParser {
                     break;
                 case MC_TAG:
                     currentMC = null;
+                    break;
                 case INFO_TAG:
                     currentInfo = null;
                     break;

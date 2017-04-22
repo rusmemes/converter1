@@ -2,20 +2,20 @@ package ru.ewromet.converter2;
 
 public class SymFileInfo {
 
-    private double cutLength;
+    private int cutLength;
     private int insertsCount;
-    private double actualArea;
-    private double areaWithInternalContours;
-    private double sizeX;
-    private double sizeY;
+    private int actualArea;
+    private int areaWithInternalContours;
+    private int sizeX;
+    private int sizeY;
     private double cutTimeUniMach;
     private double cutTimeTrumpf;
 
-    public double getCutLength() {
+    public int getCutLength() {
         return cutLength;
     }
 
-    public void setCutLength(double cutLength) {
+    public void setCutLength(int cutLength) {
         this.cutLength = cutLength;
     }
 
@@ -27,35 +27,35 @@ public class SymFileInfo {
         this.insertsCount = insertsCount;
     }
 
-    public double getActualArea() {
+    public int getActualArea() {
         return actualArea;
     }
 
-    public void setActualArea(double actualArea) {
+    public void setActualArea(int actualArea) {
         this.actualArea = actualArea;
     }
 
-    public double getAreaWithInternalContours() {
+    public int getAreaWithInternalContours() {
         return areaWithInternalContours;
     }
 
-    public void setAreaWithInternalContours(double areaWithInternalContours) {
+    public void setAreaWithInternalContours(int areaWithInternalContours) {
         this.areaWithInternalContours = areaWithInternalContours;
     }
 
-    public double getSizeX() {
+    public int getSizeX() {
         return sizeX;
     }
 
-    public void setSizeX(double sizeX) {
+    public void setSizeX(int sizeX) {
         this.sizeX = sizeX;
     }
 
-    public double getSizeY() {
+    public int getSizeY() {
         return sizeY;
     }
 
-    public void setSizeY(double sizeY) {
+    public void setSizeY(int sizeY) {
         this.sizeY = sizeY;
     }
 
@@ -73,5 +73,19 @@ public class SymFileInfo {
 
     public void setCutTimeTrumpf(double cutTimeTrumpf) {
         this.cutTimeTrumpf = cutTimeTrumpf;
+    }
+
+    @Override
+    public String toString() {
+        return "SymFileInfo{" +
+                "cutLength=" + cutLength +
+                ", insertsCount=" + insertsCount +
+                ", actualArea=" + actualArea +
+                ", areaWithInternalContours=" + areaWithInternalContours +
+                ", sizeX=" + sizeX +
+                ", sizeY=" + sizeY +
+                ", cutTimeUniMach=" + cutTimeUniMach +
+                ", cutTimeTrumpf=" + cutTimeTrumpf +
+                '}';
     }
 }

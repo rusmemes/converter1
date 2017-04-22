@@ -3,11 +3,9 @@ package ru.ewromet.converter2;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,14 +18,26 @@ import ru.ewromet.Controller;
 import ru.ewromet.OrderRow;
 import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter1.Controller1;
+import ru.ewromet.converter2.parser.Attr;
+import ru.ewromet.converter2.parser.Group;
+import ru.ewromet.converter2.parser.Info;
+import ru.ewromet.converter2.parser.MC;
+import ru.ewromet.converter2.parser.QuotationInfo;
+import ru.ewromet.converter2.parser.RadanAttributes;
+import ru.ewromet.converter2.parser.RadanCompoundDocument;
+import ru.ewromet.converter2.parser.SymFileParser;
 
+import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static ru.ewromet.FileUtil.getExtension;
+import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
+import static ru.ewromet.Utils.replaceLast;
 
 public class Controller2 extends Controller {
 
@@ -129,7 +139,7 @@ public class Controller2 extends Controller {
         logMessage("Начало работы...");
         logMessage("Проверка доступности заявки и шаблона спецификации...");
         String path = orderFilePathField.getText();
-        if (StringUtils.isBlank(path)) {
+        if (isBlank(path)) {
             logError("Укажите файл заявки");
             return;
         }
@@ -144,10 +154,9 @@ public class Controller2 extends Controller {
             logError("Не найден или не указан файл шаблона спецификации");
             return;
         }
-        logMessage("Нужные файлы найдены");
 
         String orderNumber = orderFile.getParentFile().getName();
-        File specFile = Paths.get(orderFile.getParent(), orderNumber + getExtension(template)).toFile();
+        File specFile = Paths.get(orderFile.getParent(), orderNumber + getFileExtension(template)).toFile();
         if (!specFile.exists()) {
             try {
                 FileUtils.copyFile(template, specFile);
@@ -165,14 +174,223 @@ public class Controller2 extends Controller {
             return;
         }
 
-        Map<OrderRow, SymFileInfo> row2SymInfo = orderRows.stream().collect(toMap(identity(), this::symFileOf));
+        Map<OrderRow, SymFileInfo> row2SymInfo;
+        try {
+            row2SymInfo = orderRows.stream().collect(toMap(identity(), this::symFileOf));
+        } catch (Exception e) {
+            logError("Ошибка при выгрузке информации из sym-файлов: " + e.getMessage());
+            return;
+        }
 
-
+        row2SymInfo.forEach((r,s) -> logMessage(r + ", " + s));
         // TODO
     }
 
     private SymFileInfo symFileOf(OrderRow orderRow) {
-        // TODO
-        return null;
+        String filePath = orderRow.getFilePath();
+        if (isBlank(filePath)) {
+            throw new RuntimeException("Не задан файл для позиции " + orderRow);
+        }
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new RuntimeException("Не найден файл " + file.getAbsolutePath());
+        }
+        String symFilePath = filePath.replace(getFileExtension(file), ".sym");
+        if (!new File(symFilePath).exists()) {
+            symFilePath = replaceLast(symFilePath, '_', '-');
+            if (!new File(symFilePath).exists()) {
+                symFilePath = filePath.replace(getFileExtension(file), ".SYM");
+                if (!new File(symFilePath).exists()) {
+                    throw new RuntimeException("Не найден файл " + symFilePath);
+                }
+            }
+        }
+        RadanCompoundDocument radanCompoundDocument;
+        try {
+            radanCompoundDocument = SymFileParser.parse(symFilePath);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка парсинга sym-файла", e);
+        }
+
+        SymFileInfo symFileInfo = new SymFileInfo();
+
+        try {
+            symFileInfo.setCutLength(injectCutLength(radanCompoundDocument));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении длины резки из sym-файла " + symFilePath);
+        }
+
+        try {
+            symFileInfo.setInsertsCount(injectInsertsCount(radanCompoundDocument));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении количества  врезов из sym-файла " + symFilePath);
+        }
+
+        try {
+            symFileInfo.setActualArea(injectActualArea(radanCompoundDocument));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении фактической площади детали из sym-файла " + symFilePath);
+        }
+
+        try {
+            symFileInfo.setAreaWithInternalContours(injectAreaWithInternalContours(radanCompoundDocument));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении площади детали с внутренними контурами из sym-файла " + symFilePath);
+        }
+
+        try {
+            symFileInfo.setSizeX(injectSizeX(radanCompoundDocument));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении габарита по X из sym-файла " + symFilePath);
+        }
+
+        try {
+            symFileInfo.setSizeY(injectSizeY(radanCompoundDocument));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении габарита по Y из sym-файла " + symFilePath);
+        }
+
+        try {
+            symFileInfo.setCutTimeUniMach(injectCutTime(radanCompoundDocument, "psys_EWR001_2"));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении время резки UniMach из sym-файла " + symFilePath);
+        }
+
+        try {
+            symFileInfo.setCutTimeTrumpf(injectCutTime(radanCompoundDocument, "psys_EWR001_1"));
+        } catch (Exception e) {
+            logError("Ошибка при извлечении время резки Trumpf из sym-файла " + symFilePath);
+        }
+
+        return symFileInfo;
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@name='Ожидаемое время обработки']/rcd:MC
+     * */
+    private double injectCutTime(RadanCompoundDocument radanCompoundDocument, String mcMachine) {
+        double psys_ewr001_2 = ofNullable(radanCompoundDocument.getQuotationInfo())
+                .map(QuotationInfo::getInfos)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(info -> equalsIgnoreCase(info.getName(), "Ожидаемое время обработки"))
+                .map(Info::getMcs)
+                .flatMap(List::stream)
+                .filter(mc -> equalsIgnoreCase(mc.getMachine(), mcMachine))
+                .map(MC::getValue)
+                .mapToDouble(Double::valueOf)
+                .findFirst()
+                .getAsDouble();
+        return (int)(psys_ewr001_2 * 100) / 100D;
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Ограничивающий прямоугольник Y']
+     * */
+    private int injectSizeY(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
+                .map(RadanAttributes::getGroups)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
+                .map(Group::getAttrs)
+                .flatMap(List::stream)
+                .filter(attr -> equalsIgnoreCase(attr.getName(), "Ограничивающий прямоугольник Y"))
+                .map(Attr::getValue)
+                .mapToDouble(Double::valueOf)
+                .findFirst()
+                .getAsDouble());
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Ограничивающий прямоугольник Х']
+     */
+    private int injectSizeX(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
+                .map(RadanAttributes::getGroups)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
+                .map(Group::getAttrs)
+                .flatMap(List::stream)
+                .filter(attr -> equalsIgnoreCase(attr.getName(), "Ограничивающий прямоугольник Х"))
+                .map(Attr::getValue)
+                .mapToDouble(Double::valueOf)
+                .findFirst()
+                .getAsDouble());
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Область, включающая отверстия']
+     */
+    private int injectAreaWithInternalContours(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
+                .map(RadanAttributes::getGroups)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
+                .map(Group::getAttrs)
+                .flatMap(List::stream)
+                .filter(attr -> equalsIgnoreCase(attr.getName(), "Область, включающая отверстия"))
+                .map(Attr::getValue)
+                .mapToDouble(Double::valueOf)
+                .findFirst()
+                .getAsDouble());
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Область']
+     */
+    private int injectActualArea(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
+                .map(RadanAttributes::getGroups)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
+                .map(Group::getAttrs)
+                .flatMap(List::stream)
+                .filter(attr -> equalsIgnoreCase(attr.getName(), "Область"))
+                .map(Attr::getValue)
+                .mapToDouble(Double::valueOf)
+                .findFirst()
+                .getAsDouble());
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@name='Кол-во врезов']/rcd:MC[1]
+     * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@name='Кол-во врезов']/rcd:MC[2]
+     */
+    private int injectInsertsCount(RadanCompoundDocument radanCompoundDocument) {
+        return ofNullable(radanCompoundDocument.getQuotationInfo())
+                .map(QuotationInfo::getInfos)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(info -> equalsIgnoreCase(info.getName(), "Кол-во врезов"))
+                .map(Info::getMcs)
+                .flatMap(List::stream)
+                .filter(mc -> containsIgnoreCase(mc.getMachine(), "psys_EWR"))
+                .map(MC::getValue)
+                .mapToInt(Integer::valueOf)
+                .max()
+                .getAsInt();
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Периметр ']
+     */
+    private int injectCutLength(RadanCompoundDocument radanCompoundDocument) throws Exception {
+        double asDouble = ofNullable(radanCompoundDocument.getRadanAttributes())
+                .map(RadanAttributes::getGroups)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
+                .map(Group::getAttrs)
+                .flatMap(List::stream)
+                .filter(attr -> containsIgnoreCase(attr.getName(), "Периметр"))
+                .map(Attr::getValue)
+                .mapToDouble(Double::valueOf)
+                .findFirst()
+                .getAsDouble();
+        return (int) Math.floor(asDouble / 50) * 50;
     }
 }
