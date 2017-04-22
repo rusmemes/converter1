@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -174,15 +176,16 @@ public class Controller2 extends Controller {
             return;
         }
 
-        Map<OrderRow, SymFileInfo> row2SymInfo;
+        Map<OrderRow, SymFileInfo> row2SymInfo = new TreeMap<>(Comparator.comparing(OrderRow::getPosNumber));
         try {
-            row2SymInfo = orderRows.stream().collect(toMap(identity(), this::symFileOf));
+
+            row2SymInfo.putAll(orderRows.stream().collect(toMap(identity(), this::symFileOf)));
         } catch (Exception e) {
             logError("Ошибка при выгрузке информации из sym-файлов: " + e.getMessage());
             return;
         }
 
-        row2SymInfo.forEach((r,s) -> logMessage(r + ", " + s));
+        row2SymInfo.forEach((r, s) -> logMessage(r + ", " + s));
         // TODO
     }
 
