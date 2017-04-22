@@ -276,8 +276,8 @@ public class Controller2 extends Controller {
     private double injectCutTime(RadanCompoundDocument radanCompoundDocument, String mcMachine) {
         double psys_ewr001_2 = getInfosMcsValuesStream(
                 radanCompoundDocument,
-                info -> equalsIgnoreCase(info.getName(), "Кол-во врезов"),
-                mc -> containsIgnoreCase(mc.getMachine(), "psys_EWR")
+                info -> equalsIgnoreCase(info.getName(), "Ожидаемое время обработки"),
+                mc -> equalsIgnoreCase(mc.getMachine(), mcMachine)
         ).mapToDouble(Double::valueOf)
                 .findFirst()
                 .getAsDouble();
