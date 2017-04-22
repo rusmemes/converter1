@@ -8,6 +8,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,9 +38,9 @@ import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
+import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.Utils.replaceLast;
 
 public class Controller2 extends Controller {
@@ -178,7 +180,6 @@ public class Controller2 extends Controller {
 
         Map<OrderRow, SymFileInfo> row2SymInfo = new TreeMap<>(Comparator.comparing(OrderRow::getPosNumber));
         try {
-
             row2SymInfo.putAll(orderRows.stream().collect(toMap(identity(), this::symFileOf)));
         } catch (Exception e) {
             logError("Ошибка при выгрузке информации из sym-файлов: " + e.getMessage());
@@ -208,6 +209,7 @@ public class Controller2 extends Controller {
                 }
             }
         }
+
         RadanCompoundDocument radanCompoundDocument;
         try {
             radanCompoundDocument = SymFileParser.parse(symFilePath);
@@ -270,93 +272,68 @@ public class Controller2 extends Controller {
 
     /**
      * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@name='Ожидаемое время обработки']/rcd:MC
-     * */
+     */
     private double injectCutTime(RadanCompoundDocument radanCompoundDocument, String mcMachine) {
-        double psys_ewr001_2 = ofNullable(radanCompoundDocument.getQuotationInfo())
-                .map(QuotationInfo::getInfos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(info -> equalsIgnoreCase(info.getName(), "Ожидаемое время обработки"))
-                .map(Info::getMcs)
-                .flatMap(List::stream)
-                .filter(mc -> equalsIgnoreCase(mc.getMachine(), mcMachine))
-                .map(MC::getValue)
-                .mapToDouble(Double::valueOf)
+        double psys_ewr001_2 = getInfosMcsValuesStream(
+                radanCompoundDocument,
+                info -> equalsIgnoreCase(info.getName(), "Кол-во врезов"),
+                mc -> containsIgnoreCase(mc.getMachine(), "psys_EWR")
+        ).mapToDouble(Double::valueOf)
                 .findFirst()
                 .getAsDouble();
-        return (int)(psys_ewr001_2 * 100) / 100D;
+        return ((int) (psys_ewr001_2 * 100)) / 100D;
     }
 
     /**
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Ограничивающий прямоугольник Y']
-     * */
+     */
     private int injectSizeY(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
-                .map(RadanAttributes::getGroups)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
-                .map(Group::getAttrs)
-                .flatMap(List::stream)
-                .filter(attr -> equalsIgnoreCase(attr.getName(), "Ограничивающий прямоугольник Y"))
-                .map(Attr::getValue)
-                .mapToDouble(Double::valueOf)
-                .findFirst()
-                .getAsDouble());
+        return (int) Math.floor(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        attr -> equalsIgnoreCase(attr.getName(), "Ограничивающий прямоугольник Y")
+                )
+        );
     }
 
     /**
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Ограничивающий прямоугольник Х']
      */
     private int injectSizeX(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
-                .map(RadanAttributes::getGroups)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
-                .map(Group::getAttrs)
-                .flatMap(List::stream)
-                .filter(attr -> equalsIgnoreCase(attr.getName(), "Ограничивающий прямоугольник Х"))
-                .map(Attr::getValue)
-                .mapToDouble(Double::valueOf)
-                .findFirst()
-                .getAsDouble());
+        return (int) Math.floor(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        attr -> equalsIgnoreCase(attr.getName(), "Ограничивающий прямоугольник Х")
+                )
+        );
     }
 
     /**
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Область, включающая отверстия']
      */
     private int injectAreaWithInternalContours(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
-                .map(RadanAttributes::getGroups)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
-                .map(Group::getAttrs)
-                .flatMap(List::stream)
-                .filter(attr -> equalsIgnoreCase(attr.getName(), "Область, включающая отверстия"))
-                .map(Attr::getValue)
-                .mapToDouble(Double::valueOf)
-                .findFirst()
-                .getAsDouble());
+        return (int) Math.floor(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        attr -> equalsIgnoreCase(attr.getName(), "Область, включающая отверстия")
+                )
+        );
     }
 
     /**
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Область']
      */
     private int injectActualArea(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(ofNullable(radanCompoundDocument.getRadanAttributes())
-                .map(RadanAttributes::getGroups)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
-                .map(Group::getAttrs)
-                .flatMap(List::stream)
-                .filter(attr -> equalsIgnoreCase(attr.getName(), "Область"))
-                .map(Attr::getValue)
-                .mapToDouble(Double::valueOf)
-                .findFirst()
-                .getAsDouble());
+        return (int) Math.floor(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        attr -> equalsIgnoreCase(attr.getName(), "Область")
+                )
+        );
     }
 
     /**
@@ -364,16 +341,11 @@ public class Controller2 extends Controller {
      * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@name='Кол-во врезов']/rcd:MC[2]
      */
     private int injectInsertsCount(RadanCompoundDocument radanCompoundDocument) {
-        return ofNullable(radanCompoundDocument.getQuotationInfo())
-                .map(QuotationInfo::getInfos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(info -> equalsIgnoreCase(info.getName(), "Кол-во врезов"))
-                .map(Info::getMcs)
-                .flatMap(List::stream)
-                .filter(mc -> containsIgnoreCase(mc.getMachine(), "psys_EWR"))
-                .map(MC::getValue)
-                .mapToInt(Integer::valueOf)
+        return getInfosMcsValuesStream(
+                radanCompoundDocument,
+                info -> equalsIgnoreCase(info.getName(), "Кол-во врезов"),
+                mc -> containsIgnoreCase(mc.getMachine(), "psys_EWR")
+        ).mapToInt(Integer::valueOf)
                 .max()
                 .getAsInt();
     }
@@ -382,18 +354,38 @@ public class Controller2 extends Controller {
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@name='Периметр ']
      */
     private int injectCutLength(RadanCompoundDocument radanCompoundDocument) throws Exception {
-        double asDouble = ofNullable(radanCompoundDocument.getRadanAttributes())
+        double asDouble = getGroupAttrValueAsDouble(
+                radanCompoundDocument,
+                group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                attr -> containsIgnoreCase(attr.getName(), "Периметр")
+        );
+        return (int) Math.floor(asDouble / 50) * 50;
+    }
+
+    private double getGroupAttrValueAsDouble(RadanCompoundDocument radanCompoundDocument, Predicate<Group> groupPredicate, Predicate<Attr> attrPredicate) {
+        return ofNullable(radanCompoundDocument.getRadanAttributes())
                 .map(RadanAttributes::getGroups)
                 .orElse(Collections.emptyList())
                 .stream()
-                .filter(group -> equalsIgnoreCase(group.getName(), "Геометрия"))
+                .filter(groupPredicate)
                 .map(Group::getAttrs)
                 .flatMap(List::stream)
-                .filter(attr -> containsIgnoreCase(attr.getName(), "Периметр"))
+                .filter(attrPredicate)
                 .map(Attr::getValue)
                 .mapToDouble(Double::valueOf)
                 .findFirst()
                 .getAsDouble();
-        return (int) Math.floor(asDouble / 50) * 50;
+    }
+
+    private Stream<String> getInfosMcsValuesStream(RadanCompoundDocument radanCompoundDocument, Predicate<Info> infoPredicate, Predicate<MC> mcPredicate) {
+        return ofNullable(radanCompoundDocument.getQuotationInfo())
+                .map(QuotationInfo::getInfos)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(infoPredicate)
+                .map(Info::getMcs)
+                .flatMap(List::stream)
+                .filter(mcPredicate)
+                .map(MC::getValue);
     }
 }
