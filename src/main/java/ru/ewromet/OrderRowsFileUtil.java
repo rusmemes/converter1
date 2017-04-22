@@ -17,14 +17,16 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 public class OrderRowsFileUtil {
 
     private static final String EXTENSION = ".cor";
 
     public void saveOrderRows(List<OrderRow> rowList, String orderNumber) throws IOException {
-        if (CollectionUtils.isEmpty(rowList) || StringUtils.isBlank(orderNumber)) {
+        if (CollectionUtils.isEmpty(rowList) || isBlank(orderNumber)) {
             return;
         }
         final File file = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), orderNumber + EXTENSION).toFile();
@@ -56,7 +58,7 @@ public class OrderRowsFileUtil {
         List<OrderRow> list = new ArrayList<>();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))))) {
             String line;
-            while (StringUtils.isNotEmpty((line = in.readLine()))) {
+            while (isNotEmpty((line = in.readLine()))) {
                 list.add(createOrderRowFromCsvLine(line));
             }
         }

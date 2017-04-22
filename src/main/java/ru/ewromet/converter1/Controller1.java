@@ -51,6 +51,7 @@ import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter2.Controller2;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.FileSearchUtil.findRecursively;
 import static ru.ewromet.Utils.getFileExtension;
@@ -110,7 +111,7 @@ public class Controller1 extends Controller {
             OrderRow orderRow = orderTable.getSelectionModel().getSelectedItem();
             FileRow fileRow = filesTable.getSelectionModel().getSelectedItem();
             if (orderRow != null && fileRow != null) {
-                if (StringUtils.isEmpty(orderRow.getFilePath())) {
+                if (isEmpty(orderRow.getFilePath())) {
                     if (fileRow.getPosNumber() > 0) {
                         fileRow = new FileRow(fileRow.getFilePath());
                         filesTable.getItems().add(fileRow);

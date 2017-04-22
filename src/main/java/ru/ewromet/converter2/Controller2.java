@@ -83,7 +83,7 @@ public class Controller2 extends Controller {
         templateButton.setOnAction(event -> {
             changePathAction(templateField);
             String text = templateField.getText();
-            if (StringUtils.isNotBlank(text)) {
+            if (isNotBlank(text)) {
                 try {
                     preferences.update(SPECIFICATION_TEMPLATE_PATH, text);
                 } catch (IOException e) {
