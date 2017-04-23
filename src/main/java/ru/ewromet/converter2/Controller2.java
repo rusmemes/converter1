@@ -1,7 +1,11 @@
 package ru.ewromet.converter2;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,7 +16,11 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -41,6 +49,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 import static ru.ewromet.Utils.getFileExtension;
+import static ru.ewromet.Utils.getWorkbook;
 import static ru.ewromet.Utils.replaceLast;
 
 public class Controller2 extends Controller {
@@ -140,6 +149,7 @@ public class Controller2 extends Controller {
     }
 
     private void runCalc() {
+        logArea.getItems().clear();
         logMessage("Начало работы...");
         logMessage("Проверка доступности заявки и шаблона спецификации...");
         String path = orderFilePathField.getText();
@@ -160,12 +170,12 @@ public class Controller2 extends Controller {
         }
 
         String orderNumber = orderFile.getParentFile().getName();
-        File specFile = Paths.get(orderFile.getParent(), orderNumber + getFileExtension(template)).toFile();
-        if (!specFile.exists()) {
+        File specTmpFile = Paths.get(orderFile.getParent(), orderNumber + ".tmp" + getFileExtension(template)).toFile();
+        if (!specTmpFile.exists()) {
             try {
-                FileUtils.copyFile(template, specFile);
+                FileUtils.copyFile(template, specTmpFile);
             } catch (IOException e) {
-                logError("Не удалось скопировать шаблон спецификации в " + specFile.getAbsolutePath() + " " + e.getMessage());
+                logError("Не удалось скопировать шаблон спецификации в " + specTmpFile.getAbsolutePath() + " " + e.getMessage());
                 return;
             }
         }
@@ -186,8 +196,70 @@ public class Controller2 extends Controller {
             return;
         }
 
-        row2SymInfo.forEach((r, s) -> logMessage(r + ", " + s));
-        // TODO
+        File specFile = new File(specTmpFile.getAbsolutePath().replace(".tmp", ""));
+        try (FileInputStream inputStream = new FileInputStream(specTmpFile);
+             Workbook workbook = getWorkbook(inputStream, specTmpFile.getAbsolutePath());
+             OutputStream out = new FileOutputStream(specFile);
+        ) {
+            Sheet sheet = workbook.getSheet("расчет");
+            setValueToCell(sheet.getRow(20), 0, orderNumber);
+            row2SymInfo.forEach((orderRow, symInfo) -> {
+                Row row = sheet.getRow(23 + orderRow.getPosNumber() - 1);
+                setValueToCell(row, 2, orderRow.getPosNumber());
+                setValueToCell(row, 3, orderRow.getDetailName());
+                setValueToCell(row, 4, orderRow.getCount());
+                setValueToCell(row, 5, orderRow.getMaterial());
+                setValueToCell(row, 6, orderRow.getMaterialBrand());
+                setValueToCell(row, 7, orderRow.getThickness());
+                setValueToCell(row, 8, orderRow.getColor());
+                setValueToCell(row, 11, symInfo.getCutLength());
+                setValueToCell(row, 12, symInfo.getInsertsCount());
+                setValueToCell(row, 13, symInfo.getActualArea());
+                setValueToCell(row, 14, symInfo.getAreaWithInternalContours());
+                setValueToCell(row, 16, symInfo.getSizeX());
+                setValueToCell(row, 17, symInfo.getSizeY());
+                setValueToCell(row, 18, orderRow.getBendsCount());
+                setValueToCell(row, 23, symInfo.getCutTimeUniMach());
+                setValueToCell(row, 24, symInfo.getCutTimeTrumpf());
+            });
+            workbook.write(out);
+        } catch (IOException e) {
+            logError("Ошибка при заполнении спецификации: " + e.getClass().getName() + ' ' + e.getMessage());
+            return;
+        } finally {
+            if (!specTmpFile.delete()) {
+                specTmpFile.deleteOnExit();
+            }
+        }
+        logMessage("ДАННЫЕ СОХРАНЕНЫ");
+    }
+
+    private static void setValueToCell(Row row, int cellIndex, Object value) {
+        if (value == null) {
+            return;
+        }
+        Cell cell = row.getCell(cellIndex);
+        CellType cellType;
+        if (cell == null) {
+            row.createCell(0, (cellType = getCellTypeFor(value)));
+        } else {
+            cell.setCellType((cellType = getCellTypeFor(value)));
+        }
+        switch (cellType) {
+            case NUMERIC:
+                cell.setCellValue(value instanceof Integer ? (int) value : (double) value);
+                break;
+            case STRING:
+            default:
+                cell.setCellValue(value.toString());
+        }
+
+    }
+
+    private static CellType getCellTypeFor(Object object) {
+        return object instanceof Integer
+                ? CellType.NUMERIC
+                : CellType.STRING;
     }
 
     private SymFileInfo symFileOf(OrderRow orderRow) {

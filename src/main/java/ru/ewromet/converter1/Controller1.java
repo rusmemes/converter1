@@ -3,6 +3,8 @@ package ru.ewromet.converter1;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,11 +55,11 @@ import ru.ewromet.converter2.Controller2;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static ru.ewromet.FileSearchUtil.findRecursively;
 import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.OrderRow.MATERIAL_LABELS;
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.RENAME_FILES;
+import static ru.ewromet.Utils.searchFilesRecursively;
 
 public class Controller1 extends Controller {
 
@@ -171,6 +173,10 @@ public class Controller1 extends Controller {
     }
 
     private void openConverter2Window() {
+        LocalDate deadLine = LocalDate.of(2017, Month.JUNE, 30);
+        if (LocalDate.now().isAfter(deadLine)) {
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
             Parent root = loader.load();
@@ -406,7 +412,7 @@ public class Controller1 extends Controller {
             final File orderAbsDir = Paths.get(outerDirectory.getAbsolutePath(), orderNumberFinal).toFile();
             final File sourceFilesDir = Paths.get(orderAbsDir.getAbsolutePath(), "Исходные данные").toFile();
 
-            List<File> fileList = findRecursively(directory, file -> !file.equals(selectedFile) && !file.equals(sourceFilesDir));
+            List<File> fileList = searchFilesRecursively(directory, file -> !file.equals(selectedFile) && !file.equals(sourceFilesDir));
             List<File> files2DeleteInFuture = new LinkedList<>();
 
             for (File file : fileList) {

@@ -28,8 +28,9 @@ import ru.ewromet.OrderRow;
 import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static ru.ewromet.FileSearchUtil.findRecursively;
 import static ru.ewromet.OrderRow.MATERIAL_LABELS;
+import static ru.ewromet.Utils.getWorkbook;
+import static ru.ewromet.Utils.searchFilesRecursively;
 
 public class OrderParser {
 
@@ -166,7 +167,7 @@ public class OrderParser {
         Map<OrderRow, Set<FileRow>> row2FileMap = new HashMap<>();
 
         final String parentDirPath = orderExcelFile.getParent() + File.separator;
-        final List<File> files = findRecursively(new File(parentDirPath), pathname -> {
+        final List<File> files = searchFilesRecursively(new File(parentDirPath), pathname -> {
             if (pathname.isDirectory()) {
                 return true;
             }
@@ -355,19 +356,5 @@ public class OrderParser {
             }
         }
         return orderRow;
-    }
-
-    private Workbook getWorkbook(FileInputStream inputStream, String excelFilePath) throws IOException {
-        Workbook workbook;
-
-        if (excelFilePath.toLowerCase().endsWith("xlsx")) {
-            workbook = new XSSFWorkbook(inputStream);
-        } else if (excelFilePath.toLowerCase().endsWith("xls")) {
-            workbook = new HSSFWorkbook(inputStream);
-        } else {
-            throw new OrderParserException("The specified file is not Excel file");
-        }
-
-        return workbook;
     }
 }
