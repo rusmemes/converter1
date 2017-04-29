@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -169,7 +170,14 @@ public class Controller2 extends Controller {
             return;
         }
 
-        String orderNumber = orderFile.getParentFile().getName();
+        Integer orderNumber;
+        try {
+            orderNumber = Integer.parseUnsignedInt(orderFile.getParentFile().getName());
+        } catch (Exception e) {
+            logError("Ошибка при попытке ипользовать название папки с заявкой в числовом виде как номер заказа для вставки в спецификацию");
+            return;
+        }
+
         File specTmpFile = Paths.get(orderFile.getParent(), orderNumber + ".tmp" + getFileExtension(template)).toFile();
         if (!specTmpFile.exists()) {
             try {
@@ -208,7 +216,7 @@ public class Controller2 extends Controller {
                 setValueToCell(row, 2, orderRow.getPosNumber());
                 setValueToCell(row, 3, orderRow.getDetailName());
                 setValueToCell(row, 4, orderRow.getCount());
-                setValueToCell(row, 5, orderRow.getMaterial());
+                setValueToCell(row, 5, orderRow.getOriginalMaterial());
                 setValueToCell(row, 6, orderRow.getMaterialBrand());
                 setValueToCell(row, 7, orderRow.getThickness());
                 setValueToCell(row, 8, orderRow.getColor());
@@ -222,6 +230,7 @@ public class Controller2 extends Controller {
                 setValueToCell(row, 23, symInfo.getCutTimeUniMach());
                 setValueToCell(row, 24, symInfo.getCutTimeTrumpf());
             });
+            workbook.setForceFormulaRecalculation(true);
             workbook.write(out);
         } catch (IOException e) {
             logError("Ошибка при заполнении спецификации: " + e.getClass().getName() + ' ' + e.getMessage());
@@ -257,7 +266,7 @@ public class Controller2 extends Controller {
     }
 
     private static CellType getCellTypeFor(Object object) {
-        return object instanceof Integer
+        return object instanceof Double || object instanceof Integer
                 ? CellType.NUMERIC
                 : CellType.STRING;
     }
@@ -343,17 +352,27 @@ public class Controller2 extends Controller {
     }
 
     /**
-     * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@name='Ожидаемое время обработки']/rcd:MC
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Производство  ']/rcd:Attr[@name='Время цикла']/rcd:MC
      */
     private double injectCutTime(RadanCompoundDocument radanCompoundDocument, String mcMachine) {
-        double psys_ewr001_2 = getInfosMcsValuesStream(
-                radanCompoundDocument,
-                info -> equalsIgnoreCase(info.getName(), "Ожидаемое время обработки"),
-                mc -> equalsIgnoreCase(mc.getMachine(), mcMachine)
-        ).mapToDouble(Double::valueOf)
+        double psys_ewr = ofNullable(radanCompoundDocument.getRadanAttributes())
+                .map(RadanAttributes::getGroups)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(group -> equalsIgnoreCase(group.getName(), "Производство"))
+                .map(Group::getAttrs)
+                .flatMap(List::stream)
+                .filter(attr -> equalsIgnoreCase(attr.getName(), "Время цикла"))
+                .map(Attr::getMcs)
+                .flatMap(List::stream)
+                .filter(mc -> equalsIgnoreCase(mc.getMachine(), mcMachine))
+                .map(MC::getValue)
+                .mapToDouble(Double::valueOf)
                 .findFirst()
-                .getAsDouble();
-        return ((int) (psys_ewr001_2 * 100)) / 100D;
+                .getAsDouble() * 60;
+        return ((int) (psys_ewr * 100)) / 100D;
+
+
     }
 
     /**
@@ -429,7 +448,7 @@ public class Controller2 extends Controller {
         double asDouble = getGroupAttrValueAsDouble(
                 radanCompoundDocument,
                 group -> equalsIgnoreCase(group.getName(), "Геометрия"),
-                attr -> containsIgnoreCase(attr.getName(), "Периметр")
+                attr -> containsIgnoreCase(attr.getNum(), "168") && containsIgnoreCase(attr.getName(), "Периметр")
         );
         return (int) Math.floor(asDouble / 50) * 50;
     }

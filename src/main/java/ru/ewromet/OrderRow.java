@@ -36,6 +36,7 @@ public class OrderRow extends FileRow {
     private final SimpleStringProperty detailResultName = new SimpleStringProperty();
     private final SimpleIntegerProperty count = new SimpleIntegerProperty();
     private final SimpleStringProperty material = new SimpleStringProperty();
+    private final SimpleStringProperty originalMaterial = new SimpleStringProperty();
     private final SimpleStringProperty materialBrand = new SimpleStringProperty();
     private final SimpleStringProperty color = new SimpleStringProperty();
     private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();
@@ -77,6 +78,14 @@ public class OrderRow extends FileRow {
 
     public void setMaterial(String material) {
         this.material.set(material);
+    }
+
+    public String getOriginalMaterial() {
+        return originalMaterial.get();
+    }
+
+    public void setOriginalMaterial(String originalMaterial) {
+        this.originalMaterial.set(originalMaterial);
     }
 
     public String getMaterialBrand() {

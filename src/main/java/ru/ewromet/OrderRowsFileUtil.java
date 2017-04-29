@@ -45,7 +45,7 @@ public class OrderRowsFileUtil {
                 orderRow.getPosNumber(),
                 orderRow.getDetailName(),
                 orderRow.getCount(),
-                orderRow.getMaterial(),
+                orderRow.getOriginalMaterial(),
                 orderRow.getMaterialBrand(),
                 orderRow.getThickness(),
                 StringUtils.trimToEmpty(orderRow.getColor()),
@@ -53,7 +53,7 @@ public class OrderRowsFileUtil {
         );
     }
 
-    public List<OrderRow> restoreOrderRows(String orderNumber) throws IOException {
+    public List<OrderRow> restoreOrderRows(Integer orderNumber) throws IOException {
         final File file = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), orderNumber + EXTENSION).toFile();
         List<OrderRow> list = new ArrayList<>();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))))) {
@@ -71,7 +71,7 @@ public class OrderRowsFileUtil {
         orderRow.setPosNumber(Integer.parseUnsignedInt(split[0]));
         orderRow.setDetailName(split[1]);
         orderRow.setCount(Integer.parseUnsignedInt(split[2]));
-        orderRow.setMaterial(split[3]);
+        orderRow.setOriginalMaterial(split[3]);
         orderRow.setMaterialBrand(split[4]);
         orderRow.setThickness(Double.parseDouble(split[5]));
         orderRow.setColor(StringUtils.trimToNull(split[6]));

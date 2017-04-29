@@ -265,12 +265,17 @@ public class OrderParser {
                         throw new OrderParserException(orderRow.getPosNumber(), "некорректный материал - '" + value + "', допустимые варианты " + MATERIAL_LABELS.keySet());
                     }
                     orderRow.setMaterial(value);
+                    orderRow.setOriginalMaterial(value);
                     break;
                 case 5:
                     try {
                         orderRow.setMaterialBrand(cell.getStringCellValue());
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте марку материала " + e.getMessage());
+                        try {
+                            orderRow.setMaterialBrand(String.valueOf(cell.getNumericCellValue()));
+                        } catch (Exception e1) {
+                            throw new OrderParserException(orderRow.getPosNumber(), "проверьте марку материала " + e1.getMessage());
+                        }
                     }
                     break;
                 case 6:

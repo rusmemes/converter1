@@ -275,9 +275,9 @@ public class Controller1 extends Controller {
         countColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
-                "Материал", 50, "material",
+                "Материал", 50, "originalMaterial",
                 ChoiceBoxTableCell.forTableColumn(MATERIAL_LABELS.keySet().toArray(new String[MATERIAL_LABELS.size()])),
-                OrderRow::setMaterial
+                OrderRow::setOriginalMaterial
         );
         materialColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
@@ -437,7 +437,7 @@ public class Controller1 extends Controller {
                 }
 
                 final File sourceFile = Paths.get(sourceFilesDir.getAbsolutePath(), orderRow.getFilePath()).toFile();
-                final String materialLabel = OrderRow.MATERIAL_LABELS.get(orderRow.getMaterial());
+                final String materialLabel = OrderRow.MATERIAL_LABELS.get(orderRow.getOriginalMaterial());
                 final String dirName = materialLabel + StringUtils.SPACE + orderRow.getThickness() + "mm";
                 final String destFileName = getDestFileName(orderNumberFinal, sourceFile, orderRow);
                 final File destFile = Paths.get(orderAbsDir.getAbsolutePath(), dirName, destFileName).toFile();
