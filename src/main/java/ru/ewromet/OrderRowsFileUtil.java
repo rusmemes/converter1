@@ -41,7 +41,7 @@ public class OrderRowsFileUtil {
     }
 
     private String createCsvLine(OrderRow orderRow) {
-        return String.format("%d;%s;%d;%s;%s;%s;%s;%s",
+        return String.format("%d;%s;%d;%s;%s;%s;%s;%d;%s",
                 orderRow.getPosNumber(),
                 orderRow.getDetailName(),
                 orderRow.getCount(),
@@ -49,6 +49,7 @@ public class OrderRowsFileUtil {
                 orderRow.getMaterialBrand(),
                 orderRow.getThickness(),
                 StringUtils.trimToEmpty(orderRow.getColor()),
+                orderRow.getBendsCount(),
                 orderRow.getFilePath()
         );
     }
@@ -75,7 +76,8 @@ public class OrderRowsFileUtil {
         orderRow.setMaterialBrand(split[4]);
         orderRow.setThickness(Double.parseDouble(split[5]));
         orderRow.setColor(StringUtils.trimToNull(split[6]));
-        orderRow.setFilePath(split[7]);
+        orderRow.setBendsCount(Integer.parseUnsignedInt(split[7]));
+        orderRow.setFilePath(split[8]);
         return orderRow;
     }
 }

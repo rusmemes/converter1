@@ -8,6 +8,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -23,6 +24,9 @@ public class SymFileParser {
         XMLReader xmlReader = saxParser.getXMLReader();
         XmlReaderHandler handler = new XmlReaderHandler();
         xmlReader.setContentHandler(handler);
+        if (!StringUtils.startsWithIgnoreCase(symFilePath, "file:")) {
+            symFilePath = "file:///" + symFilePath;
+        }
         xmlReader.parse(symFilePath);
 
         return handler.getRadanCompoundDocument();
