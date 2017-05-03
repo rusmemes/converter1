@@ -2,22 +2,21 @@ package ru.ewromet.converter1;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -133,19 +132,26 @@ public class OrderParser {
                         }
                     }
                     cell = row.getCell(firstCellNum + 1);
+                    String stringCellValue;
                     if (cell == null) {
                         continue;
                     } else {
                         try {
-                            if (isBlank(cell.getStringCellValue())) {
-                                continue;
-                            }
+                            stringCellValue = cell.getStringCellValue();
                         } catch (Exception e) {
-                            throw new OrderParserException(l, "проверьте наименование детали " + e.getMessage());
+                            double numericCellValue = cell.getNumericCellValue();
+                            if (Double.compare(numericCellValue, (int) numericCellValue) == 0) {
+                                stringCellValue = String.valueOf((int) numericCellValue);
+                            } else {
+                                stringCellValue = String.valueOf(numericCellValue);
+                            }
+                        }
+                        if (isBlank(stringCellValue)) {
+                            break;
                         }
                     }
-                    if (!addedDetailNames.add(cell.getStringCellValue())) {
-                        throw new OrderParserException("Дублирующееся наименование детали: " + cell.getStringCellValue());
+                    if (!addedDetailNames.add(stringCellValue)) {
+                        throw new OrderParserException("Дублирующееся наименование детали: " + stringCellValue);
                     }
                     result.add(createOrderRowFromExcelRow(row));
                 }
@@ -191,7 +197,7 @@ public class OrderParser {
 
                 final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
 
-                if (fileNameLowerCased.endsWith(detailNameLowerCased)) {
+                if (Objects.equals(Paths.get(fileNameLowerCased).toFile().getName(), detailNameLowerCased)) {
                     orderRow.setFilePath(relativeFilePath);
                     fileRow.setPosNumber(orderRow.getPosNumber());
                     fileOrderRows.add(orderRow);
@@ -240,7 +246,12 @@ public class OrderParser {
                     try {
                         orderRow.setDetailName(cell.getStringCellValue());
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), e.getMessage());
+                        double numericCellValue = cell.getNumericCellValue();
+                        if (Double.compare(numericCellValue, (int) numericCellValue) == 0) {
+                            orderRow.setDetailName(String.valueOf((int) numericCellValue));
+                        } else {
+                            orderRow.setDetailName(String.valueOf(numericCellValue));
+                        }
                     }
                     break;
                 case 3:
@@ -355,7 +366,11 @@ public class OrderParser {
                     try {
                         orderRow.setComment(cell.getStringCellValue());
                     } catch (Exception e) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "проверьте комментарий " + e.getMessage());
+                        try {
+                            orderRow.setComment(String.valueOf(cell.getNumericCellValue()));
+                        } catch (Exception e1) {
+                            throw new OrderParserException(orderRow.getPosNumber(), "проверьте комментарий " + e.getMessage());
+                        }
                     }
                     break;
             }
