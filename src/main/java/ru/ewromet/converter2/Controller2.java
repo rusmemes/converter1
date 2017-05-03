@@ -362,7 +362,7 @@ public class Controller2 extends Controller {
                 .filter(group -> equalsIgnoreCase(group.getName(), "Производство"))
                 .map(Group::getAttrs)
                 .flatMap(List::stream)
-                .filter(attr -> "123".equals(attr.getName()))
+                .filter(attr -> "123".equals(attr.getNum()))
                 .map(Attr::getMcs)
                 .flatMap(List::stream)
                 .filter(mc -> equalsIgnoreCase(mc.getMachine(), mcMachine))
