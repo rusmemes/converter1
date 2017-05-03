@@ -2,7 +2,6 @@ package ru.ewromet.converter2;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,10 +10,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.poi.ss.usermodel.Cell;
@@ -359,7 +356,7 @@ public class Controller2 extends Controller {
                 .map(RadanAttributes::getGroups)
                 .orElse(Collections.emptyList())
                 .stream()
-                .filter(group -> equalsIgnoreCase(group.getName(), "Производство"))
+                .filter(group -> containsIgnoreCase(group.getName(), "Производство"))
                 .map(Group::getAttrs)
                 .flatMap(List::stream)
                 .filter(attr -> "123".equals(attr.getNum()))
@@ -381,7 +378,7 @@ public class Controller2 extends Controller {
         return (int) Math.floor(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
-                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        group -> containsIgnoreCase(group.getName(), "Геометрия"),
                         attr -> "166".equals(attr.getNum())
                 )
         );
@@ -394,7 +391,7 @@ public class Controller2 extends Controller {
         return (int) Math.floor(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
-                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        group -> containsIgnoreCase(group.getName(), "Геометрия"),
                         attr -> "165".equals(attr.getNum())
                 )
         );
@@ -407,7 +404,7 @@ public class Controller2 extends Controller {
         return (int) Math.floor(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
-                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        group -> containsIgnoreCase(group.getName(), "Геометрия"),
                         attr -> "163".equals(attr.getNum())
                 )
         );
@@ -420,7 +417,7 @@ public class Controller2 extends Controller {
         return (int) Math.floor(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
-                        group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                        group -> containsIgnoreCase(group.getName(), "Геометрия"),
                         attr -> "162".equals(attr.getNum())
                 )
         );
@@ -447,7 +444,7 @@ public class Controller2 extends Controller {
     private int injectCutLength(RadanCompoundDocument radanCompoundDocument) throws Exception {
         double asDouble = getGroupAttrValueAsDouble(
                 radanCompoundDocument,
-                group -> equalsIgnoreCase(group.getName(), "Геометрия"),
+                group -> containsIgnoreCase(group.getName(), "Геометрия"),
                 attr -> "168".equals(attr.getNum())
         );
         return (int) Math.floor(asDouble / 50) * 50;
