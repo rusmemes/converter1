@@ -224,8 +224,8 @@ public class Controller2 extends Controller {
                 setValueToCell(row, 16, symInfo.getSizeX());
                 setValueToCell(row, 17, symInfo.getSizeY());
                 setValueToCell(row, 18, orderRow.getBendsCount());
-                setValueToCell(row, 23, symInfo.getCutTimeUniMach());
-                setValueToCell(row, 24, symInfo.getCutTimeTrumpf());
+                setValueToCell(row, 24, symInfo.getCutTimeUniMach());
+                setValueToCell(row, 25, symInfo.getCutTimeTrumpf());
             });
             workbook.setForceFormulaRecalculation(true);
             workbook.write(out);
@@ -349,7 +349,7 @@ public class Controller2 extends Controller {
     }
 
     /**
-     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Производство  ']/rcd:Attr[@name='Время цикла']/rcd:MC
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Производство  ']/rcd:Attr[@num='123']/rcd:MC
      */
     private double injectCutTime(RadanCompoundDocument radanCompoundDocument, String mcMachine) {
         double psys_ewr = ofNullable(radanCompoundDocument.getRadanAttributes())
