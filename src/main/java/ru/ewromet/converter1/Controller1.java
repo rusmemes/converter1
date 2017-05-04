@@ -173,7 +173,7 @@ public class Controller1 extends Controller {
     }
 
     private void openConverter2Window() {
-        LocalDate deadLine = LocalDate.of(2017, Month.JUNE, 30);
+        LocalDate deadLine = LocalDate.of(2017, Month.MAY, 30);
         if (LocalDate.now().isAfter(deadLine)) {
             return;
         }
