@@ -283,7 +283,12 @@ public class OrderParser {
                         orderRow.setMaterialBrand(cell.getStringCellValue());
                     } catch (Exception e) {
                         try {
-                            orderRow.setMaterialBrand(String.valueOf(cell.getNumericCellValue()));
+                            double numericCellValue = cell.getNumericCellValue();
+                            if (numericCellValue == (int) numericCellValue) {
+                                orderRow.setMaterialBrand(String.valueOf((int) numericCellValue));
+                            } else {
+                                orderRow.setMaterialBrand(String.valueOf(numericCellValue));
+                            }
                         } catch (Exception e1) {
                             throw new OrderParserException(orderRow.getPosNumber(), "проверьте марку материала " + e1.getMessage());
                         }
@@ -367,7 +372,12 @@ public class OrderParser {
                         orderRow.setComment(cell.getStringCellValue());
                     } catch (Exception e) {
                         try {
-                            orderRow.setComment(String.valueOf(cell.getNumericCellValue()));
+                            double numericCellValue = cell.getNumericCellValue();
+                            if (numericCellValue == (int) numericCellValue) {
+                                orderRow.setComment(String.valueOf((int) numericCellValue));
+                            } else {
+                                orderRow.setComment(String.valueOf(numericCellValue));
+                            }
                         } catch (Exception e1) {
                             throw new OrderParserException(orderRow.getPosNumber(), "проверьте комментарий " + e.getMessage());
                         }
