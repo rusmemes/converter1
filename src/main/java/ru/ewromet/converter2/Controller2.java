@@ -280,14 +280,27 @@ public class Controller2 extends Controller {
         if (!file.exists()) {
             throw new RuntimeException("Не найден файл " + file.getAbsolutePath());
         }
-        String symFilePath = filePath.replace(getFileExtension(file), ".sym");
+        String startSymFile;
+        String symFilePath = startSymFile = filePath.replace(getFileExtension(file), ".sym");
         if (!new File(symFilePath).exists()) {
+            String oldSymFilePath = symFilePath;
             symFilePath = replaceLast(symFilePath, '_', '-');
-            if (!new File(symFilePath).exists()) {
-                symFilePath = filePath.replace(getFileExtension(file), ".SYM");
+            boolean found = false;
+            while (!oldSymFilePath.equals(symFilePath)) {
                 if (!new File(symFilePath).exists()) {
-                    throw new RuntimeException("Не найден файл " + symFilePath);
+                    symFilePath = filePath.replace(getFileExtension(file), ".SYM");
+                    if (!new File(symFilePath).exists()) {
+                        oldSymFilePath = symFilePath;
+                        symFilePath = replaceLast(symFilePath, '_', '-').replace(".SYM", ".sym");
+                    } else {
+                        found = true;
+                    }
+                } else {
+                    found = true;
                 }
+            }
+            if (!found) {
+                throw new RuntimeException("Не найден файл " + startSymFile);
             }
         }
 

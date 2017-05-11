@@ -546,7 +546,7 @@ public class Controller1 extends Controller {
         );
     }
 
-    private static final String FILENAME_TEMPLATE = "Nz-Np-Q_gK_O.f";
+    private static final String FILENAME_TEMPLATE = "Nz-Np-Q-gK-O.f";
 
     /**
      * Nz - номер заказа,
@@ -564,9 +564,9 @@ public class Controller1 extends Controller {
                     .replace("Nz", orderNumber)
                     .replace("Np", String.valueOf(row.getPosNumber()))
                     .replace("Q", String.valueOf(row.getCount()))
-                    .replace("_g", row.getBendsCount() > 0 ? "_g" : StringUtils.EMPTY)
+                    .replace("-g", row.getBendsCount() > 0 ? "-g" : StringUtils.EMPTY)
                     .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
-                    .replace("_O", isNotBlank(row.getColor()) ? "_O" : StringUtils.EMPTY)
+                    .replace("-O", isNotBlank(row.getColor()) ? "-O" : StringUtils.EMPTY)
                     .replace(".f", getFileExtension(sourceFile))
                     ;
         }
