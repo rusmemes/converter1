@@ -44,14 +44,13 @@ public class Utils {
     }
 
     public static List<File> searchFilesRecursively(File dir, FileFilter filter) {
-        final BiFunction<File, FileFilter, File[]> function = File::listFiles;
-        return getFileStreamRecursively(dir, filter, function).collect(Collectors.toList());
+        return getFileStreamRecursively(dir, filter).collect(Collectors.toList());
     }
 
-    private static Stream<File> getFileStreamRecursively(File file, FileFilter filter, BiFunction<File, FileFilter, File[]> function) {
-        return Stream.of(function.apply(file, filter)).flatMap(f ->
+    private static Stream<File> getFileStreamRecursively(File file, FileFilter filter) {
+        return Stream.of(file.listFiles(filter)).flatMap(f ->
                 f.isDirectory()
-                        ? getFileStreamRecursively(f, filter, function)
+                        ? getFileStreamRecursively(f, filter)
                         : Stream.of(f)
         );
     }
