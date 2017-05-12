@@ -391,7 +391,7 @@ public class Controller2 extends Controller {
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='166']
      */
     private int injectSizeY(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(
+        return (int) Math.ceil(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
                         containsIgnoreCase(Group::getName, "Геометрия"),
@@ -404,7 +404,7 @@ public class Controller2 extends Controller {
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='165']
      */
     private int injectSizeX(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(
+        return (int) Math.ceil(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
                         containsIgnoreCase(Group::getName, "Геометрия"),
@@ -417,7 +417,7 @@ public class Controller2 extends Controller {
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='163']
      */
     private int injectAreaWithInternalContours(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(
+        return (int) Math.round(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
                         containsIgnoreCase(Group::getName, "Геометрия"),
@@ -430,7 +430,7 @@ public class Controller2 extends Controller {
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='162']
      */
     private int injectActualArea(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.floor(
+        return (int) Math.round(
                 getGroupAttrValueAsDouble(
                         radanCompoundDocument,
                         containsIgnoreCase(Group::getName, "Геометрия"),
