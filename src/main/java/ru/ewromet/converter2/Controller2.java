@@ -463,7 +463,7 @@ public class Controller2 extends Controller {
                 containsIgnoreCase(Group::getName, "Геометрия"),
                 equalsBy(Attr::getNum, "168")
         );
-        return (int) Math.floor(asDouble / 50) * 50;
+        return (int) Math.ceil(asDouble / 50) * 50;
     }
 
     private double getGroupAttrValueAsDouble(RadanCompoundDocument radanCompoundDocument, Predicate<Group> groupPredicate, Predicate<Attr> attrPredicate) {
