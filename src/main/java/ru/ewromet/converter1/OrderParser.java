@@ -73,6 +73,9 @@ public class OrderParser {
                 SHEET:
                 for (int j = sheet.getFirstRowNum(); j < sheet.getLastRowNum(); j++) {
                     final Row row = sheet.getRow(j);
+                    if (row == null) {
+                        continue;
+                    }
                     for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
                         Cell cell = row.getCell(k);
                         if (cell != null) {
