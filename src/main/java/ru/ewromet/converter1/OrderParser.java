@@ -71,7 +71,7 @@ public class OrderParser {
             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
                 Sheet sheet = workbook.getSheetAt(i);
                 SHEET:
-                for (int j = sheet.getFirstRowNum(); j < sheet.getLastRowNum(); j++) {
+                for (int j = sheet.getFirstRowNum(); j <= sheet.getLastRowNum(); j++) {
                     final Row row = sheet.getRow(j);
                     if (row == null) {
                         continue;
@@ -120,7 +120,7 @@ public class OrderParser {
 
                 Set<String> addedDetailNames = new HashSet<>();
 
-                for (int l = tableHeaderRowNum + 1; l < sheet.getLastRowNum(); l++) {
+                for (int l = tableHeaderRowNum + 1; l <= sheet.getLastRowNum(); l++) {
                     final Row row = sheet.getRow(l);
                     Cell cell = row.getCell(firstCellNum);
                     if (cell == null) {
