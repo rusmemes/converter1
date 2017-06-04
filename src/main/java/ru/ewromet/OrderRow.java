@@ -1,36 +1,10 @@
 package ru.ewromet;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class OrderRow extends FileRow {
-
-    public static final Map<String, String> MATERIAL_LABELS = Collections.unmodifiableMap(new HashMap<String, String>() {{
-        put("сталь_хк", "Mild Steel");
-        put("сталь х/к", "Mild Steel");
-        put("сталь_гк", "Mild Steel");
-        put("сталь г/к", "Mild Steel");
-        put("сталь_рифл", "Mild Steel");
-        put("оцинковка", "Zintec");
-        put("нерж_мат", "Stainless Steel");
-        put("нерж.мат", "Stainless Steel");
-        put("нерж_рифл", "Stainless Steel");
-        put("нерж_зерк", "Stainless Steel Foil");
-        put("нерж.зерк +пл", "Stainless Steel Foil");
-        put("нерж.зерк", "Stainless Steel Foil");
-        put("нерж. зеркало", "Stainless Steel Foil");
-        put("нерж_шлиф", "Stainless Steel Foil");
-        put("алюминий", "Aluminium");
-        put("алюм_рифл", "Aluminium");
-        put("латунь", "Brass");
-        put("медь", "Copper");
-        put("иное", "");
-    }});
 
     private final SimpleStringProperty detailName = new SimpleStringProperty();
     private final SimpleStringProperty detailResultName = new SimpleStringProperty();

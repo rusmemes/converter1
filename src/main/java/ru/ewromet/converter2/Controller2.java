@@ -27,7 +27,6 @@ import javafx.stage.FileChooser;
 import ru.ewromet.Controller;
 import ru.ewromet.OrderRow;
 import ru.ewromet.OrderRowsFileUtil;
-import ru.ewromet.Utils;
 import ru.ewromet.converter1.Controller1;
 import ru.ewromet.converter2.parser.Attr;
 import ru.ewromet.converter2.parser.Group;
@@ -41,11 +40,9 @@ import ru.ewromet.converter2.parser.SymFileParser;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static ru.ewromet.Preferences.Key.LAST_PATH;
 import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 import static ru.ewromet.Utils.containsIgnoreCase;
 import static ru.ewromet.Utils.equalsBy;
@@ -118,35 +115,13 @@ public class Controller2 extends Controller {
     public void changePathAction(TextField field) {
         logArea.getItems().clear();
 
-        final FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(
+        chooseFileAndAccept(
                 new FileChooser.ExtensionFilter(
                         "Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"
-                )
+                ),
+                "Выбор файла",
+                file -> field.setText(file.getAbsolutePath())
         );
-        fileChooser.setTitle("Выбор файла");
-        File dirFromConfig = new File((String) preferences.get(LAST_PATH));
-        while (!dirFromConfig.exists()) {
-            dirFromConfig = dirFromConfig.getParentFile();
-        }
-        File dir2Open = dirFromConfig;
-        fileChooser.setInitialDirectory(dir2Open);
-
-        File file = fileChooser.showOpenDialog(stage);
-        if (file != null) {
-            try {
-                field.setText(file.getAbsolutePath());
-            } catch (Exception e) {
-                logError(e.getMessage());
-            }
-            try {
-                preferences.update(LAST_PATH, file.getParent());
-            } catch (IOException e) {
-                logError("Ошибка записи настроек " + e.getMessage());
-            }
-        } else {
-            logMessage("Файл не был выбран");
-        }
     }
 
     private void runCalc() {

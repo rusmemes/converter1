@@ -1,18 +1,20 @@
 package ru.ewromet.converter1;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,16 +54,29 @@ import ru.ewromet.OrderRow;
 import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter2.Controller2;
 
+import static java.nio.charset.Charset.forName;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static ru.ewromet.Utils.getFileExtension;
-import static ru.ewromet.OrderRow.MATERIAL_LABELS;
-import static ru.ewromet.Preferences.Key.LAST_PATH;
+import static org.apache.commons.lang3.StringUtils.split;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.apache.commons.lang3.tuple.Pair.of;
 import static ru.ewromet.Preferences.Key.RENAME_FILES;
+import static ru.ewromet.Preferences.TEMP_DIR_ABS_PATH;
+import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.Utils.searchFilesRecursively;
 
 public class Controller1 extends Controller {
+
+    private static Map<Pair<String, String>, String> MATERIALS;
+    private static Map<String, String> MATERIALS2DIR;
+    private static Map<String, String> BRANDS2DIR;
+
+    private static File materialsFile = Paths.get(TEMP_DIR_ABS_PATH, "materials.csv").toFile();
+    static {
+        initMaterials();
+    }
 
     private static final String ALIGNMENT_BASELINE_CENTER = "-fx-alignment: BASELINE-CENTER;";
     private static final String ALIGNMENT_CENTER_LEFT = "-fx-alignment: CENTER-LEFT;";
@@ -168,8 +183,113 @@ public class Controller1 extends Controller {
         continueWork.setOnAction(event -> openConverter2Window());
         continueWork.setAccelerator(KeyCombination.keyCombination("F2"));
 
-        menu.getItems().addAll(newOrderItem, saveItem, renameFilesItem, continueWork);
+        MenuItem materialsItem = new MenuItem();
+        materialsItem.setText("Таблица соответствий материалов");
+        materialsItem.setOnAction(event -> {
+            chooseFileAndAccept(
+                    new FileChooser.ExtensionFilter("Файлы с расширением '.csv'", "*.csv"),
+                    "Соответствия материалов",
+                    csvFile -> {
+                        FileUtils.copyFile(csvFile, materialsFile);
+                        initMaterials();
+                    }
+            );
+        });
+        materialsItem.setAccelerator(new KeyCodeCombination(KeyCode.M, KeyCombination.CONTROL_DOWN));
+
+        menu.getItems().addAll(newOrderItem, saveItem, renameFilesItem, continueWork, materialsItem);
         menuBar.getMenus().add(menu);
+    }
+
+    public static Map<String, String> getMATERIALS2DIR() {
+        return MATERIALS2DIR;
+    }
+
+    public static Map<String, String> getBRANDS2DIR() {
+        return BRANDS2DIR;
+    }
+
+    private static void initMaterials() {
+        if (materialsFile.exists()) {
+            try {
+                List<String> csvLines = IOUtils.readLines(new FileInputStream(materialsFile), forName("windows-1251"));
+                Map<Pair<String, String>, String> map = new HashMap<>();
+                for (String csvLine : csvLines) {
+                    String[] split = split(trimToNull(csvLine), ';');
+                    if (ArrayUtils.isEmpty(split) || split.length != 3) {
+                        throw new RuntimeException(Arrays.toString(split));
+                    }
+                    map.put(
+                            of(
+                                    trimToEmpty(split[0]),
+                                    trimToEmpty(split[1])
+                            ),
+                            trimToEmpty(split[2])
+                    );
+                }
+                MATERIALS = Collections.unmodifiableMap(map);
+                setOtherMaterialMaps();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        MATERIALS = getMaterialsMap();
+        setOtherMaterialMaps();
+    }
+
+    private static void setOtherMaterialMaps() {
+        MATERIALS2DIR = new HashMap<>();
+        BRANDS2DIR = new HashMap<>();
+        MATERIALS.forEach((key, value) -> {
+            MATERIALS2DIR.put(key.getLeft(), value);
+            BRANDS2DIR.put(key.getRight(), value);
+        });
+        MATERIALS2DIR = Collections.unmodifiableMap(MATERIALS2DIR);
+        BRANDS2DIR = Collections.unmodifiableMap(BRANDS2DIR);
+    }
+
+    private static Map<Pair<String, String>, String> getMaterialsMap() {
+        return Collections.unmodifiableMap(new HashMap<Pair<String, String>, String>() {{
+            put(of("сталь х/к", "ст08"), "Mild Steel hk");
+            put(of("сталь х/к", "иное"), "Mild Steel hk other");
+            put(of("сталь г/к", "ст3"), "Mild Steel gk");
+            put(of("сталь г/к", "иное"), "Mild Steel gk other");
+            put(of("оцинковка", "ст08"), "Zintec");
+            put(of("оцинковка", "иное"), "Zintec other");
+            put(of("нерж. мат", "430"), "Stainless Steel 430");
+            put(of("нерж. мат", "304"), "Stainless Steel 304");
+            put(of("нерж. мат", "201"), "Stainless Steel 201");
+            put(of("нерж. мат", "321 (12Х18Н10Т)"), "Stainless Steel 321");
+            put(of("нерж. мат", "316 (10Х17Н13М3)"), "Stainless Steel 316");
+            put(of("нерж. мат", "439"), "Stainless Steel 439");
+            put(of("нерж. мат", "иное"), "Stainless Steel other");
+            put(of("нерж. зерк", "430"), "Stainless Steel Foil 430");
+            put(of("нерж. зерк", "304"), "Stainless Steel Foil 304");
+            put(of("нерж. зерк", "иное"), "Stainless Steel Foil other");
+            put(of("нерж. шлиф", "430"), "Stainless Steel Shlif 430");
+            put(of("нерж. шлиф", "304"), "Stainless Steel Shlif 304");
+            put(of("нерж. шлиф", "иное"), "Stainless Steel Shlif other");
+            put(of("алюминий", "АМГ2М"), "Aluminium AMG2M");
+            put(of("алюминий", "АМГ3М"), "Aluminium AMG3M");
+            put(of("алюминий", "АМГ2НР рифл"), "Aluminium AMG2NR ribbed");
+            put(of("алюминий", "АМГ6"), "Aluminium AMG6");
+            put(of("алюминий", "ВД1АНР рифл"), "Aluminium VD1ANR ribbed");
+            put(of("алюминий", "Д16АТ"), "Aluminium D16AT");
+            put(of("алюминий", "Д16АМ"), "Aluminium D16AM");
+            put(of("алюминий", "А5м"), "Aluminium A5m");
+            put(of("алюминий", "А5Н"), "Aluminium A5n");
+            put(of("алюминий", "АМЦМ"), "Aluminium AMCM");
+            put(of("алюминий", "АМЦН2"), "Aluminium AMCN2");
+            put(of("алюминий", "иное"), "Aluminium other");
+            put(of("латунь", "Л63м"), "Brass L63m");
+            put(of("латунь", "Л63т"), "Brass L63t");
+            put(of("латунь", "иное"), "Brass other");
+            put(of("медь", "М1м"), "Copper M1m");
+            put(of("медь", "М1т"), "Copper M1t");
+            put(of("медь", "иное"), "Copper other");
+            put(of("иное", "иное"), "Other");
+        }});
     }
 
     private void openConverter2Window() {
@@ -272,14 +392,15 @@ public class Controller1 extends Controller {
 
         TableColumn<OrderRow, String> materialColumn = ColumnFactory.createColumn(
                 "Материал", 50, "originalMaterial",
-                ChoiceBoxTableCell.forTableColumn(MATERIAL_LABELS.keySet().toArray(new String[MATERIAL_LABELS.size()])),
+                ChoiceBoxTableCell.forTableColumn(MATERIALS2DIR.keySet().toArray(new String[MATERIALS2DIR.size()])),
                 OrderRow::setOriginalMaterial
         );
         materialColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<OrderRow, String> materialBrandColumn = ColumnFactory.createColumn(
                 "Марка материала", 50, "materialBrand",
-                column -> new TooltipTextFieldTableCell<>(), OrderRow::setMaterialBrand
+                ChoiceBoxTableCell.forTableColumn(BRANDS2DIR.keySet().toArray(new String[BRANDS2DIR.size()])),
+                OrderRow::setMaterialBrand
         );
         materialBrandColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
@@ -356,43 +477,25 @@ public class Controller1 extends Controller {
     public void newOrderMenuItemAction() {
         progressBar.setProgress(0);
         logArea.getItems().clear();
-        final FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(
+
+        chooseFileAndAccept(
                 new FileChooser.ExtensionFilter(
                         "Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"
-                )
+                ),
+                "Укажите файл с заявкой",
+                file -> {
+                    final Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parseResult = parser.parse(file, this);
+                    orderTable.setItems(parseResult.getLeft());
+                    filesTable.setItems(parseResult.getRight());
+                    refreshTable(filesTable, FILE_ROW_COMPARATOR);
+                    refreshTable(orderTable, ORDER_ROW_COMPARATOR);
+                    orderPathField.setText(file.getAbsolutePath());
+                    selectedFile = file;
+                    orderNumberField.setText(file.getParentFile().getName());
+                    saveItem.setDisable(false);
+                    progressBar.setProgress(0.5);
+                }
         );
-        fileChooser.setTitle("Укажите файл с заявкой");
-        File dirFromConfig = new File((String) preferences.get(LAST_PATH));
-        while (!dirFromConfig.exists()) {
-            dirFromConfig = dirFromConfig.getParentFile();
-        }
-        File dir2Open = dirFromConfig;
-        fileChooser.setInitialDirectory(dir2Open);
-        File file = fileChooser.showOpenDialog(stage);
-        if (file != null) {
-            try {
-                final Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parseResult = parser.parse(file, this);
-                orderTable.setItems(parseResult.getLeft());
-                filesTable.setItems(parseResult.getRight());
-                refreshTable(filesTable, FILE_ROW_COMPARATOR);
-                refreshTable(orderTable, ORDER_ROW_COMPARATOR);
-                orderPathField.setText(file.getAbsolutePath());
-                selectedFile = file;
-                orderNumberField.setText(file.getParentFile().getName());
-                saveItem.setDisable(false);
-                progressBar.setProgress(0.5);
-            } catch (Exception e) {
-                logError(e.getMessage());
-            }
-            try {
-                preferences.update(LAST_PATH, file.getParent());
-            } catch (IOException e) {
-                logError("Ошибка записи настроек " + e.getMessage());
-            }
-        } else {
-            logMessage("Файл не был выбран");
-        }
     }
 
     private void saveAction() {
@@ -433,7 +536,10 @@ public class Controller1 extends Controller {
                 }
 
                 final File sourceFile = Paths.get(sourceFilesDir.getAbsolutePath(), orderRow.getFilePath()).toFile();
-                final String materialLabel = OrderRow.MATERIAL_LABELS.get(orderRow.getOriginalMaterial());
+                final String materialLabel = MATERIALS.get(Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()));
+                if (materialLabel == null) {
+                    throw new Exception("Не найдено соответствие названия папки паре материал -> брэнд: " + Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()));
+                }
                 final String dirName = materialLabel + StringUtils.SPACE + orderRow.getThickness() + "mm";
                 final String destFileName = getDestFileName(orderNumberFinal, sourceFile, orderRow);
                 final File destFile = Paths.get(orderAbsDir.getAbsolutePath(), dirName, destFileName).toFile();

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static ru.ewromet.Preferences.TEMP_DIR_ABS_PATH;
 
 public class OrderRowsFileUtil {
 
@@ -29,7 +30,8 @@ public class OrderRowsFileUtil {
         if (CollectionUtils.isEmpty(rowList) || isBlank(orderNumber)) {
             return;
         }
-        final File file = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), orderNumber + EXTENSION).toFile();
+
+        final File file = Paths.get(TEMP_DIR_ABS_PATH, orderNumber + EXTENSION).toFile();
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(file))))) {
             for (OrderRow orderRow : rowList) {
                 if (isNotBlank(orderRow.getFilePath())) {
@@ -55,7 +57,7 @@ public class OrderRowsFileUtil {
     }
 
     public List<OrderRow> restoreOrderRows(Integer orderNumber) throws IOException {
-        final File file = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), orderNumber + EXTENSION).toFile();
+        final File file = Paths.get(TEMP_DIR_ABS_PATH, orderNumber + EXTENSION).toFile();
         List<OrderRow> list = new ArrayList<>();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))))) {
             String line;

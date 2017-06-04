@@ -1,10 +1,16 @@
 package ru.ewromet;
 
+import java.io.File;
+import java.io.IOException;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import static ru.ewromet.Preferences.Key.LAST_PATH;
 
 public abstract class Controller implements Logger {
 
@@ -40,5 +46,40 @@ public abstract class Controller implements Logger {
 
     public void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+    public void chooseFileAndAccept(FileChooser.ExtensionFilter extensionFilter, String title, ExtendedConsumer<File> fileConsumer) {
+
+        final FileChooser fileChooser = new FileChooser();
+        if (extensionFilter != null) {
+            fileChooser.getExtensionFilters().add(extensionFilter);
+        }
+        if (title != null) {
+            fileChooser.setTitle(title);
+        }
+
+        File dirFromConfig = new File((String) preferences.get(LAST_PATH));
+        while (!dirFromConfig.exists()) {
+            dirFromConfig = dirFromConfig.getParentFile();
+        }
+
+        File dir2Open = dirFromConfig;
+        fileChooser.setInitialDirectory(dir2Open);
+        File file = fileChooser.showOpenDialog(stage);
+
+        if (file != null) {
+            try {
+                fileConsumer.accept(file);
+            } catch (Exception e) {
+                logError(e.getMessage());
+            }
+            try {
+                preferences.update(LAST_PATH, file.getParent());
+            } catch (IOException e) {
+                logError("Ошибка записи настроек " + e.getMessage());
+            }
+        } else {
+            logMessage("Файл не был выбран");
+        }
     }
 }

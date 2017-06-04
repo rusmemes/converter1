@@ -27,7 +27,6 @@ import ru.ewromet.OrderRow;
 import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static ru.ewromet.OrderRow.MATERIAL_LABELS;
 import static ru.ewromet.Utils.getWorkbook;
 import static ru.ewromet.Utils.searchFilesRecursively;
 
@@ -275,27 +274,32 @@ public class OrderParser {
                     } catch (Exception e) {
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте материал " + e.getMessage());
                     }
-                    if (!MATERIAL_LABELS.containsKey(value)) {
-                        throw new OrderParserException(orderRow.getPosNumber(), "некорректный материал - '" + value + "', допустимые варианты " + MATERIAL_LABELS.keySet());
+                    if (!Controller1.getMATERIALS2DIR().containsKey(value)) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "некорректный материал - '" + value + "', допустимые варианты " + Controller1.getMATERIALS2DIR().keySet());
                     }
                     orderRow.setMaterial(value);
                     orderRow.setOriginalMaterial(value);
                     break;
                 case 5:
+                    String brand;
                     try {
-                        orderRow.setMaterialBrand(cell.getStringCellValue());
+                        brand = cell.getStringCellValue();
                     } catch (Exception e) {
                         try {
                             double numericCellValue = cell.getNumericCellValue();
                             if (numericCellValue == (int) numericCellValue) {
-                                orderRow.setMaterialBrand(String.valueOf((int) numericCellValue));
+                                brand = String.valueOf((int) numericCellValue);
                             } else {
-                                orderRow.setMaterialBrand(String.valueOf(numericCellValue));
+                                brand = String.valueOf(numericCellValue);
                             }
                         } catch (Exception e1) {
                             throw new OrderParserException(orderRow.getPosNumber(), "проверьте марку материала " + e1.getMessage());
                         }
                     }
+                    if (!Controller1.getBRANDS2DIR().containsKey(brand)) {
+                        throw new OrderParserException(orderRow.getPosNumber(), "некорректная марка материала - '" + brand + "', допустимые варианты " + Controller1.getBRANDS2DIR().keySet());
+                    }
+                    orderRow.setMaterialBrand(brand);
                     break;
                 case 6:
                     try {

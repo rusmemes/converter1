@@ -15,7 +15,8 @@ import java.util.Properties;
 
 public class Preferences {
 
-    private static final File file = Paths.get(new File(System.getProperty("user.home")).getAbsolutePath(), "converter1.ini").toFile();
+    public static final String TEMP_DIR_ABS_PATH = new File("C:\\Temp").getAbsolutePath();
+    private static final File file = Paths.get(TEMP_DIR_ABS_PATH, "converter1.ini").toFile();
 
     public enum Key {
         LAST_PATH(System.getProperty("user.home")), RENAME_FILES(true), SPECIFICATION_TEMPLATE_PATH("");
