@@ -15,8 +15,15 @@ import java.util.Properties;
 
 public class Preferences {
 
-    public static final String TEMP_DIR_ABS_PATH = new File("C:\\Temp").getAbsolutePath();
-    private static final File file = Paths.get(TEMP_DIR_ABS_PATH, "converter1.ini").toFile();
+    public static final String CONVERTER_DIR_ABS_PATH = Paths.get(System.getProperty("user.home"), "converter").toString();
+    private static final File file = Paths.get(CONVERTER_DIR_ABS_PATH, "converter1.ini").toFile();
+
+    static {
+        File dir = new File(CONVERTER_DIR_ABS_PATH);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+    }
 
     public enum Key {
         LAST_PATH(System.getProperty("user.home")), RENAME_FILES(true), SPECIFICATION_TEMPLATE_PATH("");

@@ -62,8 +62,8 @@ import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.apache.commons.lang3.tuple.Pair.of;
+import static ru.ewromet.Preferences.CONVERTER_DIR_ABS_PATH;
 import static ru.ewromet.Preferences.Key.RENAME_FILES;
-import static ru.ewromet.Preferences.TEMP_DIR_ABS_PATH;
 import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.Utils.searchFilesRecursively;
 
@@ -73,7 +73,7 @@ public class Controller1 extends Controller {
     private static Map<String, String> MATERIALS2DIR;
     private static Map<String, String> BRANDS2DIR;
 
-    private static File materialsFile = Paths.get(TEMP_DIR_ABS_PATH, "materials.csv").toFile();
+    private static File materialsFile = Paths.get(CONVERTER_DIR_ABS_PATH, "materials.csv").toFile();
     static {
         initMaterials();
     }
