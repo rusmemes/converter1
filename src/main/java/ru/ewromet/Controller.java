@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -48,9 +49,40 @@ public abstract class Controller implements Logger {
         this.stage = stage;
     }
 
+    public void chooseDirAndAccept(String title, ExtendedConsumer<File> fileConsumer) {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        if (title != null) {
+            directoryChooser.setTitle(title);
+        }
+
+        File dirFromConfig = new File((String) preferences.get(LAST_PATH));
+        while (!dirFromConfig.exists()) {
+            dirFromConfig = dirFromConfig.getParentFile();
+        }
+
+        directoryChooser.setInitialDirectory(dirFromConfig);
+        File dir = directoryChooser.showDialog(stage);
+
+        if (dir != null) {
+            try {
+                fileConsumer.accept(dir);
+            } catch (Exception e) {
+                logError(e.getMessage());
+            }
+            try {
+                preferences.update(LAST_PATH, dir.getParent());
+            } catch (IOException e) {
+                logError("Ошибка записи настроек " + e.getMessage());
+            }
+        } else {
+            logMessage("Файл не был выбран");
+        }
+    }
+
     public void chooseFileAndAccept(FileChooser.ExtensionFilter extensionFilter, String title, ExtendedConsumer<File> fileConsumer) {
 
         final FileChooser fileChooser = new FileChooser();
+
         if (extensionFilter != null) {
             fileChooser.getExtensionFilters().add(extensionFilter);
         }
@@ -63,8 +95,7 @@ public abstract class Controller implements Logger {
             dirFromConfig = dirFromConfig.getParentFile();
         }
 
-        File dir2Open = dirFromConfig;
-        fileChooser.setInitialDirectory(dir2Open);
+        fileChooser.setInitialDirectory(dirFromConfig);
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {

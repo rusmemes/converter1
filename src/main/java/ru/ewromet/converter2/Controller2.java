@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -21,9 +22,13 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import ru.ewromet.Controller;
 import ru.ewromet.OrderRow;
 import ru.ewromet.OrderRowsFileUtil;
@@ -36,6 +41,7 @@ import ru.ewromet.converter2.parser.QuotationInfo;
 import ru.ewromet.converter2.parser.RadanAttributes;
 import ru.ewromet.converter2.parser.RadanCompoundDocument;
 import ru.ewromet.converter2.parser.SymFileParser;
+import ru.ewromet.converter3.Controller3;
 
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
@@ -68,6 +74,12 @@ public class Controller2 extends Controller {
     private TextField templateField;
 
     @FXML
+    private Button compoundsButton;
+
+    @FXML
+    private TextField compoundsField;
+
+    @FXML
     public Button calcButton;
 
     public void setController1(Controller1 controller1) {
@@ -76,6 +88,7 @@ public class Controller2 extends Controller {
         File orderFile = controller1.getSelectedFile();
         if (orderFile != null) {
             orderFilePathField.setText(orderFile.getAbsolutePath());
+            compoundsField.setText(Paths.get(orderFile.getParent(), "nests").toString());
         }
     }
 
@@ -86,7 +99,22 @@ public class Controller2 extends Controller {
             templateField.setText(templatePath);
         }
 
-        orderFilePathButton.setOnAction(event -> changePathAction(orderFilePathField));
+        orderFilePathButton.setOnAction(event -> {
+            changePathAction(orderFilePathField);
+            if (StringUtils.isBlank(compoundsField.getText())) {
+                compoundsField.setText(Paths.get(new File(orderFilePathField.getText()).getParent(), "nests").toString());
+            }
+        });
+
+        compoundsButton.setOnAction(event -> {
+            logArea.getItems().clear();
+
+            chooseDirAndAccept(
+                    "Директория с файлами компановок",
+                    file -> compoundsField.setText(file.getAbsolutePath())
+            );
+        });
+
         templateButton.setOnAction(event -> {
             changePathAction(templateField);
             String text = templateField.getText();
@@ -216,6 +244,7 @@ public class Controller2 extends Controller {
             }
         }
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
+        openConverter3Window();
     }
 
     private static void setValueToCell(Row row, int cellIndex, Object value) {
@@ -269,9 +298,11 @@ public class Controller2 extends Controller {
                         symFilePath = replaceLast(symFilePath, '_', '-').replace(".SYM", ".sym");
                     } else {
                         found = true;
+                        break;
                     }
                 } else {
                     found = true;
+                    break;
                 }
             }
             if (!found) {
@@ -454,5 +485,21 @@ public class Controller2 extends Controller {
                 .mapToDouble(Double::valueOf)
                 .findFirst()
                 .getAsDouble();
+    }
+
+    private void openConverter3Window() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter3.fxml"));
+            Parent root = loader.load();
+            Controller3 controller = loader.getController();
+            controller.setController1(this);
+            Stage stage = new Stage();
+            controller.setStage(stage);
+            stage.setTitle("Информация по файлам компоновок");
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception e) {
+            logError("Ошибка при открытии окна " + e.getMessage());
+        }
     }
 }
