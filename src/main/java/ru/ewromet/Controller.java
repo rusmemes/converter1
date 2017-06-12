@@ -15,6 +15,9 @@ import static ru.ewromet.Preferences.Key.LAST_PATH;
 
 public abstract class Controller implements Logger {
 
+    protected static final String ALIGNMENT_BASELINE_CENTER = "-fx-alignment: BASELINE-CENTER;";
+    protected static final String ALIGNMENT_CENTER_LEFT = "-fx-alignment: CENTER-LEFT;";
+
     protected static Preferences preferences;
 
     static {

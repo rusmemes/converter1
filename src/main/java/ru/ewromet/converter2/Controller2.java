@@ -92,6 +92,10 @@ public class Controller2 extends Controller {
         }
     }
 
+    public TextField getCompoundsField() {
+        return compoundsField;
+    }
+
     @FXML
     private void initialize() {
         String templatePath = preferences.get(SPECIFICATION_TEMPLATE_PATH);
@@ -492,14 +496,15 @@ public class Controller2 extends Controller {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter3.fxml"));
             Parent root = loader.load();
             Controller3 controller = loader.getController();
-            controller.setController1(this);
+            controller.setCompoundsPath(compoundsField.getText());
             Stage stage = new Stage();
+            stage.setWidth(1200);
             controller.setStage(stage);
             stage.setTitle("Информация по файлам компоновок");
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) {
-            logError("Ошибка при открытии окна " + e.getMessage());
+            logError("Ошибка при открытии окна: " + e.getMessage());
         }
     }
 }

@@ -78,9 +78,6 @@ public class Controller1 extends Controller {
         initMaterials();
     }
 
-    private static final String ALIGNMENT_BASELINE_CENTER = "-fx-alignment: BASELINE-CENTER;";
-    private static final String ALIGNMENT_CENTER_LEFT = "-fx-alignment: CENTER-LEFT;";
-
     private File selectedFile;
     private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
     protected OrderParser parser = new OrderParser();
@@ -310,7 +307,7 @@ public class Controller1 extends Controller {
             stage.show();
             controller.setFocus();
         } catch (Exception e) {
-            logError("Ошибка при открытии окна " + e.getMessage());
+            logError("Ошибка при открытии окна: " + e.getMessage());
         }
     }
 
