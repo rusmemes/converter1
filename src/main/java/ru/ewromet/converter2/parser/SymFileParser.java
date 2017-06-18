@@ -41,6 +41,7 @@ public class SymFileParser {
         private static final String ATTR_TAG = "Attr";
         private static final String VALID_TAG = "Valid";
         private static final String MC_TAG = "MC";
+        private static final String SYMBOL_TAG = "Symbol";
         private static final String QUOTATION_INFO_TAG = "QuotationInfo";
         private static final String INFO_TAG = "Info";
         private static final String TOOL_TAG = "Tool";
@@ -144,6 +145,18 @@ public class SymFileParser {
                     valid.setMax(attributes.getValue(ATTRIBUTE_MAX));
                     valid.setMin(attributes.getValue(ATTRIBUTE_MIN));
                     valid.setPerm(attributes.getValue(ATTRIBUTE_PERM));
+                    break;
+                case SYMBOL_TAG:
+                    List<Symbol> symbols = currentInfo.getSymbols();
+                    if (symbols == null) {
+                        symbols = new ArrayList<>();
+                        currentInfo.setSymbols(symbols);
+                    }
+
+                    Symbol symbol = new Symbol();
+                    symbols.add(symbol);
+
+                    symbol.setName(attributes.getValue(ATTRIBUTE_NAME));
                     break;
                 case MC_TAG:
                     List<MC> mcs = null;

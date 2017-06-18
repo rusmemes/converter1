@@ -43,9 +43,10 @@ public class OrderRowsFileUtil {
     }
 
     private String createCsvLine(OrderRow orderRow) {
-        return String.format("%d;%s;%d;%s;%s;%s;%s;%d;%s",
+        return String.format("%d;%s;%s;%d;%s;%s;%s;%s;%d;%s",
                 orderRow.getPosNumber(),
                 orderRow.getDetailName(),
+                orderRow.getDetailResultName(),
                 orderRow.getCount(),
                 orderRow.getOriginalMaterial(),
                 orderRow.getMaterialBrand(),
@@ -70,16 +71,18 @@ public class OrderRowsFileUtil {
 
     private OrderRow createOrderRowFromCsvLine(String line) {
         String[] split = line.split(";");
+        int i = 0;
         OrderRow orderRow = new OrderRow();
-        orderRow.setPosNumber(Integer.parseUnsignedInt(split[0]));
-        orderRow.setDetailName(split[1]);
-        orderRow.setCount(Integer.parseUnsignedInt(split[2]));
-        orderRow.setOriginalMaterial(split[3]);
-        orderRow.setMaterialBrand(split[4]);
-        orderRow.setThickness(Double.parseDouble(split[5]));
-        orderRow.setColor(StringUtils.trimToNull(split[6]));
-        orderRow.setBendsCount(Integer.parseUnsignedInt(split[7]));
-        orderRow.setFilePath(split[8]);
+        orderRow.setPosNumber(Integer.parseUnsignedInt(split[i++]));
+        orderRow.setDetailName(split[i++]);
+        orderRow.setDetailResultName(split[i++]);
+        orderRow.setCount(Integer.parseUnsignedInt(split[i++]));
+        orderRow.setOriginalMaterial(split[i++]);
+        orderRow.setMaterialBrand(split[i++]);
+        orderRow.setThickness(Double.parseDouble(split[i++]));
+        orderRow.setColor(StringUtils.trimToNull(split[i++]));
+        orderRow.setBendsCount(Integer.parseUnsignedInt(split[i++]));
+        orderRow.setFilePath(split[i++]);
         return orderRow;
     }
 }

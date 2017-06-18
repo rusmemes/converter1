@@ -9,6 +9,7 @@ public class Compound {
     private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();
     private final SimpleStringProperty name = new SimpleStringProperty();
     private final SimpleStringProperty material = new SimpleStringProperty();
+    private final SimpleStringProperty materialBrand = new SimpleStringProperty();
     private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();
     private final SimpleIntegerProperty n = new SimpleIntegerProperty();
 
@@ -44,6 +45,14 @@ public class Compound {
 
     public void setMaterial(String material) {
         this.material.set(material);
+    }
+
+    public String getMaterialBrand() {
+        return materialBrand.get();
+    }
+
+    public void setMaterialBrand(String materialBrand) {
+        this.materialBrand.set(materialBrand);
     }
 
     public double getThickness() {

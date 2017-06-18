@@ -20,6 +20,8 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import ru.ewromet.Controller;
+import ru.ewromet.OrderRow;
+import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter1.ColumnFactory;
 import ru.ewromet.converter1.TooltipTextFieldTableCell;
 import ru.ewromet.converter2.parser.Attr;
@@ -64,11 +66,11 @@ public class Controller3 extends Controller {
         initializeTable2();
     }
 
-    public void fillTables() {
-        //        fillTable1();
+    public void fillTables() throws Exception {
+        fillTable1();
     }
 
-    private void fillTable1() {
+    private void fillTable1() throws Exception {
         List<RadanCompoundDocument> radanCompoundDocuments = Arrays.stream(files)
                 .map(file -> {
                     try {
@@ -78,6 +80,17 @@ public class Controller3 extends Controller {
                     }
                 })
                 .collect(Collectors.toList());
+
+        String projectDirName = files[0].getParentFile().getParentFile().getName();
+
+        int orderNumber;
+        try {
+            orderNumber = Integer.parseUnsignedInt(projectDirName);
+        } catch (NumberFormatException e) {
+            throw new Exception("Ошибка при попытке получить номер заказа по названию папки заказа " + projectDirName, e);
+        }
+
+        List<OrderRow> orderRows = new OrderRowsFileUtil().restoreOrderRows(orderNumber);
 
         for (int i = 0, filesLength = files.length; i < filesLength; i++) {
             Compound compound = new Compound();
@@ -102,6 +115,8 @@ public class Controller3 extends Controller {
             compound.setSk(compound.getXr() * compound.getYr());
             compound.setSo(compound.getN() * compound.getSk());
 
+            compound.setMaterialBrand(getBrand(orderRows, quotationInfo));
+
             table1.getItems().add(compound);
         }
     }
@@ -110,7 +125,7 @@ public class Controller3 extends Controller {
         String material = compound.getMaterial();
         double thickness = compound.getThickness();
 
-        if (isSteelHkOrZintec(material)) {
+        if (isMildSteelHkOrZintec(material)) {
 
             // Если Xmin > или = 80% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
@@ -207,7 +222,7 @@ public class Controller3 extends Controller {
                 && !StringUtils.containsIgnoreCase(material, "shlif");
     }
 
-    private static boolean isSteelHkOrZintec(String material) {
+    private static boolean isMildSteelHkOrZintec(String material) {
         return isZintec(material) || isMildSteelHk(material);
     }
 
@@ -244,6 +259,26 @@ public class Controller3 extends Controller {
                 .filter(equalsBy(Info::getNum, infoNum))
                 .map(Info::getValue)
                 .findFirst().get();
+    }
+
+    private static String getBrand(List<OrderRow> orderRows, QuotationInfo quotationInfo) throws Exception {
+
+        String name = ofNullable(quotationInfo)
+                .map(QuotationInfo::getInfos)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(equalsBy(Info::getNum, "4"))
+                .map(Info::getSymbols)
+                .flatMap(List::stream)
+                .findFirst()
+                .get().getName();
+
+        for (OrderRow orderRow : orderRows) {
+            if (StringUtils.startsWithIgnoreCase(orderRow.getDetailResultName(), name)) {
+                return orderRow.getMaterialBrand();
+            }
+        }
+        throw new Exception("Не найдена марка материала для " + name);
     }
 
     private void initializeTable1() {

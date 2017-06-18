@@ -8,6 +8,7 @@ public class Info {
     private String name;
     private String value;
     private List<MC> mcs;
+    private List<Symbol> symbols;
 
     public String getNum() {
         return num;
@@ -39,5 +40,13 @@ public class Info {
 
     public void setMcs(List<MC> mcs) {
         this.mcs = mcs;
+    }
+
+    public List<Symbol> getSymbols() {
+        return symbols;
+    }
+
+    public void setSymbols(List<Symbol> symbols) {
+        this.symbols = symbols;
     }
 }
