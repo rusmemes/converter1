@@ -55,6 +55,8 @@ import ru.ewromet.OrderRowsFileUtil;
 import ru.ewromet.converter2.Controller2;
 
 import static java.nio.charset.Charset.forName;
+import static org.apache.commons.io.FilenameUtils.getExtension;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -64,7 +66,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.apache.commons.lang3.tuple.Pair.of;
 import static ru.ewromet.Preferences.CONVERTER_DIR_ABS_PATH;
 import static ru.ewromet.Preferences.Key.RENAME_FILES;
-import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.Utils.searchFilesRecursively;
 
 public class Controller1 extends Controller {
@@ -576,7 +577,7 @@ public class Controller1 extends Controller {
 
                 orderRow.setDetailResultName(
                         renameFilesItem.isSelected()
-                                ? destFileName.replace(getFileExtension(destFile), StringUtils.EMPTY)
+                                ? removeExtension(destFile.getName())
                                 : orderRow.getDetailName()
                 );
             }
@@ -666,7 +667,7 @@ public class Controller1 extends Controller {
                     .replace("-g", row.getBendsCount() > 0 ? "-g" : StringUtils.EMPTY)
                     .replace("K", row.getBendsCount() > 0 ? String.valueOf(row.getBendsCount()) : StringUtils.EMPTY)
                     .replace("-O", isNotBlank(row.getColor()) ? "-O" : StringUtils.EMPTY)
-                    .replace(".f", getFileExtension(sourceFile))
+                    .replace("f", getExtension(sourceFile.getName()))
                     ;
         }
 

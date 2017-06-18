@@ -46,6 +46,7 @@ import ru.ewromet.converter3.Controller3;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -185,7 +186,7 @@ public class Controller2 extends Controller {
             return;
         }
 
-        File specTmpFile = Paths.get(orderFile.getParent(), orderNumber + ".tmp" + getFileExtension(template)).toFile();
+        File specTmpFile = Paths.get(orderFile.getParent(), orderNumber + ".tmp." + getExtension(template.getName())).toFile();
         if (!specTmpFile.exists()) {
             try {
                 FileUtils.copyFile(template, specTmpFile);
@@ -497,8 +498,8 @@ public class Controller2 extends Controller {
             Parent root = loader.load();
             Controller3 controller = loader.getController();
             controller.setCompoundsPath(compoundsField.getText());
+            controller.fillTables();
             Stage stage = new Stage();
-            stage.setWidth(1200);
             controller.setStage(stage);
             stage.setTitle("Информация по файлам компоновок");
             stage.setScene(new Scene(root));

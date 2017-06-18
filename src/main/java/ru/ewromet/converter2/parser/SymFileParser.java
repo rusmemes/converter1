@@ -35,6 +35,7 @@ public class SymFileParser {
     private static class XmlReaderHandler extends DefaultHandler {
 
         private static final String RADAN_COMPOUND_DOCUMENT_TAG = "RadanCompoundDocument";
+        private static final String SETUP_SHEET_TAG = "SetupSheet";
         private static final String RADAN_ATTRIBUTES_TAG = "RadanAttributes";
         private static final String GROUP_TAG = "Group";
         private static final String ATTR_TAG = "Attr";
@@ -69,13 +70,21 @@ public class SymFileParser {
         private Info currentInfo;
         private MC currentMC;
 
+        private boolean inSetupSheet;
+
         public RadanCompoundDocument getRadanCompoundDocument() {
             return radanCompoundDocument;
         }
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            if (inSetupSheet) {
+                return;
+            }
             switch (qName) {
+                case SETUP_SHEET_TAG:
+                    inSetupSheet = true;
+                    break;
                 case RADAN_COMPOUND_DOCUMENT_TAG:
                     radanCompoundDocument = new RadanCompoundDocument();
                     break;
@@ -230,6 +239,9 @@ public class SymFileParser {
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
             switch (qName) {
+                case SETUP_SHEET_TAG:
+                    inSetupSheet = false;
+                    break;
                 case GROUP_TAG:
                     currentGroup = null;
                     break;

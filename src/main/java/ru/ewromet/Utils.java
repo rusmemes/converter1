@@ -6,13 +6,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -23,9 +22,7 @@ import ru.ewromet.converter1.OrderParserException;
 public class Utils {
 
     public static String getFileExtension(File file) {
-        final String sourceFileName = file.getName();
-        final int lastCommaPos = sourceFileName.lastIndexOf(".");
-        return sourceFileName.substring(lastCommaPos);
+        return '.' + FilenameUtils.getExtension(file.getName());
     }
 
     public static String replaceLast(String string, char oldChar, char newChar) {
