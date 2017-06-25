@@ -10,7 +10,7 @@ public class CompoundAggregation {
     private final SimpleStringProperty material = new SimpleStringProperty();
     private final SimpleStringProperty materialBrand = new SimpleStringProperty();
     private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();
-    private final SimpleStringProperty size = new SimpleStringProperty();
+    private final SimpleDoubleProperty size = new SimpleDoubleProperty();
     private final SimpleIntegerProperty listsCount = new SimpleIntegerProperty();
     private final SimpleDoubleProperty totalConsumption = new SimpleDoubleProperty();
     private final SimpleDoubleProperty materialDensity = new SimpleDoubleProperty();
@@ -50,11 +50,11 @@ public class CompoundAggregation {
         this.thickness.set(thickness);
     }
 
-    public String getSize() {
+    public double getSize() {
         return size.get();
     }
 
-    public void setSize(String size) {
+    public void setSize(double size) {
         this.size.set(size);
     }
 

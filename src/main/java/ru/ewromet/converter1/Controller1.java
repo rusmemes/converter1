@@ -142,17 +142,6 @@ public class Controller1 extends Controller {
         });
     }
 
-    private static <T> void refreshTable(TableView<T> tableView, Comparator<T> comparator) {
-        final List<T> items = tableView.getItems();
-        if (items == null || items.size() == 0) {
-            return;
-        }
-        if (comparator != null) {
-            Collections.sort(items, comparator);
-        }
-        tableView.refresh();
-    }
-
     private void initializeMenu() {
         final Menu menu = new Menu();
         menu.setText("Меню");
@@ -205,6 +194,10 @@ public class Controller1 extends Controller {
 
     public static Map<String, String> getBRANDS2DIR() {
         return BRANDS2DIR;
+    }
+
+    public static Map<Pair<String, String>, String> getMATERIALS() {
+        return MATERIALS;
     }
 
     private static void initMaterials() {

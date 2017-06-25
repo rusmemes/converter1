@@ -15,8 +15,6 @@ import java.util.function.Predicate;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -249,35 +247,7 @@ public class Controller2 extends Controller {
             }
         }
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
-        openConverter3Window();
-    }
-
-    private static void setValueToCell(Row row, int cellIndex, Object value) {
-        if (value == null) {
-            return;
-        }
-        Cell cell = row.getCell(cellIndex);
-        CellType cellType;
-        if (cell == null) {
-            row.createCell(0, (cellType = getCellTypeFor(value)));
-        } else {
-            cell.setCellType((cellType = getCellTypeFor(value)));
-        }
-        switch (cellType) {
-            case NUMERIC:
-                cell.setCellValue(value instanceof Integer ? (int) value : (double) value);
-                break;
-            case STRING:
-            default:
-                cell.setCellValue(value.toString());
-        }
-
-    }
-
-    private static CellType getCellTypeFor(Object object) {
-        return object instanceof Double || object instanceof Integer
-                ? CellType.NUMERIC
-                : CellType.STRING;
+        openConverter3Window(specFile);
     }
 
     private SymFileInfo symFileOf(OrderRow orderRow) {
@@ -492,16 +462,20 @@ public class Controller2 extends Controller {
                 .getAsDouble();
     }
 
-    private void openConverter3Window() {
+    private void openConverter3Window(File specFile) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter3.fxml"));
             Parent root = loader.load();
             Controller3 controller = loader.getController();
             controller.setCompoundsPath(compoundsField.getText());
+            controller.setOrderFilePath(orderFilePathField.getText());
+            controller.setSpecFile(specFile);
             controller.fillTables();
             Stage stage = new Stage();
+            stage.setHeight(1000);
+            stage.setWidth(1400);
             controller.setStage(stage);
-            stage.setTitle("Информация по файлам компоновок");
+            stage.setTitle("Обработка компоновок");
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) {
