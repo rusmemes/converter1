@@ -107,7 +107,8 @@ public class Controller3 extends Controller {
 
         String template = preferences.get(PRODUCE_ORDER_TEMPLATE_PATH);
         if (StringUtils.isBlank(template)) {
-            logError("Необходимо указать шаблон для заявки на производство в 'Меню' -> 'Указать шаблон заказа на производство'");
+            //            logError("Необходимо указать шаблон для заявки на производство в 'Меню' -> 'Указать шаблон заказа на производство'");
+            // TODO
         } else {
             logMessage("Шаблон заказа на производство будет взят из " + template);
         }
@@ -327,8 +328,8 @@ public class Controller3 extends Controller {
             }
         }
 
-
         // сформировать заказ на производство
+        // TODO
     }
 
     public void fillTables() throws Exception {
