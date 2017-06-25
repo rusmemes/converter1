@@ -328,6 +328,7 @@ public class Controller3 extends Controller {
             }
         }
 
+        logMessage("ДАННЫЕ СОХРАНЕНЫ");
         // сформировать заказ на производство
         // TODO
     }
