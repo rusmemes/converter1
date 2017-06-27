@@ -166,7 +166,7 @@ public class Controller3 extends Controller {
              Workbook workbook = getWorkbook(inputStream, sourceFile.getAbsolutePath());
              OutputStream out = new FileOutputStream(specFile);
         ) {
-            Sheet sheet = workbook.getSheet("Спецификация");
+            Sheet sheet = workbook.getSheet("расчет");
 
             boolean hearedRowFound = false;
             int metallCellNum = -1;
@@ -192,15 +192,15 @@ public class Controller3 extends Controller {
                                     if (StringUtils.equals(value, "\u2116")) {
                                         hearedRowFound = true;
                                     }
-                                } else if (StringUtils.containsIgnoreCase(value, "Расход металла, кг")) {
+                                } else if (StringUtils.containsIgnoreCase(value, "Расход металла, кв.м.")) {
                                     metallCellNum = k;
                                 } else if (StringUtils.containsIgnoreCase(value, "Цена металла, руб/кг")) {
                                     priceCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Вид металла")) {
+                                } else if (StringUtils.containsIgnoreCase(value, "Материал")) {
                                     materialCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Марка металла")) {
+                                } else if (StringUtils.containsIgnoreCase(value, "Марка")) {
                                     materialBrandCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Толщина металла") || StringUtils.containsIgnoreCase(value, "Тощлина металла")) {
+                                } else if (StringUtils.containsIgnoreCase(value, "Тощлина металла, мм") || StringUtils.containsIgnoreCase(value, "Толщина металла, мм")) {
                                     thinknessCellNum = k;
                                 }
                                 if (hearedRowFound
@@ -223,46 +223,33 @@ public class Controller3 extends Controller {
                     }
                 } else {
                     if (metallCellNum == -1) {
-                        throw new RuntimeException("В файле " + specFile + " на вкладке 'Спецификация' в шапке таблицы не найдена колонка, содержащая фразу 'Расход металла, кг'");
+                        throw new RuntimeException("В файле " + specFile + " на вкладке 'расчет' в шапке таблицы не найдена колонка, содержащая фразу 'Расход металла, кв.м.'");
                     }
                     if (priceCellNum == -1) {
-                        throw new RuntimeException("В файле " + specFile + " на вкладке 'Спецификация' в шапке таблицы не найдена колонка, содержащая фразу 'Цена металла, руб/кг'");
+                        throw new RuntimeException("В файле " + specFile + " на вкладке 'расчет' в шапке таблицы не найдена колонка, содержащая фразу 'Цена металла, руб/кг'");
                     }
                     if (materialCellNum == -1) {
-                        throw new RuntimeException("В файле " + specFile + " на вкладке 'Спецификация' в шапке таблицы не найдена колонка, содержащая фразу 'Вид металла'");
+                        throw new RuntimeException("В файле " + specFile + " на вкладке 'расчет' в шапке таблицы не найдена колонка, содержащая фразу 'Материал'");
                     }
                     if (materialBrandCellNum == -1) {
-                        throw new RuntimeException("В файле " + specFile + " на вкладке 'Спецификация' в шапке таблицы не найдена колонка, содержащая фразу 'Марка металлa'");
+                        throw new RuntimeException("В файле " + specFile + " на вкладке 'расчет' в шапке таблицы не найдена колонка, содержащая фразу 'Марка'");
                     }
                     if (thinknessCellNum == -1) {
-                        throw new RuntimeException("В файле " + specFile + " на вкладке 'Спецификация' в шапке таблицы не найдена колонка, содержащая фразу 'Толщина металла'");
+                        throw new RuntimeException("В файле " + specFile + " на вкладке 'расчет' в шапке таблицы не найдена колонка, содержащая фразу 'Толщина металла, мм'");
                     }
                 }
 
-                Cell cell;
-
-                cell = row.getCell(row.getFirstCellNum());
-                if (cell == null) {
-                    break;
-                } else {
-                    try {
-                        if (cell.getNumericCellValue() == 0.0) {
-                            break;
-                        }
-                    } catch (Exception e) {
-                        break;
-                    }
-                }
-
-                cell = row.getCell(materialCellNum);
+                Cell cell = row.getCell(materialCellNum);
                 String material = null;
                 if (cell != null) {
                     try {
                         material = cell.getStringCellValue();
                     } catch (Exception ignored) {
-                        logError("В файле " + specFile + " на вкладке 'Спецификация' в строке таблицы #" + metallCellNum + " не найден вид металла");
+                        logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найден вид металла");
                         continue;
                     }
+                } else {
+                    continue;
                 }
 
                 cell = row.getCell(materialBrandCellNum);
@@ -271,9 +258,11 @@ public class Controller3 extends Controller {
                     try {
                         materialBrand = cell.getStringCellValue();
                     } catch (Exception ignored) {
-                        logError("В файле " + specFile + " на вкладке 'Спецификация' в строке таблицы #" + metallCellNum + " не найдена марка металла");
+                        logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена марка металла");
                         continue;
                     }
+                } else {
+                    continue;
                 }
 
                 cell = row.getCell(thinknessCellNum);
@@ -282,9 +271,11 @@ public class Controller3 extends Controller {
                     try {
                         thinkness = cell.getNumericCellValue();
                     } catch (Exception ignored) {
-                        logError("В файле " + specFile + " на вкладке 'Спецификация' в строке таблицы #" + metallCellNum + " не найдена толщина металла");
+                        logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена толщина металла");
                         continue;
                     }
+                } else {
+                    continue;
                 }
 
                 Map<Pair<String, String>, String> materials = Controller1.getMATERIALS();
@@ -296,20 +287,7 @@ public class Controller3 extends Controller {
 
                 for (CompoundAggregation aggregation : table2.getItems()) {
                     if (aggregation.getThickness() == thinkness && aggregation.getMaterial().equals(foundMaterial)) {
-                        Cell priceCell = row.getCell(priceCellNum);
-                        String cellFormula = priceCell.getCellFormula();
-                        if (StringUtils.isNotBlank(cellFormula)) {
-                            try {
-                                char column = cellFormula.charAt(cellFormula.indexOf('!') + 1);
-                                int rowNum = Integer.parseUnsignedInt(cellFormula.substring(cellFormula.indexOf('!') + 2, cellFormula.indexOf('>'))) - 1;
-                                Sheet calcSheet = workbook.getSheet("расчет");
-                                calcSheet.getRow(rowNum).getCell(Character.getNumericValue(column) - 10).setCellValue(aggregation.getPrice());
-                            } catch (Exception e) {
-                                logError("Не удалось проставить цену металла во вкладке 'расчет' для материала " + foundMaterial + " " + thinkness + ":" + e.getMessage());
-                            }
-                        } else {
-                            setValueToCell(row, priceCellNum, aggregation.getPrice());
-                        }
+                        setValueToCell(row, priceCellNum, aggregation.getPrice());
                         if (alreadyDefinedMaterials.add(foundMaterial)) {
                             setValueToCell(row, metallCellNum, aggregation.getTotalConsumption());
                             break;
