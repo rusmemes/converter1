@@ -12,14 +12,14 @@ public class OrderRow extends FileRow {
     private final SimpleStringProperty material = new SimpleStringProperty();
     private final SimpleStringProperty originalMaterial = new SimpleStringProperty();
     private final SimpleStringProperty materialBrand = new SimpleStringProperty();
-    private final SimpleStringProperty color = new SimpleStringProperty();
+    private final SimpleStringProperty color = new SimpleStringProperty(); // цвет окраски
     private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();
     private final SimpleStringProperty owner = new SimpleStringProperty();
-    private final SimpleIntegerProperty bendsCount = new SimpleIntegerProperty();
+    private final SimpleIntegerProperty bendsCount = new SimpleIntegerProperty(); // количество гибов
     private final SimpleStringProperty drawCreation = new SimpleStringProperty();
     private final SimpleStringProperty cleaning = new SimpleStringProperty();
-    private final SimpleStringProperty wasteReturn = new SimpleStringProperty();
-    private final SimpleStringProperty cuttingReturn = new SimpleStringProperty();
+    private final SimpleStringProperty wasteReturn = new SimpleStringProperty(); // возврат отходов
+    private final SimpleStringProperty cuttingReturn = new SimpleStringProperty(); // возврат высечки
     private final SimpleStringProperty comment = new SimpleStringProperty();
 
     public String getDetailName() {

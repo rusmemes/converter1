@@ -52,6 +52,10 @@ public class Utils {
         );
     }
 
+    public static String getClientNameFromOrderFile(String pathToOrderFile) {
+        return "client name";
+    }
+
     public static Workbook getWorkbook(FileInputStream inputStream, String excelFilePath) throws IOException {
         Workbook workbook;
 

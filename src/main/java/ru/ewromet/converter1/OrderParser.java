@@ -117,8 +117,6 @@ public class OrderParser {
 
                 logger.logMessage("Проверка шапки таблицы (строка " + (tableHeaderRowNum + 1) + ") завершена");
 
-                //                Set<String> addedDetailNames = new HashSet<>();
-
                 for (int l = tableHeaderRowNum + 1; l <= sheet.getLastRowNum(); l++) {
                     final Row row = sheet.getRow(l);
                     Cell cell = row.getCell(firstCellNum);
@@ -152,9 +150,7 @@ public class OrderParser {
                             break;
                         }
                     }
-                    //                    if (!addedDetailNames.add(stringCellValue)) {
-                    //                        throw new OrderParserException("Дублирующееся наименование детали: " + stringCellValue);
-                    //                    }
+
                     result.add(createOrderRowFromExcelRow(row));
                 }
 

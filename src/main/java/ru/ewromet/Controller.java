@@ -143,7 +143,7 @@ public abstract class Controller implements Logger {
         Cell cell = row.getCell(cellIndex);
         CellType cellType;
         if (cell == null) {
-            row.createCell(0, (cellType = getCellTypeFor(value)));
+            cell = row.createCell(0, (cellType = getCellTypeFor(value)));
         } else {
             cell.setCellType((cellType = getCellTypeFor(value)));
         }
