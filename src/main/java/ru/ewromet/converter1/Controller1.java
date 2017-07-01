@@ -246,6 +246,10 @@ public class Controller1 extends Controller {
             put(of("сталь х/к", "иное"), "Mild Steel hk other");
             put(of("сталь г/к", "ст3"), "Mild Steel gk");
             put(of("сталь г/к", "иное"), "Mild Steel gk other");
+            put(of("сталь_хк", "ст08"), "Mild Steel hk");
+            put(of("сталь_хк", "иное"), "Mild Steel hk other");
+            put(of("сталь_гк", "ст3"), "Mild Steel gk");
+            put(of("сталь_гк", "иное"), "Mild Steel gk other");
             put(of("оцинковка", "ст08"), "Zintec");
             put(of("оцинковка", "иное"), "Zintec other");
             put(of("нерж. мат", "430"), "Stainless Steel 430");

@@ -160,7 +160,7 @@ public class Controller3 extends Controller {
             throw new RuntimeException("Ошибка при копировании " + specFile + " в " + sourceFile);
         }
 
-        Set<String> alreadyDefinedMaterials = new HashSet<>();
+        Set<Pair<String, Double>> alreadyDefinedMaterials = new HashSet<>();
 
         try (FileInputStream inputStream = new FileInputStream(sourceFile);
              Workbook workbook = getWorkbook(inputStream, sourceFile.getAbsolutePath());
@@ -282,13 +282,16 @@ public class Controller3 extends Controller {
                 String foundMaterial = materials.get(Pair.of(material, materialBrand));
 
                 if (foundMaterial == null) {
+                    if (StringUtils.isNotBlank(material) && StringUtils.isNotBlank(materialBrand)) {
+                        logError("Для материала " + material + " " + materialBrand + " не нашлось соответствия в таблице соответствия материалов");
+                    }
                     continue;
                 }
 
                 for (CompoundAggregation aggregation : table2.getItems()) {
                     if (aggregation.getThickness() == thinkness && aggregation.getMaterial().equals(foundMaterial)) {
                         setValueToCell(row, priceCellNum, aggregation.getPrice());
-                        if (alreadyDefinedMaterials.add(foundMaterial)) {
+                        if (alreadyDefinedMaterials.add(Pair.of(foundMaterial, thinkness))) {
                             setValueToCell(row, metallCellNum, aggregation.getTotalConsumption());
                             break;
                         }
@@ -377,6 +380,7 @@ public class Controller3 extends Controller {
             }
         }
 
+        Collections.sort(indexesToDelete);
         Collections.reverse(indexesToDelete);
         indexesToDelete.forEach(index -> compoundAggregations.remove(index.intValue()));
 
@@ -476,34 +480,34 @@ public class Controller3 extends Controller {
             // Если Xmin > или = 80% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(xMin >= xSt * 0.8 ? xSt : xMin * 1.2);
+            compound.setXr(round(xMin >= xSt * 0.8 ? xSt : xMin * 1.2));
 
             // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
             int yMin = compound.getYmin();
             int ySt = compound.getYst();
-            compound.setYr(yMin < ySt / 2 ? ySt / 2 : ySt);
+            compound.setYr(round(yMin < ySt / 2 ? ySt / 2 : ySt));
 
         } else if (isMildSteelGk(material)) {
 
             // Если Xmin > или = 90% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(xMin >= xSt * 0.9 ? xSt : xMin * 1.2);
+            compound.setXr(round(xMin >= xSt * 0.9 ? xSt : xMin * 1.2));
 
             // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
             int yMin = compound.getYmin();
             int ySt = compound.getYst();
-            compound.setYr(yMin < ySt / 2 ? ySt / 2 : ySt);
+            compound.setYr(round(yMin < ySt / 2 ? ySt / 2 : ySt));
 
         } else if ((thickness > 2 && isAluminium(material)) || isStainlessSteelNoFoilNoShlif(material)) {
 
             // Если Xmin > или = 70% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(xMin >= xSt * 0.7 ? xSt : xMin * 1.2);
+            compound.setXr(round(xMin >= xSt * 0.7 ? xSt : xMin * 1.2));
 
             // Yr = Yst - всегда
-            compound.setYr(compound.getYst());
+            compound.setYr(round(compound.getYst()));
 
         } else if (
             // @formatter:off
