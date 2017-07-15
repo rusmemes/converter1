@@ -540,7 +540,6 @@ public class Controller3 extends Controller {
             compoundAggregation.setThickness(compound.getThickness());
             compoundAggregation.setSize(round(compound.getXr() / 1000 * compound.getYr() / 1000));
             compoundAggregation.setListsCount(compound.getN());
-            compoundAggregation.setTotalConsumption(round(compoundAggregation.getListsCount() * compoundAggregation.getSize()));
 
             String material = compound.getMaterial();
             if (isAluminium(material)) {
@@ -554,11 +553,6 @@ public class Controller3 extends Controller {
             } else {
                 compoundAggregation.setMaterialDensity(7850);
             }
-
-            double totalConsumption = compoundAggregation.getTotalConsumption();
-            double thickness = compoundAggregation.getThickness() / 1000;
-            double materialDensity = compoundAggregation.getMaterialDensity();
-            compoundAggregation.setWeight(round(totalConsumption * thickness * materialDensity));
 
             compoundAggregation.setXMin_x_yMin_m(round(compound.getXmin() / 1000) + " x " + round(compound.getYmin() / 1000));
             compoundAggregation.setXSt_x_ySt_m(round(compound.getXst() / 1000) + " x " + round(compound.getYst() / 1000));
@@ -578,8 +572,6 @@ public class Controller3 extends Controller {
                 if (needToAggregate(first, second)) {
                     first.setSize(first.getSize() + second.getSize());
                     first.setListsCount(first.getListsCount() + second.getListsCount());
-                    first.setTotalConsumption(round(first.getTotalConsumption() + second.getTotalConsumption()));
-                    first.setWeight(round(first.getWeight() + second.getWeight()));
                     indexesToDelete.add(j);
                 }
             }
@@ -595,6 +587,8 @@ public class Controller3 extends Controller {
 
         ObservableList<CompoundAggregation> items = FXCollections.observableList(compoundAggregations);
 
+        calcTotalConsumption(items);
+
         if (MapUtils.isNotEmpty(oldItemsMaterialsPrices)) {
             for (CompoundAggregation item : items) {
                 Double price;
@@ -604,8 +598,6 @@ public class Controller3 extends Controller {
                 }
             }
         }
-
-        calcTotalConsumption(items);
 
         table2.setItems(items);
     }
@@ -692,7 +684,10 @@ public class Controller3 extends Controller {
                             .mapToDouble(aggregation -> round(aggregation.getListsCount() * aggregation.getSize()))
                             .sum()
             );
-            aggregationSet.forEach(aggregation -> aggregation.setTotalConsumption(sum));
+            aggregationSet.forEach(aggregation -> {
+                aggregation.setTotalConsumption(sum);
+                aggregation.setWeight(round(sum * (aggregation.getThickness() / 1000) * (aggregation.getMaterialDensity())));
+            });
         }
     }
 
