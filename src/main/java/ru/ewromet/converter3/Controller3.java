@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -19,16 +21,20 @@ import java.util.stream.Collectors;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.xml.sax.SAXException;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -36,13 +42,16 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import ru.ewromet.Controller;
@@ -60,6 +69,7 @@ import ru.ewromet.converter2.parser.RadanCompoundDocument;
 import ru.ewromet.converter2.parser.SymFileParser;
 
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static ru.ewromet.Preferences.Key.PRODUCE_ORDER_TEMPLATE_PATH;
 import static ru.ewromet.Utils.containsIgnoreCase;
@@ -104,6 +114,7 @@ public class Controller3 extends Controller {
         if (ArrayUtils.isEmpty(files)) {
             throw new Exception("В папке " + compoundsDir + " drg-файлы не найдены");
         }
+        Arrays.sort(files, new WindowsExplorerFilesComparator());
     }
 
     @FXML
@@ -173,6 +184,7 @@ public class Controller3 extends Controller {
             Sheet sheet = workbook.getSheet("расчет");
 
             boolean hearedRowFound = false;
+            int posNumberCellNum = -1;
             int metallCellNum = -1;
             int priceCellNum = -1;
             int materialCellNum = -1;
@@ -195,6 +207,7 @@ public class Controller3 extends Controller {
                                 if (!hearedRowFound) {
                                     if (StringUtils.equals(value, "\u2116")) {
                                         hearedRowFound = true;
+                                        posNumberCellNum = k;
                                     }
                                 } else if (StringUtils.containsIgnoreCase(value, "Расход металла, кв.м.")) {
                                     metallCellNum = k;
@@ -243,7 +256,21 @@ public class Controller3 extends Controller {
                     }
                 }
 
-                Cell cell = row.getCell(materialCellNum);
+                Cell cell = row.getCell(posNumberCellNum);
+                if (cell == null) {
+                    continue;
+                } else {
+                    try {
+                        double numericCellValue = cell.getNumericCellValue();
+                        if (numericCellValue < 1) {
+                            continue;
+                        }
+                    } catch (Exception ignored) {
+                        continue;
+                    }
+                }
+
+                cell = row.getCell(materialCellNum);
                 String material = null;
                 if (cell != null) {
                     try {
@@ -321,7 +348,7 @@ public class Controller3 extends Controller {
 
         List<Compound> compounds = table1.getItems();
 
-        if (CollectionUtils.isEmpty(compounds)) {
+        if (isEmpty(compounds)) {
             return;
         }
 
@@ -337,15 +364,11 @@ public class Controller3 extends Controller {
         }
 
         File file = Paths.get(new File(orderFilePath).getParentFile().getPath(), template.getName()).toFile();
-        Workbook wb = null;
-        OutputStream os = null;
+
         try (FileInputStream inputStream = new FileInputStream(template);
              Workbook workbook = getWorkbook(inputStream, template.getAbsolutePath());
              OutputStream out = new FileOutputStream(file);
         ) {
-            wb = workbook;
-            os = out;
-
             Sheet sheet = workbook.getSheet("Заказ на производство");
             if (sheet == null) {
                 logError("Не найдена вкладка 'Заказ на производство' в шаблоне");
@@ -480,13 +503,6 @@ public class Controller3 extends Controller {
             }
             workbook.write(out);
         } catch (Exception e) {
-            if (wb != null) {
-                try {
-                    wb.write(os);
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
             logError("Ошибка при создании заказа на производство " + e.getMessage());
         }
     }
@@ -498,12 +514,21 @@ public class Controller3 extends Controller {
 
     private void fillTable2() {
         List<CompoundAggregation> oldItems = new ArrayList(table2.getItems());
+        Map<Triple<Double, String, String>, Double> oldItemsMaterialsPrices = new HashMap<>();
+
         if (CollectionUtils.isNotEmpty(oldItems)) {
+            for (CompoundAggregation oldItem : oldItems) {
+                if (oldItem.getPrice() > 0) {
+                    Triple<Double, String, String> triple = oldItem.materialTriple();
+                    oldItemsMaterialsPrices.computeIfAbsent(triple, (key) -> oldItem.getPrice());
+                }
+            }
+            oldItems = null;
             table2.getItems().clear();
         }
 
         ObservableList<Compound> compounds = table1.getItems();
-        if (CollectionUtils.isEmpty(compounds)) {
+        if (isEmpty(compounds)) {
             return;
         }
         List<CompoundAggregation> compoundAggregations = new ArrayList<>();
@@ -535,6 +560,9 @@ public class Controller3 extends Controller {
             double materialDensity = compoundAggregation.getMaterialDensity();
             compoundAggregation.setWeight(round(totalConsumption * thickness * materialDensity));
 
+            compoundAggregation.setXMin_x_yMin_m(round(compound.getXmin() / 1000) + " x " + round(compound.getYmin() / 1000));
+            compoundAggregation.setXSt_x_ySt_m(round(compound.getXst() / 1000) + " x " + round(compound.getYst() / 1000));
+
             compoundAggregations.add(compoundAggregation);
         }
 
@@ -557,8 +585,8 @@ public class Controller3 extends Controller {
             }
         }
 
-        Collections.sort(indexesToDelete);
-        Collections.reverse(indexesToDelete);
+        Collections.sort(indexesToDelete, Comparator.reverseOrder());
+
         indexesToDelete.forEach(index -> compoundAggregations.remove(index.intValue()));
 
         for (int i = 0; i < compoundAggregations.size(); i++) {
@@ -566,20 +594,20 @@ public class Controller3 extends Controller {
         }
 
         ObservableList<CompoundAggregation> items = FXCollections.observableList(compoundAggregations);
-        table2.setItems(items);
 
-        if (CollectionUtils.isNotEmpty(oldItems)) {
-            for (CompoundAggregation oldItem : oldItems) {
-                for (CompoundAggregation item : items) {
-                    if (item.getPosNumber() == oldItem.getPosNumber()) {
-                        item.setPrice(oldItem.getPrice());
-                        item.setTotalPrice(round(item.getWeight() * item.getPrice()));
-                        break;
-                    }
+        if (MapUtils.isNotEmpty(oldItemsMaterialsPrices)) {
+            for (CompoundAggregation item : items) {
+                Double price;
+                if ((price = oldItemsMaterialsPrices.get(item.materialTriple())) != null) {
+                    item.setPrice(price);
+                    item.setTotalPrice(round(item.getWeight() * item.getPrice()));
                 }
             }
-            refreshTable(table2, null);
         }
+
+        calcTotalConsumption(items);
+
+        table2.setItems(items);
     }
 
     private static double round(double value) {
@@ -587,12 +615,14 @@ public class Controller3 extends Controller {
     }
 
     private boolean needToAggregate(CompoundAggregation first, CompoundAggregation second) {
-        return first.getThickness() == second.getThickness()
-                && first.getMaterialBrand().equals(second.getMaterialBrand())
-                && first.getMaterial().equals(second.getMaterial());
+        return first.materialTriple().equals(second.materialTriple())
+                && first.getXMin_x_yMin_m().equals(second.getXMin_x_yMin_m())
+                && first.getXSt_x_ySt_m().equals(second.getXSt_x_ySt_m())
+                ;
     }
 
     private void fillTable1() throws Exception {
+
         List<RadanCompoundDocument> radanCompoundDocuments = Arrays.stream(files)
                 .map(file -> {
                     try {
@@ -628,17 +658,18 @@ public class Controller3 extends Controller {
             compound.setN(Integer.valueOf(getAttrValue(radanAttributes, "137")));
 
             QuotationInfo quotationInfo = radanCompoundDocument.getQuotationInfo();
-            compound.setXmin((int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "1"))));
-            compound.setYmin((int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "2"))));
-
-            setXYst(compound);
-
-            calcCompoundEditableCells(compound);
+            compound.setXmin(Math.min(compound.getXst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "1")))));
+            compound.setYmin(Math.min(compound.getYst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "2")))));
 
             compound.setMaterialBrand(getBrand(orderRows, quotationInfo));
 
-            table1.getItems().add(compound);
+            setXrYr(compound);
+            calcCompoundEditableCells(compound);
+
+            table1.getItems().addAll(compound);
         }
+
+        refreshTable(table1, Comparator.comparing(Compound::getPosNumber));
     }
 
     private void calcCompoundEditableCells(Compound compound) {
@@ -646,8 +677,26 @@ public class Controller3 extends Controller {
         compound.setSo(round(compound.getN() * compound.getSk()));
     }
 
+    private void calcTotalConsumption(List<CompoundAggregation> aggregations) {
+        if (isEmpty(aggregations)) {
+            return;
+        }
+        Map<Triple<Double, String, String>, Set<CompoundAggregation>> map = aggregations.stream().collect(Collectors.groupingBy(
+                CompoundAggregation::materialTriple, Collectors.toSet()
+        ));
 
-    private void setXYst(Compound compound) {
+        for (Triple<Double, String, String> triple : map.keySet()) {
+            Set<CompoundAggregation> aggregationSet = map.get(triple);
+            double sum = round(
+                    aggregationSet.stream()
+                            .mapToDouble(aggregation -> round(aggregation.getListsCount() * aggregation.getSize()))
+                            .sum()
+            );
+            aggregationSet.forEach(aggregation -> aggregation.setTotalConsumption(sum));
+        }
+    }
+
+    private void setXrYr(Compound compound) {
         String material = compound.getMaterial();
         double thickness = compound.getThickness();
 
@@ -692,7 +741,7 @@ public class Controller3 extends Controller {
                                 thickness <= 0.8
                                         && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))
                                 )
-                    // @formatter:on
+            // @formatter:on
                 ) {
             // Xr = Xst - всегда
             compound.setXr(compound.getXst());
@@ -875,6 +924,34 @@ public class Controller3 extends Controller {
         xstColumn.setEditable(false);
         xstColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
+        TableColumn<Compound, Integer> xMinColumn = ColumnFactory.createColumn(
+                "Xmin, мм", 50, "xmin",
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()),
+                (Compound compound, Integer value) -> {
+                    compound.setXmin(value);
+                    recalcXrYr(compound);
+                    refreshTable(table1, null);
+                    fillTable2();
+                }
+        );
+
+        xMinColumn.setEditable(true);
+        xMinColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
+
+        TableColumn<Compound, Integer> yMinColumn = ColumnFactory.createColumn(
+                "Ymin, мм", 50, "ymin",
+                TextFieldTableCell.forTableColumn(new IntegerStringConverter()),
+                (Compound compound, Integer value) -> {
+                    compound.setYmin(value);
+                    recalcXrYr(compound);
+                    refreshTable(table1, null);
+                    fillTable2();
+                }
+        );
+
+        yMinColumn.setEditable(true);
+        yMinColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
+
         TableColumn<Compound, Double> yrColumn = ColumnFactory.createColumn(
                 "Yr, мм", 50, "yr",
                 TextFieldTableCell.forTableColumn(new DoubleStringConverter()),
@@ -901,6 +978,30 @@ public class Controller3 extends Controller {
 
         xrColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
+        TableColumn<Compound, Boolean> fullListColumn = ColumnFactory.createColumn(
+                "Весь лист", 50, "fullList",
+                new Callback<TableColumn<Compound, Boolean>, TableCell<Compound, Boolean>>() {
+                    @Override
+                    public TableCell<Compound, Boolean> call(TableColumn<Compound, Boolean> param) {
+                        return new CheckBoxTableCell<>(index -> {
+                            BooleanProperty active = new SimpleBooleanProperty(table1.getItems().get(index).isFullList());
+                            active.addListener((obs, wasActive, isNowActive) -> {
+                                Compound compound = table1.getItems().get(index);
+                                compound.setFullList(isNowActive);
+                                recalcXrYr(compound);
+                                refreshTable(table1, null);
+                                fillTable2();
+                            });
+                            return active;
+                        });
+                    }
+                },
+                (Compound compound, Boolean value) -> {
+                }
+        );
+
+        fullListColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
+
         TableColumn<Compound, Double> skColumn = ColumnFactory.createColumn(
                 "Sk, кв. м.", 50, "sk",
                 TextFieldTableCell.forTableColumn(new DoubleStringConverter()), Compound::setSk
@@ -925,8 +1026,11 @@ public class Controller3 extends Controller {
                 nColumn,
                 ystColumn,
                 xstColumn,
+                xMinColumn,
+                yMinColumn,
                 yrColumn,
                 xrColumn,
+                fullListColumn,
                 skColumn,
                 soColumn
         );
@@ -949,6 +1053,16 @@ public class Controller3 extends Controller {
                 table1.requestFocus();
             });
         });
+    }
+
+    private void recalcXrYr(Compound compound) {
+        if (compound.isFullList()) {
+            compound.setYr(compound.getYst());
+            compound.setXr(compound.getXst());
+        } else {
+            setXrYr(compound);
+        }
+        calcCompoundEditableCells(compound);
     }
 
     private void initializeTable2() {
@@ -988,14 +1102,21 @@ public class Controller3 extends Controller {
         thicknessColumn.setEditable(false);
         thicknessColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
-        TableColumn<CompoundAggregation, Double> sizeColumn = ColumnFactory.createColumn(
-                "Габариты листа, Xr x Yr", 50, "size",
-                TextFieldTableCell.forTableColumn(new DoubleStringConverter()),
-                CompoundAggregation::setSize
+        TableColumn<CompoundAggregation, String> xMin_x_yMin_mColumn = ColumnFactory.createColumn(
+                "Габариты листа, Xmin x Ymin, м", 150, "xMin_x_yMin_m",
+                column -> new TooltipTextFieldTableCell<>(), CompoundAggregation::setXMin_x_yMin_m
         );
 
-        sizeColumn.setEditable(false);
-        sizeColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
+        xMin_x_yMin_mColumn.setEditable(false);
+        xMin_x_yMin_mColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
+
+        TableColumn<CompoundAggregation, String> xSt_x_ySt_mColumn = ColumnFactory.createColumn(
+                "Габариты листа, Xst x Yst, м", 150, "xSt_x_ySt_m",
+                column -> new TooltipTextFieldTableCell<>(), CompoundAggregation::setXSt_x_ySt_m
+        );
+
+        xSt_x_ySt_mColumn.setEditable(false);
+        xSt_x_ySt_mColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<CompoundAggregation, Integer> countColumn = ColumnFactory.createColumn(
                 "Количество листов, шт", 50, "listsCount",
@@ -1040,9 +1161,13 @@ public class Controller3 extends Controller {
         TableColumn<CompoundAggregation, Double> priceColumn = ColumnFactory.createColumn(
                 "Цена за 1 кг, руб.", 50, "price",
                 TextFieldTableCell.forTableColumn(new DoubleStringConverter()),
-                (CompoundAggregation aggregation, Double value) -> {
-                    aggregation.setPrice(value);
-                    aggregation.setTotalPrice(round(aggregation.getWeight() * value));
+                (CompoundAggregation aggr, Double value) -> {
+                    table2.getItems().stream()
+                            .filter(aggregation -> aggregation.materialTriple().equals(aggr.materialTriple()))
+                            .forEach(aggregation -> {
+                                aggregation.setPrice(value);
+                                aggregation.setTotalPrice(round(aggregation.getWeight() * value));
+                            });
                     refreshTable(table2, null);
                 }
         );
@@ -1062,7 +1187,8 @@ public class Controller3 extends Controller {
                 materialColumn,
                 materialBrandColumn,
                 thicknessColumn,
-                sizeColumn,
+                xMin_x_yMin_mColumn,
+                xSt_x_ySt_mColumn,
                 countColumn,
                 totalConsumptionColumn,
                 materialDensityColumn,

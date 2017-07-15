@@ -1,5 +1,6 @@
 package ru.ewromet.converter3;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -22,6 +23,8 @@ public class Compound {
     private final SimpleDoubleProperty xr = new SimpleDoubleProperty();
     private final SimpleDoubleProperty sk = new SimpleDoubleProperty();
     private final SimpleDoubleProperty so = new SimpleDoubleProperty();
+
+    private final SimpleBooleanProperty fullList = new SimpleBooleanProperty();
 
     public int getPosNumber() {
         return posNumber.get();
@@ -133,5 +136,17 @@ public class Compound {
 
     public void setSo(double so) {
         this.so.set(so);
+    }
+
+    public boolean isFullList() {
+        return fullList.get();
+    }
+
+    public void setFullList(boolean fullList) {
+        this.fullList.set(fullList);
+    }
+
+    public SimpleBooleanProperty fullListProperty() {
+        return fullList;
     }
 }
