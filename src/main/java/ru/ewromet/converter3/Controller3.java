@@ -15,12 +15,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -57,6 +57,7 @@ import javafx.util.converter.IntegerStringConverter;
 import ru.ewromet.Controller;
 import ru.ewromet.OrderRow;
 import ru.ewromet.OrderRowsFileUtil;
+import ru.ewromet.Utils;
 import ru.ewromet.converter1.ColumnFactory;
 import ru.ewromet.converter1.Controller1;
 import ru.ewromet.converter1.TooltipTextFieldTableCell;
@@ -70,6 +71,7 @@ import ru.ewromet.converter2.parser.SymFileParser;
 
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static ru.ewromet.Preferences.Key.PRODUCE_ORDER_TEMPLATE_PATH;
 import static ru.ewromet.Utils.containsIgnoreCase;
@@ -363,147 +365,214 @@ public class Controller3 extends Controller {
             return;
         }
 
-        File file = Paths.get(new File(orderFilePath).getParentFile().getPath(), template.getName()).toFile();
+        List<String> colors = orderRows.stream().map(OrderRow::getColor).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        boolean bending = !orderRows.stream().map(OrderRow::getBendsCount).filter(Objects::nonNull).distinct().collect(Collectors.toList()).isEmpty();
+        boolean cuttingReturn = !orderRows.stream().map(OrderRow::getCuttingReturn).filter(Objects::nonNull).distinct().collect(Collectors.toList()).isEmpty();
+        boolean wasteReturn = !orderRows.stream().map(OrderRow::getWasteReturn).filter(Objects::nonNull).distinct().collect(Collectors.toList()).isEmpty();
 
-        try (FileInputStream inputStream = new FileInputStream(template);
-             Workbook workbook = getWorkbook(inputStream, template.getAbsolutePath());
-             OutputStream out = new FileOutputStream(file);
-        ) {
-            Sheet sheet = workbook.getSheet("Заказ на производство");
-            if (sheet == null) {
-                logError("Не найдена вкладка 'Заказ на производство' в шаблоне");
-                return;
-            }
-
-            boolean hearedRowFound = false;
-
-            int posNumberCellNum = -1;
-            int compoundNameCellNum = -1;
-            int countCellNum = -1;
-            int metallCellNum = -1;
-            int sizeCellNum = -1;
-            int ourMaterialCellNum = -1;
-            int ownerMaterialCellNum = -1;
-
-            Cell clientCell = null; // заказчик
-            Cell bendingCell = null; // гибка
-            Cell coloringCell = null; // окраска
-            Cell wasteReturnCell = null; // возврат отходов
-            Cell cuttingReturnCell = null; // возврат высечки
-
-            ROWS:
-            for (int lineNumber = sheet.getFirstRowNum(); lineNumber <= sheet.getLastRowNum(); lineNumber++) {
-                final Row row = sheet.getRow(lineNumber);
-                if (row == null) {
-                    continue;
+        int fileNumber = 1;
+        FILES_CYCLE:
+        while (true) { // цикл создания файлов для заказов на производство
+            String templateName = template.getName();
+            String fileExtension = Utils.getFileExtension(template);
+            File file = Paths.get(
+                    new File(orderFilePath).getParentFile().getPath(),
+                    templateName.replace(fileExtension, (fileNumber++) + fileExtension)
+            )
+                    .toFile();
+            try (
+                    FileInputStream inputStream = new FileInputStream(template);
+                    Workbook workbook = getWorkbook(inputStream, template.getAbsolutePath());
+                    OutputStream out = new FileOutputStream(file);
+            ) {
+                Sheet sheet = workbook.getSheet("Заказ на производство");
+                if (sheet == null) {
+                    logError("Не найдена вкладка 'Заказ на производство' в шаблоне");
+                    return;
                 }
-                if (!hearedRowFound) {
-                    for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
-                        Cell cell = row.getCell(k);
-                        if (cell != null) {
-                            String value;
-                            try {
-                                value = cell.getStringCellValue();
-                                if (!hearedRowFound) {
-                                    if (StringUtils.equals(value, "\u2116")) {
-                                        hearedRowFound = true;
-                                        posNumberCellNum = k;
-                                    } else {
-                                        if (StringUtils.containsIgnoreCase(value, "Заказчик:")) {
-                                            clientCell = cell;
-                                        } else if (StringUtils.containsIgnoreCase(value, "Гибка")) {
-                                            bendingCell = cell;
-                                        } else if (StringUtils.containsIgnoreCase(value, "Окраска")) {
-                                            coloringCell = cell;
-                                        } else if (StringUtils.containsIgnoreCase(value, "Возврат отходов")) {
-                                            wasteReturnCell = cell;
-                                        } else if (StringUtils.containsIgnoreCase(value, "Высечки")) {
-                                            cuttingReturnCell = cell;
-                                        }
-                                    }
-                                } else if (StringUtils.containsIgnoreCase(value, "Металл")) {
-                                    if (metallCellNum == -1) {
-                                        metallCellNum = k;
-                                    } else {
-                                        ourMaterialCellNum = k;
-                                        ownerMaterialCellNum = k + 1;
-                                    }
-                                } else if (StringUtils.containsIgnoreCase(value, "Программа")) {
-                                    compoundNameCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Кол-во")) {
-                                    countCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Размер заготовки")) {
-                                    sizeCellNum = k;
-                                }
-                                if (hearedRowFound
-                                        && metallCellNum != -1
-                                        && compoundNameCellNum != -1
-                                        && countCellNum != -1
-                                        && sizeCellNum != -1
-                                        && ourMaterialCellNum != -1
-                                        && ownerMaterialCellNum != -1
-                                        ) {
-                                    break;
-                                }
-                            } catch (Exception ignored) {
-                            }
-                        }
-                    }
-                    if (hearedRowFound) {
-                        lineNumber += 1;
-                        continue ROWS;
-                    } else {
+
+                boolean hearedRowFound = false;
+
+                int posNumberCellNum = -1;
+                int compoundNameCellNum = -1;
+                int countCellNum = -1;
+                int metallCellNum = -1;
+                int minSizeCellNum = -1;
+                int sizeCellNum = -1;
+                int ourMaterialCellNum = -1;
+                int ownerMaterialCellNum = -1;
+
+                Cell clientCell = null; // заказчик
+                Cell orderCell = null; // заказ на производство
+                Cell bendingCell = null; // гибка
+                Cell coloringCell = null; // окраска
+                Cell wasteReturnCell = null; // возврат отходов
+                Cell cuttingReturnCell = null; // возврат высечки
+
+                ROWS:
+                for (
+                        int lineNumber = sheet.getFirstRowNum(),
+                        savedRowsNumber = 0 // счетчик сохраненных в шаблон компановок
+                        ; lineNumber <= sheet.getLastRowNum() && savedRowsNumber < 16;
+                        lineNumber++
+                        ) {
+                    final Row row = sheet.getRow(lineNumber);
+                    if (row == null) {
                         continue;
                     }
-                } else {
-                    if (metallCellNum == -1) {
-                        throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Металл'");
-                    }
-                    if (compoundNameCellNum == -1) {
-                        throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Программа'");
-                    }
-                    if (countCellNum == -1) {
-                        throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Кол-во'");
-                    }
-                    if (sizeCellNum == -1) {
-                        throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Размер заготовки'");
-                    }
-                }
-
-                if (!compoundIterator.hasNext()) {
-                    break;
-                }
-                Compound compound = compoundIterator.next();
-                setValueToCell(row, posNumberCellNum, compound.getPosNumber());
-                setValueToCell(row, compoundNameCellNum, compound.getName());
-                setValueToCell(row, countCellNum, compound.getN());
-                setValueToCell(row, sizeCellNum, compound.getXr() + " x " + compound.getYr());
-
-                ORDER_ROWS:
-                for (OrderRow orderRow : orderRows) {
-                    if (Double.compare(orderRow.getThickness(), compound.getThickness()) == 0) {
-                        for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
-                            if (Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
-                                    && compound.getMaterial().equals(pairStringEntry.getValue())
-                                    ) {
-                                setValueToCell(row, metallCellNum, "#" + orderRow.getThickness() + " " + orderRow.getOriginalMaterial() + " " + orderRow.getMaterialBrand());
-                                if (StringUtils.containsIgnoreCase(orderRow.getOwner(), "исполнитель")) {
-                                    setValueToCell(row, ourMaterialCellNum, "V");
-                                } else {
-                                    setValueToCell(row, ownerMaterialCellNum, "V");
+                    if (!hearedRowFound) {
+                        for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
+                            Cell cell = row.getCell(k);
+                            if (cell != null) {
+                                String value;
+                                try {
+                                    value = cell.getStringCellValue();
+                                    if (!hearedRowFound) {
+                                        if (StringUtils.equals(value, "\u2116")) {
+                                            hearedRowFound = true;
+                                            posNumberCellNum = k;
+                                        } else {
+                                            if (StringUtils.containsIgnoreCase(value, "Заказ на производство")) {
+                                                orderCell = row.getCell(cell.getColumnIndex() + 2);
+                                                if (orderCell == null) {
+                                                    orderCell = row.createCell(cell.getColumnIndex() + 2);
+                                                }
+                                            } else if (StringUtils.containsIgnoreCase(value, "Заказчик:")) {
+                                                clientCell = cell;
+                                            } else if (StringUtils.containsIgnoreCase(value, "Гибка")) {
+                                                bendingCell = cell;
+                                            } else if (StringUtils.containsIgnoreCase(value, "Окраска")) {
+                                                coloringCell = cell;
+                                            } else if (StringUtils.containsIgnoreCase(value, "Возврат отходов")) {
+                                                wasteReturnCell = cell;
+                                            } else if (StringUtils.containsIgnoreCase(value, "Высечки")) {
+                                                cuttingReturnCell = cell;
+                                            }
+                                        }
+                                    } else if (StringUtils.containsIgnoreCase(value, "Металл")) {
+                                        if (metallCellNum == -1) {
+                                            metallCellNum = k;
+                                        } else {
+                                            ourMaterialCellNum = k;
+                                            ownerMaterialCellNum = k + 1;
+                                        }
+                                    } else if (StringUtils.containsIgnoreCase(value, "Программа")) {
+                                        compoundNameCellNum = k;
+                                    } else if (StringUtils.containsIgnoreCase(value, "Кол-во")) {
+                                        countCellNum = k;
+                                    } else if (StringUtils.containsIgnoreCase(value, "Минимальный размер заготовки")) {
+                                        minSizeCellNum = k;
+                                    } else if (StringUtils.contains(value, "Размер заготовки")) {
+                                        sizeCellNum = k;
+                                    }
+                                    if (hearedRowFound
+                                            && metallCellNum != -1
+                                            && compoundNameCellNum != -1
+                                            && countCellNum != -1
+                                            && minSizeCellNum != -1
+                                            && sizeCellNum != -1
+                                            && ourMaterialCellNum != -1
+                                            && ownerMaterialCellNum != -1
+                                            ) {
+                                        break;
+                                    }
+                                } catch (Exception ignored) {
                                 }
+                            }
+                        }
+                        if (hearedRowFound) {
+                            lineNumber += 1;
+                            continue ROWS;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        if (metallCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Металл'");
+                        }
+                        if (compoundNameCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Программа'");
+                        }
+                        if (countCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Кол-во'");
+                        }
+                        if (minSizeCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Минимальный размер заготовки'");
+                        }
+                        if (sizeCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Размер заготовки'");
+                        }
+                    }
 
-                                break ORDER_ROWS;
+                    if (!compoundIterator.hasNext()) {
+                        endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
+                        workbook.write(out);
+                        break FILES_CYCLE;
+                    }
+
+                    Compound compound = compoundIterator.next();
+                    setValueToCell(row, posNumberCellNum, savedRowsNumber + 1);
+                    setValueToCell(row, compoundNameCellNum, compound.getName());
+                    setValueToCell(row, countCellNum, compound.getN());
+                    setValueToCell(row, minSizeCellNum, compound.getXmin() + " x " + compound.getYmin());
+                    setValueToCell(row, sizeCellNum, compound.getXr() + " x " + compound.getYr());
+
+                    ORDER_ROWS:
+                    for (OrderRow orderRow : orderRows) {
+                        if (Double.compare(orderRow.getThickness(), compound.getThickness()) == 0) {
+                            for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
+                                if (compound.getMaterial().equals(pairStringEntry.getValue())
+                                        && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
+                                        ) {
+                                    setValueToCell(row, metallCellNum, "#" + orderRow.getThickness() + " " + orderRow.getOriginalMaterial() + " " + orderRow.getMaterialBrand());
+                                    if (StringUtils.containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
+                                        setValueToCell(row, ownerMaterialCellNum, "V");
+                                    } else {
+                                        setValueToCell(row, ourMaterialCellNum, "V");
+                                    }
+
+                                    break ORDER_ROWS;
+                                }
                             }
                         }
                     }
+
+                    savedRowsNumber++;
+                    lineNumber++;
                 }
 
-                lineNumber++;
+                endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
+                workbook.write(out);
+            } catch (Exception e) {
+                logError("Ошибка при создании заказа на производство " + e.getMessage());
             }
-            workbook.write(out);
-        } catch (Exception e) {
-            logError("Ошибка при создании заказа на производство " + e.getMessage());
+        }
+    }
+
+    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell) {
+
+        if (orderCell != null) {
+            setValueToCell(orderCell.getRow(), orderCell.getColumnIndex(), orderNumber);
+        }
+
+        if (bending && bendingCell != null) { // гибка
+            setValueToCell(bendingCell.getRow(), bendingCell.getColumnIndex(), "Гибка: да");
+        }
+
+        if (cuttingReturn && cuttingReturnCell != null) { // высечка
+            setValueToCell(cuttingReturnCell.getRow(), cuttingReturnCell.getColumnIndex(), "Высечки: да");
+        }
+
+        if (wasteReturn && wasteReturnCell != null) { // отходы
+            setValueToCell(wasteReturnCell.getRow(), wasteReturnCell.getColumnIndex(), "Возврат отходов: да");
+        }
+
+        if (isNotEmpty(colors) && coloringCell != null) { // окраска
+            if (colors.size() == 1) {
+                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: " + colors.get(0));
+            } else {
+                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: да");
+            }
         }
     }
 
@@ -516,7 +585,7 @@ public class Controller3 extends Controller {
         List<CompoundAggregation> oldItems = new ArrayList(table2.getItems());
         Map<Triple<Double, String, String>, Double> oldItemsMaterialsPrices = new HashMap<>();
 
-        if (CollectionUtils.isNotEmpty(oldItems)) {
+        if (isNotEmpty(oldItems)) {
             for (CompoundAggregation oldItem : oldItems) {
                 if (oldItem.getPrice() > 0) {
                     Triple<Double, String, String> triple = oldItem.materialTriple();
@@ -603,7 +672,12 @@ public class Controller3 extends Controller {
     }
 
     private static double round(double value) {
-        return Math.ceil(value * 1000) / 1000;
+        return round(value, 3);
+    }
+
+    private static double round(double value, int precision) {
+        double v = Math.pow(10, precision);
+        return Math.ceil(value * v) / v;
     }
 
     private boolean needToAggregate(CompoundAggregation first, CompoundAggregation second) {

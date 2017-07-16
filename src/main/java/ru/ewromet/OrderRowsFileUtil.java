@@ -43,7 +43,7 @@ public class OrderRowsFileUtil {
     }
 
     private String createCsvLine(OrderRow orderRow) {
-        return String.format("%d;%s;%s;%d;%s;%s;%s;%s;%d;%s;%s",
+        return String.format("%d;%s;%s;%d;%s;%s;%s;%s;%d;%s;%s;%s;%s",
                 orderRow.getPosNumber(),
                 orderRow.getDetailName(),
                 orderRow.getDetailResultName(),
@@ -54,7 +54,9 @@ public class OrderRowsFileUtil {
                 StringUtils.trimToEmpty(orderRow.getColor()),
                 orderRow.getBendsCount(),
                 orderRow.getFilePath(),
-                orderRow.getOwner()
+                orderRow.getOwner(),
+                orderRow.getCuttingReturn(), // высечка
+                orderRow.getWasteReturn() // отходы
         );
     }
 
@@ -86,6 +88,12 @@ public class OrderRowsFileUtil {
         orderRow.setFilePath(split[i++]);
         if (split.length > ++i) {
             orderRow.setOwner(split[i]);
+        }
+        if (split.length > ++i) {
+            orderRow.setCuttingReturn(split[i]);
+        }
+        if (split.length > ++i) {
+            orderRow.setWasteReturn(split[i]);
         }
         return orderRow;
     }
