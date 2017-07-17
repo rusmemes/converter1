@@ -365,10 +365,10 @@ public class Controller3 extends Controller {
             return;
         }
 
-        List<String> colors = orderRows.stream().map(OrderRow::getColor).filter(Objects::nonNull).distinct().collect(Collectors.toList());
-        boolean bending = !orderRows.stream().map(OrderRow::getBendsCount).filter(Objects::nonNull).distinct().collect(Collectors.toList()).isEmpty();
-        boolean cuttingReturn = !orderRows.stream().map(OrderRow::getCuttingReturn).filter(Objects::nonNull).distinct().collect(Collectors.toList()).isEmpty();
-        boolean wasteReturn = !orderRows.stream().map(OrderRow::getWasteReturn).filter(Objects::nonNull).distinct().collect(Collectors.toList()).isEmpty();
+        List<String> colors = orderRows.stream().map(OrderRow::getColor).filter(StringUtils::isNotBlank).distinct().collect(Collectors.toList());
+        boolean bending = orderRows.stream().map(OrderRow::getBendsCount).filter(Objects::nonNull).filter(c -> c > 0).count() > 0;
+        boolean cuttingReturn = orderRows.stream().map(OrderRow::getCuttingReturn).anyMatch(s -> StringUtils.containsIgnoreCase(s, "да"));
+        boolean wasteReturn = orderRows.stream().map(OrderRow::getWasteReturn).anyMatch(s -> StringUtils.containsIgnoreCase(s, "да"));
 
         int fileNumber = 1;
         FILES_CYCLE:
@@ -514,8 +514,8 @@ public class Controller3 extends Controller {
                     setValueToCell(row, posNumberCellNum, savedRowsNumber + 1);
                     setValueToCell(row, compoundNameCellNum, compound.getName());
                     setValueToCell(row, countCellNum, compound.getN());
-                    setValueToCell(row, minSizeCellNum, compound.getXmin() + " x " + compound.getYmin());
-                    setValueToCell(row, sizeCellNum, compound.getXr() + " x " + compound.getYr());
+                    setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000, 2) + " x " + round(compound.getYmin() / 1000, 2));
+                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000, 2) + " x " + round(compound.getYst() / 1000, 2));
 
                     ORDER_ROWS:
                     for (OrderRow orderRow : orderRows) {

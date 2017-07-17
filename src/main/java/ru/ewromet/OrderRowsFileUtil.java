@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static ru.ewromet.Preferences.CONVERTER_DIR_ABS_PATH;
 
 public class OrderRowsFileUtil {
@@ -32,7 +33,7 @@ public class OrderRowsFileUtil {
         }
 
         final File file = Paths.get(CONVERTER_DIR_ABS_PATH, orderNumber + EXTENSION).toFile();
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(file))))) {
+        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(file)), "UTF-8"))) {
             for (OrderRow orderRow : rowList) {
                 if (isNotBlank(orderRow.getFilePath())) {
                     out.write(createCsvLine(orderRow));
@@ -45,25 +46,25 @@ public class OrderRowsFileUtil {
     private String createCsvLine(OrderRow orderRow) {
         return String.format("%d;%s;%s;%d;%s;%s;%s;%s;%d;%s;%s;%s;%s",
                 orderRow.getPosNumber(),
-                orderRow.getDetailName(),
-                orderRow.getDetailResultName(),
+                trimToEmpty(orderRow.getDetailName()),
+                trimToEmpty(orderRow.getDetailResultName()),
                 orderRow.getCount(),
-                orderRow.getOriginalMaterial(),
-                orderRow.getMaterialBrand(),
+                trimToEmpty(orderRow.getOriginalMaterial()),
+                trimToEmpty(orderRow.getMaterialBrand()),
                 orderRow.getThickness(),
-                StringUtils.trimToEmpty(orderRow.getColor()),
+                trimToEmpty(orderRow.getColor()),
                 orderRow.getBendsCount(),
-                orderRow.getFilePath(),
-                orderRow.getOwner(),
-                orderRow.getCuttingReturn(), // высечка
-                orderRow.getWasteReturn() // отходы
+                trimToEmpty(orderRow.getFilePath()),
+                trimToEmpty(orderRow.getOwner()),
+                trimToEmpty(orderRow.getCuttingReturn()), // высечка
+                trimToEmpty(orderRow.getWasteReturn()) // отходы
         );
     }
 
     public List<OrderRow> restoreOrderRows(Integer orderNumber) throws IOException {
         final File file = Paths.get(CONVERTER_DIR_ABS_PATH, orderNumber + EXTENSION).toFile();
         List<OrderRow> list = new ArrayList<>();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file)), "UTF-8"))) {
             String line;
             while (isNotEmpty((line = in.readLine()))) {
                 list.add(createOrderRowFromCsvLine(line));
@@ -86,14 +87,14 @@ public class OrderRowsFileUtil {
         orderRow.setColor(StringUtils.trimToNull(split[i++]));
         orderRow.setBendsCount(Integer.parseUnsignedInt(split[i++]));
         orderRow.setFilePath(split[i++]);
-        if (split.length > ++i) {
-            orderRow.setOwner(split[i]);
+        if (split.length > i) {
+            orderRow.setOwner(split[i++]);
         }
-        if (split.length > ++i) {
-            orderRow.setCuttingReturn(split[i]);
+        if (split.length > i) {
+            orderRow.setCuttingReturn(split[i++]);
         }
-        if (split.length > ++i) {
-            orderRow.setWasteReturn(split[i]);
+        if (split.length > i) {
+            orderRow.setWasteReturn(split[i++]);
         }
         return orderRow;
     }
