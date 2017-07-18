@@ -514,8 +514,8 @@ public class Controller3 extends Controller {
                     setValueToCell(row, posNumberCellNum, savedRowsNumber + 1);
                     setValueToCell(row, compoundNameCellNum, compound.getName());
                     setValueToCell(row, countCellNum, compound.getN());
-                    setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000, 2) + " x " + round(compound.getYmin() / 1000, 2));
-                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000, 2) + " x " + round(compound.getYst() / 1000, 2));
+                    setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000D, 2) + " x " + round(compound.getYmin() / 1000D, 2));
+                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000D, 2) + " x " + round(compound.getYst() / 1000D, 2));
 
                     ORDER_ROWS:
                     for (OrderRow orderRow : orderRows) {
@@ -607,7 +607,7 @@ public class Controller3 extends Controller {
             compoundAggregation.setMaterial(compound.getMaterial());
             compoundAggregation.setMaterialBrand(compound.getMaterialBrand());
             compoundAggregation.setThickness(compound.getThickness());
-            compoundAggregation.setSize(round(compound.getXr() / 1000 * compound.getYr() / 1000));
+            compoundAggregation.setSize(round(compound.getXr() / 1000D * compound.getYr() / 1000D));
             compoundAggregation.setListsCount(compound.getN());
 
             String material = compound.getMaterial();
@@ -623,8 +623,8 @@ public class Controller3 extends Controller {
                 compoundAggregation.setMaterialDensity(7850);
             }
 
-            compoundAggregation.setXMin_x_yMin_m(round(compound.getXmin() / 1000) + " x " + round(compound.getYmin() / 1000));
-            compoundAggregation.setXSt_x_ySt_m(round(compound.getXst() / 1000) + " x " + round(compound.getYst() / 1000));
+            compoundAggregation.setXMin_x_yMin_m(round(compound.getXmin() / 1000D) + " x " + round(compound.getYmin() / 1000D));
+            compoundAggregation.setXSt_x_ySt_m(round(compound.getXst() / 1000D) + " x " + round(compound.getYst() / 1000D));
 
             compoundAggregations.add(compoundAggregation);
         }
@@ -739,7 +739,7 @@ public class Controller3 extends Controller {
     }
 
     private void calcCompoundEditableCells(Compound compound) {
-        compound.setSk(round(compound.getXr() / 1000 * compound.getYr() / 1000));
+        compound.setSk(round(compound.getXr() / 1000D * compound.getYr() / 1000D));
         compound.setSo(round(compound.getN() * compound.getSk()));
     }
 
@@ -760,7 +760,7 @@ public class Controller3 extends Controller {
             );
             aggregationSet.forEach(aggregation -> {
                 aggregation.setTotalConsumption(sum);
-                aggregation.setWeight(round(sum * (aggregation.getThickness() / 1000) * (aggregation.getMaterialDensity())));
+                aggregation.setWeight(round(sum * (aggregation.getThickness() / 1000D) * (aggregation.getMaterialDensity())));
             });
         }
     }
@@ -1095,8 +1095,8 @@ public class Controller3 extends Controller {
                 nColumn,
                 ystColumn,
                 xstColumn,
-                xMinColumn,
                 yMinColumn,
+                xMinColumn,
                 yrColumn,
                 xrColumn,
                 fullListColumn,
@@ -1209,7 +1209,7 @@ public class Controller3 extends Controller {
                 (CompoundAggregation aggreration, Double value) -> {
                     aggreration.setMaterialDensity(value);
                     double totalConsumption = aggreration.getTotalConsumption();
-                    double thickness = aggreration.getThickness() / 1000;
+                    double thickness = aggreration.getThickness() / 1000D;
                     double materialDensity = aggreration.getMaterialDensity();
                     aggreration.setWeight(round(totalConsumption * thickness * materialDensity));
                     aggreration.setTotalPrice(round(aggreration.getWeight() * aggreration.getPrice()));
