@@ -39,12 +39,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
@@ -80,6 +82,30 @@ import static ru.ewromet.Utils.getFileExtension;
 import static ru.ewromet.Utils.getWorkbook;
 
 public class Controller3 extends Controller {
+
+    @FXML
+    private ChoiceBox priceTypeChoiceBox;
+
+    @FXML
+    private ChoiceBox thinknessTypeChoiceBox;
+
+    @FXML
+    private TextField laserDiscount;
+
+    @FXML
+    private TextField thinknessDiscount;
+
+    @FXML
+    private TextField draftingTime;
+
+    @FXML
+    private TextField locksmith;
+
+    @FXML
+    private TextField poddons;
+
+    @FXML
+    private TextField boxesAndBags;
 
     @FXML
     private TableView<Compound> table1;
@@ -130,8 +156,14 @@ public class Controller3 extends Controller {
         }
 
         initializeMenu();
+        initializeChoiceBoxes();
         initializeTable1();
         initializeTable2();
+    }
+
+    private void initializeChoiceBoxes() {
+        priceTypeChoiceBox.setItems(FXCollections.observableArrayList("", "розн", "мелк опт", "опт"));
+        thinknessTypeChoiceBox.setItems(FXCollections.observableArrayList("", "розн", "мелк опт", "опт"));
     }
 
     private void initializeMenu() {
