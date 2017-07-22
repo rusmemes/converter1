@@ -607,7 +607,7 @@ public class Controller3 extends Controller {
             compoundAggregation.setMaterial(compound.getMaterial());
             compoundAggregation.setMaterialBrand(compound.getMaterialBrand());
             compoundAggregation.setThickness(compound.getThickness());
-            compoundAggregation.setSize(round(compound.getXr() / 1000D * compound.getYr() / 1000D));
+            compoundAggregation.setSize(round(compound.getXr() / 1000D * compound.getYr() / 1000D) * compound.getN());
             compoundAggregation.setListsCount(compound.getN());
 
             String material = compound.getMaterial();
@@ -755,7 +755,7 @@ public class Controller3 extends Controller {
             Set<CompoundAggregation> aggregationSet = map.get(triple);
             double sum = round(
                     aggregationSet.stream()
-                            .mapToDouble(aggregation -> round(aggregation.getListsCount() * aggregation.getSize()))
+                            .mapToDouble(aggregation -> aggregation.getSize())
                             .sum()
             );
             aggregationSet.forEach(aggregation -> {
