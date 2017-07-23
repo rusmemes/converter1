@@ -35,6 +35,8 @@ import org.xml.sax.SAXException;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -75,6 +77,9 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static ru.ewromet.Preferences.Key.PRODUCE_ORDER_TEMPLATE_PATH;
 import static ru.ewromet.Utils.containsIgnoreCase;
 import static ru.ewromet.Utils.equalsBy;
@@ -157,8 +162,97 @@ public class Controller3 extends Controller {
 
         initializeMenu();
         initializeChoiceBoxes();
+        initializeTextField();
         initializeTable1();
         initializeTable2();
+    }
+
+    private ChangeListener<String> getChangeListenerFor(TextField textField) {
+        if (textField == laserDiscount || textField == thinknessDiscount) {
+            return new ChangeListener<String>() {
+                @Override
+                public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                    try {
+                        if (isBlank(newValue) || newValue.equals("-") || newValue.equals("+")) {
+                            return;
+                        }
+                        if (newValue.endsWith(".")) {
+                            if (newValue.indexOf('.') != newValue.length() - 1) {
+                                textField.setText(oldValue);
+                            }
+                            return;
+                        }
+                        int anInt = Integer.parseInt(newValue);
+                        if (anInt < -100 || anInt > 500) {
+                            textField.setText(oldValue);
+                        }
+                    } catch (NumberFormatException e) {
+                        try {
+                            double value = Double.parseDouble(newValue);
+                            if (value < -100D || value > 500D) {
+                                textField.setText(oldValue);
+                            } else {
+                                textField.setText(Double.toString(round(value, 1)));
+                            }
+                        } catch (NumberFormatException e1) {
+                            textField.setText(oldValue);
+                        }
+                    }
+                }
+            };
+        } else if (textField == draftingTime || textField == locksmith) {
+            return new ChangeListener<String>() {
+                @Override
+                public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                    try {
+                        if (isBlank(newValue)) {
+                            return;
+                        }
+                        if (newValue.endsWith(".")) {
+                            if (newValue.indexOf('.') != newValue.length() - 1) {
+                                textField.setText(oldValue);
+                            }
+                            return;
+                        }
+                        Integer.parseUnsignedInt(newValue);
+                    } catch (NumberFormatException e) {
+                        try {
+                            double value = Double.parseDouble(newValue);
+                            if (value < 0) {
+                                textField.setText(oldValue);
+                            } else {
+                                textField.setText(Double.toString(round(value, 2)));
+                            }
+                        } catch (NumberFormatException e1) {
+                            textField.setText(oldValue);
+                        }
+                    }
+                }
+            };
+        } else {
+            return new ChangeListener<String>() {
+                @Override
+                public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                    try {
+                        if (isBlank(newValue)) {
+                            return;
+                        }
+                        Integer.parseUnsignedInt(newValue);
+                    } catch (NumberFormatException e) {
+                        textField.setText(oldValue);
+                    }
+                }
+            };
+        }
+    }
+
+    private void initializeTextField() {
+        laserDiscount.textProperty().addListener(getChangeListenerFor(laserDiscount));
+        thinknessDiscount.textProperty().addListener(getChangeListenerFor(thinknessDiscount));
+        draftingTime.textProperty().addListener(getChangeListenerFor(draftingTime));
+        locksmith.textProperty().addListener(getChangeListenerFor(locksmith));
+        poddons.textProperty().addListener(getChangeListenerFor(poddons));
+        boxesAndBags.textProperty().addListener(getChangeListenerFor(boxesAndBags));
     }
 
     private void initializeChoiceBoxes() {
@@ -225,6 +319,15 @@ public class Controller3 extends Controller {
             int materialBrandCellNum = -1;
             int thinknessCellNum = -1;
 
+            Cell laserPriceTypeCell = null;
+            Cell laserDiscountCell = null;
+            Cell thinknessPriceTypeCell = null;
+            Cell thinknessDiscountCell = null;
+            Cell draftingTimeCell = null;
+            Cell locksmithCell = null;
+            Cell poddonsCell = null;
+            Cell boxesAndBagsCell = null;
+
             ROWS:
             for (int j = sheet.getFirstRowNum(); j <= sheet.getLastRowNum(); j++) {
                 final Row row = sheet.getRow(j);
@@ -242,16 +345,66 @@ public class Controller3 extends Controller {
                                     if (StringUtils.equals(value, "\u2116")) {
                                         hearedRowFound = true;
                                         posNumberCellNum = k;
+                                    } else if (containsIgnoreCase(value, "Тип цены для резки")) {
+                                        Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                        laserPriceTypeCell = nextRow.getCell(cell.getColumnIndex());
+                                        if (laserPriceTypeCell == null) {
+                                            laserPriceTypeCell = nextRow.createCell(cell.getColumnIndex());
+                                        }
+                                    } else if (containsIgnoreCase(value, "Тип цены для гибки")) {
+                                        Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                        thinknessPriceTypeCell = nextRow.getCell(cell.getColumnIndex());
+                                        if (thinknessPriceTypeCell == null) {
+                                            thinknessPriceTypeCell = nextRow.createCell(cell.getColumnIndex());
+                                        }
+                                    } else if (containsIgnoreCase(value, "Скидка-") && containsIgnoreCase(value, "Наценка+")) {
+                                        if (containsIgnoreCase(value, "Лазер")) {
+                                            Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                            laserDiscountCell = nextRow.getCell(cell.getColumnIndex());
+                                            if (laserDiscountCell == null) {
+                                                laserDiscountCell = nextRow.createCell(cell.getColumnIndex());
+                                            }
+                                        } else if (containsIgnoreCase(value, "Гибка")) {
+                                            Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                            thinknessDiscountCell = nextRow.getCell(cell.getColumnIndex());
+                                            if (thinknessDiscountCell == null) {
+                                                thinknessDiscountCell = nextRow.createCell(cell.getColumnIndex());
+                                            }
+                                        }
+                                    } else if (containsIgnoreCase(value, "Время черчения")) {
+                                        Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                        draftingTimeCell = nextRow.getCell(cell.getColumnIndex());
+                                        if (draftingTimeCell == null) {
+                                            draftingTimeCell = nextRow.createCell(cell.getColumnIndex());
+                                        }
+                                    } else if (containsIgnoreCase(value, "слесарка")) {
+                                        Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                        locksmithCell = nextRow.getCell(cell.getColumnIndex());
+                                        if (locksmithCell == null) {
+                                            locksmithCell = nextRow.createCell(cell.getColumnIndex());
+                                        }
+                                    } else if (containsIgnoreCase(value, "Поддоны")) {
+                                        Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                        poddonsCell = nextRow.getCell(cell.getColumnIndex());
+                                        if (poddonsCell == null) {
+                                            poddonsCell = nextRow.createCell(cell.getColumnIndex());
+                                        }
+                                    } else if (containsIgnoreCase(value, "Коробки и мешки")) {
+                                        Row nextRow = sheet.getRow(cell.getRowIndex() + 1);
+                                        boxesAndBagsCell = nextRow.getCell(cell.getColumnIndex());
+                                        if (boxesAndBagsCell == null) {
+                                            boxesAndBagsCell = nextRow.createCell(cell.getColumnIndex());
+                                        }
                                     }
-                                } else if (StringUtils.containsIgnoreCase(value, "Расход металла, кв.м.")) {
+                                } else if (containsIgnoreCase(value, "Расход металла, кв.м.")) {
                                     metallCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Цена металла, руб/кг")) {
+                                } else if (containsIgnoreCase(value, "Цена металла, руб/кг")) {
                                     priceCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Материал")) {
+                                } else if (containsIgnoreCase(value, "Материал")) {
                                     materialCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Марка")) {
+                                } else if (containsIgnoreCase(value, "Марка")) {
                                     materialBrandCellNum = k;
-                                } else if (StringUtils.containsIgnoreCase(value, "Тощлина металла, мм") || StringUtils.containsIgnoreCase(value, "Толщина металла, мм")) {
+                                } else if (containsIgnoreCase(value, "Тощлина металла, мм") || containsIgnoreCase(value, "Толщина металла, мм")) {
                                     thinknessCellNum = k;
                                 }
                                 if (hearedRowFound
@@ -346,7 +499,7 @@ public class Controller3 extends Controller {
                 String foundMaterial = materials.get(Pair.of(material, materialBrand));
 
                 if (foundMaterial == null) {
-                    if (StringUtils.isNotBlank(material) && StringUtils.isNotBlank(materialBrand)) {
+                    if (isNotBlank(material) && isNotBlank(materialBrand)) {
                         logError("Для материала " + material + " " + materialBrand + " не нашлось соответствия в таблице соответствия материалов");
                     }
                     continue;
@@ -362,6 +515,39 @@ public class Controller3 extends Controller {
                     }
                 }
             }
+
+            if (laserPriceTypeCell != null && !priceTypeChoiceBox.getValue().equals("")) {
+                setValueToCell(laserPriceTypeCell.getRow(), laserPriceTypeCell.getColumnIndex(), priceTypeChoiceBox.getValue().toString());
+            }
+
+            if (laserDiscountCell != null && isNotBlank(laserDiscount.getText())) {
+                setValueToCell(laserDiscountCell.getRow(), laserDiscountCell.getColumnIndex(), laserDiscount.getText());
+            }
+
+            if (thinknessPriceTypeCell != null && !thinknessTypeChoiceBox.getValue().equals("")) {
+                setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), thinknessTypeChoiceBox.getValue().toString());
+            }
+
+            if (thinknessDiscountCell != null && isNotBlank(thinknessDiscount.getText())) {
+                setValueToCell(thinknessDiscountCell.getRow(), thinknessDiscountCell.getColumnIndex(), thinknessDiscount.getText());
+            }
+
+            if (draftingTimeCell != null && isNotBlank(draftingTime.getText())) {
+                setValueToCell(draftingTimeCell.getRow(), draftingTimeCell.getColumnIndex(), draftingTime.getText());
+            }
+
+            if (locksmithCell != null && isNotBlank(locksmith.getText())) {
+                setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), locksmith.getText());
+            }
+
+            if (poddonsCell != null && isNotBlank(poddons.getText())) {
+                setValueToCell(poddonsCell.getRow(), poddonsCell.getColumnIndex(), poddons.getText());
+            }
+
+            if (boxesAndBagsCell != null && isNotBlank(boxesAndBags.getText())) {
+                setValueToCell(boxesAndBagsCell.getRow(), boxesAndBagsCell.getColumnIndex(), boxesAndBags.getText());
+            }
+
             workbook.setForceFormulaRecalculation(true);
             workbook.write(out);
         } catch (Exception e) {
@@ -399,8 +585,8 @@ public class Controller3 extends Controller {
 
         List<String> colors = orderRows.stream().map(OrderRow::getColor).filter(StringUtils::isNotBlank).distinct().collect(Collectors.toList());
         boolean bending = orderRows.stream().map(OrderRow::getBendsCount).filter(Objects::nonNull).filter(c -> c > 0).count() > 0;
-        boolean cuttingReturn = orderRows.stream().map(OrderRow::getCuttingReturn).anyMatch(s -> StringUtils.containsIgnoreCase(s, "да"));
-        boolean wasteReturn = orderRows.stream().map(OrderRow::getWasteReturn).anyMatch(s -> StringUtils.containsIgnoreCase(s, "да"));
+        boolean cuttingReturn = orderRows.stream().map(OrderRow::getCuttingReturn).anyMatch(s -> containsIgnoreCase(s, "да"));
+        boolean wasteReturn = orderRows.stream().map(OrderRow::getWasteReturn).anyMatch(s -> containsIgnoreCase(s, "да"));
 
         int fileNumber = 1;
         FILES_CYCLE:
@@ -464,35 +650,35 @@ public class Controller3 extends Controller {
                                             hearedRowFound = true;
                                             posNumberCellNum = k;
                                         } else {
-                                            if (StringUtils.containsIgnoreCase(value, "Заказ на производство")) {
+                                            if (containsIgnoreCase(value, "Заказ на производство")) {
                                                 orderCell = row.getCell(cell.getColumnIndex() + 2);
                                                 if (orderCell == null) {
                                                     orderCell = row.createCell(cell.getColumnIndex() + 2);
                                                 }
-                                            } else if (StringUtils.containsIgnoreCase(value, "Заказчик:")) {
+                                            } else if (containsIgnoreCase(value, "Заказчик:")) {
                                                 clientCell = cell;
-                                            } else if (StringUtils.containsIgnoreCase(value, "Гибка")) {
+                                            } else if (containsIgnoreCase(value, "Гибка")) {
                                                 bendingCell = cell;
-                                            } else if (StringUtils.containsIgnoreCase(value, "Окраска")) {
+                                            } else if (containsIgnoreCase(value, "Окраска")) {
                                                 coloringCell = cell;
-                                            } else if (StringUtils.containsIgnoreCase(value, "Возврат отходов")) {
+                                            } else if (containsIgnoreCase(value, "Возврат отходов")) {
                                                 wasteReturnCell = cell;
-                                            } else if (StringUtils.containsIgnoreCase(value, "Высечки")) {
+                                            } else if (containsIgnoreCase(value, "Высечки")) {
                                                 cuttingReturnCell = cell;
                                             }
                                         }
-                                    } else if (StringUtils.containsIgnoreCase(value, "Металл")) {
+                                    } else if (containsIgnoreCase(value, "Металл")) {
                                         if (metallCellNum == -1) {
                                             metallCellNum = k;
                                         } else {
                                             ourMaterialCellNum = k;
                                             ownerMaterialCellNum = k + 1;
                                         }
-                                    } else if (StringUtils.containsIgnoreCase(value, "Программа")) {
+                                    } else if (containsIgnoreCase(value, "Программа")) {
                                         compoundNameCellNum = k;
-                                    } else if (StringUtils.containsIgnoreCase(value, "Кол-во")) {
+                                    } else if (containsIgnoreCase(value, "Кол-во")) {
                                         countCellNum = k;
-                                    } else if (StringUtils.containsIgnoreCase(value, "Минимальный размер заготовки")) {
+                                    } else if (containsIgnoreCase(value, "Минимальный размер заготовки")) {
                                         minSizeCellNum = k;
                                     } else if (StringUtils.contains(value, "Размер заготовки")) {
                                         sizeCellNum = k;
@@ -557,7 +743,7 @@ public class Controller3 extends Controller {
                                         && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
                                         ) {
                                     setValueToCell(row, metallCellNum, "#" + orderRow.getThickness() + " " + orderRow.getOriginalMaterial() + " " + orderRow.getMaterialBrand());
-                                    if (StringUtils.containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
+                                    if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
                                         setValueToCell(row, ownerMaterialCellNum, "V");
                                     } else {
                                         setValueToCell(row, ourMaterialCellNum, "V");
@@ -902,8 +1088,8 @@ public class Controller3 extends Controller {
 
     private static boolean isStainlessSteelNoFoilNoShlif(String material) {
         return StringUtils.startsWithIgnoreCase(material, "Stainless Steel")
-                && !StringUtils.containsIgnoreCase(material, "foil")
-                && !StringUtils.containsIgnoreCase(material, "shlif");
+                && !containsIgnoreCase(material, "foil")
+                && !containsIgnoreCase(material, "shlif");
     }
 
     private static boolean isMildSteelHkOrZintec(String material) {

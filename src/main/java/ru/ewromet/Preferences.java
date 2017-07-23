@@ -26,7 +26,7 @@ public class Preferences {
     }
 
     public enum Key {
-        LAST_PATH(System.getProperty("user.home")), RENAME_FILES(true), SPECIFICATION_TEMPLATE_PATH(""), PRODUCE_ORDER_TEMPLATE_PATH("");
+        LAST_PATH(System.getProperty("user.home")), RENAME_FILES(true), SPECIFICATION_TEMPLATE_PATH(""), PRODUCE_ORDER_TEMPLATE_PATH(""), NESTS_BASE_PATH("");
 
         private Method valueOfMethod;
         private Object defaultValue;

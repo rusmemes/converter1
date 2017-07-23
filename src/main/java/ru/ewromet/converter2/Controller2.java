@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,6 +49,7 @@ import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static ru.ewromet.Preferences.Key.NESTS_BASE_PATH;
 import static ru.ewromet.Preferences.Key.SPECIFICATION_TEMPLATE_PATH;
 import static ru.ewromet.Utils.containsIgnoreCase;
 import static ru.ewromet.Utils.equalsBy;
@@ -87,7 +89,10 @@ public class Controller2 extends Controller {
         File orderFile = controller1.getSelectedFile();
         if (orderFile != null) {
             orderFilePathField.setText(orderFile.getAbsolutePath());
-            compoundsField.setText(Paths.get(orderFile.getParent(), "nests").toString());
+            String nestsBasePath = preferences.get(NESTS_BASE_PATH);
+            if (isNotBlank(nestsBasePath)) {
+                compoundsField.setText(Paths.get(nestsBasePath, new File(orderFilePathField.getText()).getParent(), "nests").toString());
+            }
         }
     }
 
@@ -105,7 +110,13 @@ public class Controller2 extends Controller {
         orderFilePathButton.setOnAction(event -> {
             changePathAction(orderFilePathField);
             if (StringUtils.isBlank(compoundsField.getText())) {
-                compoundsField.setText(Paths.get(new File(orderFilePathField.getText()).getParent(), "nests").toString());
+                Path nestsPath = Paths.get(new File(orderFilePathField.getText()).getParent(), "nests");
+                compoundsField.setText(nestsPath.toString());
+                try {
+                    preferences.update(NESTS_BASE_PATH, nestsPath.getParent().getParent().toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
