@@ -516,7 +516,7 @@ public class Controller3 extends Controller {
                 }
             }
 
-            if (laserPriceTypeCell != null && !priceTypeChoiceBox.getValue().equals("")) {
+            if (laserPriceTypeCell != null && priceTypeChoiceBox.getValue() != null && !priceTypeChoiceBox.getValue().equals("")) {
                 setValueToCell(laserPriceTypeCell.getRow(), laserPriceTypeCell.getColumnIndex(), priceTypeChoiceBox.getValue().toString());
             }
 
@@ -524,7 +524,7 @@ public class Controller3 extends Controller {
                 setValueToCell(laserDiscountCell.getRow(), laserDiscountCell.getColumnIndex(), laserDiscount.getText());
             }
 
-            if (thinknessPriceTypeCell != null && !thinknessTypeChoiceBox.getValue().equals("")) {
+            if (thinknessPriceTypeCell != null && thinknessTypeChoiceBox.getValue() != null && !thinknessTypeChoiceBox.getValue().equals("")) {
                 setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), thinknessTypeChoiceBox.getValue().toString());
             }
 
