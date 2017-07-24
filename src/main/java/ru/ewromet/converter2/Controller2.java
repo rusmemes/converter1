@@ -91,7 +91,7 @@ public class Controller2 extends Controller {
             orderFilePathField.setText(orderFile.getAbsolutePath());
             String nestsBasePath = preferences.get(NESTS_BASE_PATH);
             if (isNotBlank(nestsBasePath)) {
-                compoundsField.setText(Paths.get(nestsBasePath, new File(orderFilePathField.getText()).getParent(), "nests").toString());
+                compoundsField.setText(Paths.get(nestsBasePath, new File(orderFilePathField.getText()).getParentFile().getName(), "nests").toString());
             }
         }
     }
