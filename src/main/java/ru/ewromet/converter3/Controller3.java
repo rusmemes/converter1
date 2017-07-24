@@ -598,7 +598,7 @@ public class Controller3 extends Controller {
 
         int fileNumber = 1;
         FILES_CYCLE:
-        while (true) { // цикл создания файлов для заказов на производство
+        while (compoundIterator.hasNext()) { // цикл создания файлов для заказов на производство
             String templateName = template.getName();
             String fileExtension = Utils.getFileExtension(template);
             File file = Paths.get(

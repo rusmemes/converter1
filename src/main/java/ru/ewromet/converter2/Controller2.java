@@ -111,9 +111,7 @@ public class Controller2 extends Controller {
                 String nestsBasePath = preferences.get(NESTS_BASE_PATH);
                 if (isNotBlank(nestsBasePath) && !nestsBasePath.equals("null")) {
                     File nestsDir = Paths.get(nestsBasePath, new File(orderFilePathField.getText()).getParentFile().getName(), "nests").toFile();
-                    if (nestsDir.exists()) {
-                        compoundsField.setText(nestsDir.getAbsolutePath());
-                    }
+                    compoundsField.setText(nestsDir.getAbsolutePath());
                 }
             }
         });
