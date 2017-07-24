@@ -110,7 +110,7 @@ public class Controller2 extends Controller {
         orderFilePathButton.setOnAction(event -> {
             changePathAction(orderFilePathField);
             if (StringUtils.isBlank(compoundsField.getText())) {
-                Path nestsPath = Paths.get(new File(orderFilePathField.getText()).getParent(), "nests");
+                Path nestsPath = Paths.get(new File(orderFilePathField.getText()).getParentFile().getName(), "nests");
                 compoundsField.setText(nestsPath.toString());
                 try {
                     preferences.update(NESTS_BASE_PATH, nestsPath.getParent().getParent().toString());
