@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -148,6 +149,13 @@ public class Controller3 extends Controller {
             throw new Exception("В папке " + compoundsDir + " drg-файлы не найдены");
         }
         Arrays.sort(files, new WindowsExplorerFilesComparator());
+    }
+
+    public static void main(String[] args) {
+        Path path = Paths.get("\\\\fs\\exchange");
+        System.out.println(path);
+        System.out.println(path.toFile().exists());
+        System.out.println(path.toFile().getAbsolutePath());
     }
 
     @FXML

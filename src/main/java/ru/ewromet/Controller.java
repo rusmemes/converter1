@@ -113,11 +113,14 @@ public abstract class Controller implements Logger {
         }
 
         File dirFromConfig = new File((String) preferences.get(LAST_PATH));
-        while (!dirFromConfig.exists()) {
+        while (dirFromConfig != null && !dirFromConfig.exists()) {
             dirFromConfig = dirFromConfig.getParentFile();
         }
 
-        fileChooser.setInitialDirectory(dirFromConfig);
+        if (dirFromConfig != null) {
+            fileChooser.setInitialDirectory(dirFromConfig);
+        }
+
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {

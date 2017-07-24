@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
@@ -15,7 +14,6 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -90,8 +88,8 @@ public class Controller2 extends Controller {
         if (orderFile != null) {
             orderFilePathField.setText(orderFile.getAbsolutePath());
             String nestsBasePath = preferences.get(NESTS_BASE_PATH);
-            if (isNotBlank(nestsBasePath)) {
-                compoundsField.setText(Paths.get(nestsBasePath, new File(orderFilePathField.getText()).getParentFile().getName(), "nests").toString());
+            if (isNotBlank(nestsBasePath) && !nestsBasePath.equals("null")) {
+                compoundsField.setText(Paths.get(nestsBasePath, orderFile.getParentFile().getName(), "nests").toFile().getAbsolutePath());
             }
         }
     }
@@ -109,13 +107,13 @@ public class Controller2 extends Controller {
 
         orderFilePathButton.setOnAction(event -> {
             changePathAction(orderFilePathField);
-            if (StringUtils.isBlank(compoundsField.getText())) {
-                Path nestsPath = Paths.get(new File(orderFilePathField.getText()).getParentFile().getName(), "nests");
-                compoundsField.setText(nestsPath.toString());
-                try {
-                    preferences.update(NESTS_BASE_PATH, nestsPath.getParent().getParent().toString());
-                } catch (IOException e) {
-                    e.printStackTrace();
+            if (isBlank(compoundsField.getText())) {
+                String nestsBasePath = preferences.get(NESTS_BASE_PATH);
+                if (isNotBlank(nestsBasePath) && !nestsBasePath.equals("null")) {
+                    File nestsDir = Paths.get(nestsBasePath, new File(orderFilePathField.getText()).getParentFile().getName(), "nests").toFile();
+                    if (nestsDir.exists()) {
+                        compoundsField.setText(nestsDir.getAbsolutePath());
+                    }
                 }
             }
         });
@@ -125,7 +123,18 @@ public class Controller2 extends Controller {
 
             chooseDirAndAccept(
                     "Директория с файлами компановок",
-                    file -> compoundsField.setText(file.getAbsolutePath())
+                    file -> {
+                        compoundsField.setText(file.getAbsolutePath());
+                        try {
+                            File nestsDir = file.getParentFile().getParentFile();
+                            if (nestsDir.exists()) {
+                                String newNestsBasePath = nestsDir.getAbsolutePath();
+                                preferences.update(NESTS_BASE_PATH, newNestsBasePath);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
             );
         });
 
