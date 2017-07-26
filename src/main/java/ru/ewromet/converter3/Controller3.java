@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,6 +80,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static ru.ewromet.Preferences.Key.PRODUCE_ORDER_TEMPLATE_PATH;
 import static ru.ewromet.Utils.containsIgnoreCase;
 import static ru.ewromet.Utils.equalsBy;
@@ -129,8 +129,11 @@ public class Controller3 extends Controller {
     private String orderFilePath;
     private File specFile;
 
+    private String clientName;
+
     public void setOrderFilePath(String orderFilePath) {
         this.orderFilePath = orderFilePath;
+        clientName = getClientName(orderFilePath);
     }
 
     public void setSpecFile(File specFile) {
@@ -149,13 +152,6 @@ public class Controller3 extends Controller {
             throw new Exception("В папке " + compoundsDir + " drg-файлы не найдены");
         }
         Arrays.sort(files, new WindowsExplorerFilesComparator());
-    }
-
-    public static void main(String[] args) {
-        Path path = Paths.get("\\\\fs\\exchange");
-        System.out.println(path);
-        System.out.println(path.toFile().exists());
-        System.out.println(path.toFile().getAbsolutePath());
     }
 
     @FXML
@@ -524,36 +520,44 @@ public class Controller3 extends Controller {
                 }
             }
 
-            if (laserPriceTypeCell != null && priceTypeChoiceBox.getValue() != null && !priceTypeChoiceBox.getValue().equals("")) {
-                setValueToCell(laserPriceTypeCell.getRow(), laserPriceTypeCell.getColumnIndex(), priceTypeChoiceBox.getValue().toString());
+            if (laserPriceTypeCell != null) {
+                if (priceTypeChoiceBox.getValue() != null && !priceTypeChoiceBox.getValue().equals("")) {
+                    setValueToCell(laserPriceTypeCell.getRow(), laserPriceTypeCell.getColumnIndex(), priceTypeChoiceBox.getValue().toString());
+                } else {
+                    setValueToCell(laserPriceTypeCell.getRow(), laserPriceTypeCell.getColumnIndex(), "");
+                }
             }
 
-            if (laserDiscountCell != null && isNotBlank(laserDiscount.getText())) {
-                setValueToCell(laserDiscountCell.getRow(), laserDiscountCell.getColumnIndex(), laserDiscount.getText());
+            if (laserDiscountCell != null) {
+                setValueToCell(laserDiscountCell.getRow(), laserDiscountCell.getColumnIndex(), trimToEmpty(laserDiscount.getText()));
             }
 
-            if (thinknessPriceTypeCell != null && thinknessTypeChoiceBox.getValue() != null && !thinknessTypeChoiceBox.getValue().equals("")) {
-                setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), thinknessTypeChoiceBox.getValue().toString());
+            if (thinknessPriceTypeCell != null) {
+                if (thinknessTypeChoiceBox.getValue() != null && !thinknessTypeChoiceBox.getValue().equals("")) {
+                    setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), thinknessTypeChoiceBox.getValue().toString());
+                } else {
+                    setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), "");
+                }
             }
 
-            if (thinknessDiscountCell != null && isNotBlank(thinknessDiscount.getText())) {
-                setValueToCell(thinknessDiscountCell.getRow(), thinknessDiscountCell.getColumnIndex(), thinknessDiscount.getText());
+            if (thinknessDiscountCell != null) {
+                setValueToCell(thinknessDiscountCell.getRow(), thinknessDiscountCell.getColumnIndex(), trimToEmpty(thinknessDiscount.getText()));
             }
 
-            if (draftingTimeCell != null && isNotBlank(draftingTime.getText())) {
-                setValueToCell(draftingTimeCell.getRow(), draftingTimeCell.getColumnIndex(), draftingTime.getText());
+            if (draftingTimeCell != null) {
+                setValueToCell(draftingTimeCell.getRow(), draftingTimeCell.getColumnIndex(), trimToEmpty(draftingTime.getText()));
             }
 
-            if (locksmithCell != null && isNotBlank(locksmith.getText())) {
-                setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), locksmith.getText());
+            if (locksmithCell != null) {
+                setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), trimToEmpty(locksmith.getText()));
             }
 
-            if (poddonsCell != null && isNotBlank(poddons.getText())) {
-                setValueToCell(poddonsCell.getRow(), poddonsCell.getColumnIndex(), poddons.getText());
+            if (poddonsCell != null) {
+                setValueToCell(poddonsCell.getRow(), poddonsCell.getColumnIndex(), trimToEmpty(poddons.getText()));
             }
 
-            if (boxesAndBagsCell != null && isNotBlank(boxesAndBags.getText())) {
-                setValueToCell(boxesAndBagsCell.getRow(), boxesAndBagsCell.getColumnIndex(), boxesAndBags.getText());
+            if (boxesAndBagsCell != null) {
+                setValueToCell(boxesAndBagsCell.getRow(), boxesAndBagsCell.getColumnIndex(), trimToEmpty(boxesAndBags.getText()));
             }
 
             workbook.setForceFormulaRecalculation(true);
@@ -664,7 +668,10 @@ public class Controller3 extends Controller {
                                                     orderCell = row.createCell(cell.getColumnIndex() + 2);
                                                 }
                                             } else if (containsIgnoreCase(value, "Заказчик:")) {
-                                                clientCell = cell;
+                                                clientCell = row.getCell(cell.getColumnIndex() + 1);
+                                                if (clientCell == null) {
+                                                    clientCell = row.createCell(cell.getColumnIndex() + 1);
+                                                }
                                             } else if (containsIgnoreCase(value, "Гибка")) {
                                                 bendingCell = cell;
                                             } else if (containsIgnoreCase(value, "Окраска")) {
@@ -731,7 +738,7 @@ public class Controller3 extends Controller {
                     }
 
                     if (!compoundIterator.hasNext()) {
-                        endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
+                        endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
                         workbook.write(out);
                         break FILES_CYCLE;
                     }
@@ -767,7 +774,7 @@ public class Controller3 extends Controller {
                     lineNumber++;
                 }
 
-                endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
+                endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
                 workbook.write(out);
             } catch (Exception e) {
                 logError("Ошибка при создании заказа на производство " + e.getMessage());
@@ -775,7 +782,11 @@ public class Controller3 extends Controller {
         }
     }
 
-    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell) {
+    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell clientCell, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell) {
+
+        if (clientCell != null) {
+            setValueToCell(clientCell.getRow(), clientCell.getColumnIndex(), clientName);
+        }
 
         if (orderCell != null) {
             setValueToCell(orderCell.getRow(), orderCell.getColumnIndex(), orderNumber);
@@ -890,6 +901,24 @@ public class Controller3 extends Controller {
                 if ((price = oldItemsMaterialsPrices.get(item.materialTriple())) != null) {
                     item.setPrice(price);
                     item.setTotalPrice(round(item.getWeight() * item.getPrice()));
+                }
+            }
+        }
+
+        if (isNotEmpty(items)) {
+            ITEMS:
+            for (CompoundAggregation item : items) {
+                for (OrderRow orderRow : orderRows) {
+                    if (Double.compare(orderRow.getThickness(), item.getThickness()) == 0) {
+                        for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
+                            if (item.getMaterial().equals(pairStringEntry.getValue())
+                                    && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
+                                    ) {
+                                item.setMaterial(orderRow.getOriginalMaterial());
+                                continue ITEMS;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1510,5 +1539,44 @@ public class Controller3 extends Controller {
                 table2.requestFocus();
             });
         });
+    }
+
+    private String getClientName(String orderFilePath) {
+        try (FileInputStream inputStream = new FileInputStream(new File(orderFilePath));
+             Workbook workbook = getWorkbook(inputStream, orderFilePath)
+        ) {
+            Sheet sheet = workbook.getSheetAt(0);
+            SHEET:
+            for (int j = sheet.getFirstRowNum(); j <= sheet.getLastRowNum(); j++) {
+                final Row row = sheet.getRow(j);
+                if (row == null) {
+                    continue;
+                }
+                for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
+                    Cell cell = row.getCell(k);
+                    if (cell != null) {
+                        String value;
+                        try {
+                            value = cell.getStringCellValue();
+                            if (containsIgnoreCase(value, "Заказчик:")) {
+                                Cell clientNameCell = row.getCell(cell.getColumnIndex() + 1);
+                                if (clientNameCell != null) {
+                                    try {
+                                        return clientNameCell.getStringCellValue();
+                                    } catch (Exception e) {
+                                        logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
+                                    }
+                                }
+                                break SHEET;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
+        }
+        return "";
     }
 }

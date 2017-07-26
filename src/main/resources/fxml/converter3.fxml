@@ -20,7 +20,11 @@
                     <children>
                         <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <children>
-                                <Label maxHeight="50.0" text="Тип цены резки" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                <Label maxHeight="50.0" text="Тип цены резки" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                    <HBox.margin>
+                                        <Insets left="2.0" />
+                                    </HBox.margin>
+                                </Label>
                                 <ChoiceBox fx:id="priceTypeChoiceBox" maxHeight="50.0">
                                     <HBox.margin>
                                         <Insets left="10.0" />

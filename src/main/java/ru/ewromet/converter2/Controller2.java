@@ -491,7 +491,7 @@ public class Controller2 extends Controller {
             controller.fillTables();
             Stage stage = new Stage();
             stage.setHeight(765);
-            stage.setWidth(1360);
+            stage.setWidth(1705);
             controller.setStage(stage);
             stage.setTitle("Обработка компоновок");
             stage.setScene(new Scene(root));
