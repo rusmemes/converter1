@@ -12,6 +12,7 @@ public class CompoundAggregation {
 
     private final SimpleIntegerProperty posNumber = new SimpleIntegerProperty();
     private final SimpleStringProperty material = new SimpleStringProperty();
+    private final SimpleStringProperty materialEn = new SimpleStringProperty();
     private final SimpleStringProperty materialBrand = new SimpleStringProperty();
     private final SimpleDoubleProperty thickness = new SimpleDoubleProperty();
     private final SimpleDoubleProperty size = new SimpleDoubleProperty();
@@ -39,6 +40,14 @@ public class CompoundAggregation {
 
     public void setMaterial(String material) {
         this.material.set(material);
+    }
+
+    public String getMaterialEn() {
+        return materialEn.get();
+    }
+
+    public void setMaterialEn(String materialEn) {
+        this.materialEn.set(materialEn);
     }
 
     public String getMaterialBrand() {

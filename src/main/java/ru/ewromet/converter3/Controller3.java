@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -510,7 +511,7 @@ public class Controller3 extends Controller {
                 }
 
                 for (CompoundAggregation aggregation : table2.getItems()) {
-                    if (aggregation.getThickness() == thinkness && aggregation.getMaterial().equals(foundMaterial)) {
+                    if (aggregation.getThickness() == thinkness && aggregation.getMaterialEn().equals(foundMaterial)) {
                         setValueToCell(row, priceCellNum, aggregation.getPrice());
                         if (alreadyDefinedMaterials.add(Pair.of(foundMaterial, thinkness))) {
                             setValueToCell(row, metallCellNum, aggregation.getTotalConsumption());
@@ -528,10 +529,6 @@ public class Controller3 extends Controller {
                 }
             }
 
-            if (laserDiscountCell != null) {
-                setValueToCell(laserDiscountCell.getRow(), laserDiscountCell.getColumnIndex(), trimToEmpty(laserDiscount.getText()));
-            }
-
             if (thinknessPriceTypeCell != null) {
                 if (thinknessTypeChoiceBox.getValue() != null && !thinknessTypeChoiceBox.getValue().equals("")) {
                     setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), thinknessTypeChoiceBox.getValue().toString());
@@ -540,24 +537,28 @@ public class Controller3 extends Controller {
                 }
             }
 
+            if (laserDiscountCell != null) {
+                eraseOrSetCell(laserDiscountCell, trimToEmpty(laserDiscount.getText()));
+            }
+
             if (thinknessDiscountCell != null) {
-                setValueToCell(thinknessDiscountCell.getRow(), thinknessDiscountCell.getColumnIndex(), trimToEmpty(thinknessDiscount.getText()));
+                eraseOrSetCell(thinknessDiscountCell, trimToEmpty(thinknessDiscount.getText()));
             }
 
             if (draftingTimeCell != null) {
-                setValueToCell(draftingTimeCell.getRow(), draftingTimeCell.getColumnIndex(), trimToEmpty(draftingTime.getText()));
+                eraseOrSetCell(draftingTimeCell, trimToEmpty(draftingTime.getText()));
             }
 
             if (locksmithCell != null) {
-                setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), trimToEmpty(locksmith.getText()));
+                eraseOrSetCell(locksmithCell, trimToEmpty(locksmith.getText()));
             }
 
             if (poddonsCell != null) {
-                setValueToCell(poddonsCell.getRow(), poddonsCell.getColumnIndex(), trimToEmpty(poddons.getText()));
+                eraseOrSetCell(poddonsCell, trimToEmpty(poddons.getText()));
             }
 
             if (boxesAndBagsCell != null) {
-                setValueToCell(boxesAndBagsCell.getRow(), boxesAndBagsCell.getColumnIndex(), trimToEmpty(boxesAndBags.getText()));
+                eraseOrSetCell(boxesAndBagsCell, trimToEmpty(boxesAndBags.getText()));
             }
 
             workbook.setForceFormulaRecalculation(true);
@@ -574,6 +575,19 @@ public class Controller3 extends Controller {
         createProduceOrder();
 
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
+    }
+
+    private void eraseOrSetCell(Cell locksmithCell, String value) {
+        if (value.isEmpty()) {
+            eraseCell(locksmithCell);
+        } else {
+            setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), Double.valueOf(value));
+        }
+    }
+
+    private static void eraseCell(Cell cell) {
+        cell.setCellType(CellType.BLANK);
+        cell.setCellType(CellType.NUMERIC);
     }
 
     private void createProduceOrder() {
@@ -914,6 +928,7 @@ public class Controller3 extends Controller {
                             if (item.getMaterial().equals(pairStringEntry.getValue())
                                     && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
                                     ) {
+                                item.setMaterialEn(item.getMaterial());
                                 item.setMaterial(orderRow.getOriginalMaterial());
                                 continue ITEMS;
                             }
