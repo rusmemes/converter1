@@ -615,6 +615,7 @@ public class Controller3 extends Controller {
         boolean wasteReturn = orderRows.stream().map(OrderRow::getWasteReturn).anyMatch(s -> containsIgnoreCase(s, "да"));
 
         int fileNumber = 1;
+        int compoundPosition = 1;
         FILES_CYCLE:
         while (compoundIterator.hasNext()) { // цикл создания файлов для заказов на производство
             String templateName = template.getName();
@@ -758,7 +759,7 @@ public class Controller3 extends Controller {
                     }
 
                     Compound compound = compoundIterator.next();
-                    setValueToCell(row, posNumberCellNum, savedRowsNumber + 1);
+                    setValueToCell(row, posNumberCellNum, compoundPosition++);
                     setValueToCell(row, compoundNameCellNum, compound.getName());
                     setValueToCell(row, countCellNum, compound.getN());
                     setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000D, 2) + " x " + round(compound.getYmin() / 1000D, 2));
