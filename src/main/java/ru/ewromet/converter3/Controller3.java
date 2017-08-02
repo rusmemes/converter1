@@ -522,19 +522,11 @@ public class Controller3 extends Controller {
             }
 
             if (laserPriceTypeCell != null) {
-                if (priceTypeChoiceBox.getValue() != null && !priceTypeChoiceBox.getValue().equals("")) {
-                    setValueToCell(laserPriceTypeCell.getRow(), laserPriceTypeCell.getColumnIndex(), priceTypeChoiceBox.getValue().toString());
-                } else {
-                    setValueToCell(laserPriceTypeCell.getRow(), laserPriceTypeCell.getColumnIndex(), "");
-                }
+                eraseOrSetCell(laserPriceTypeCell, trimToEmpty(priceTypeChoiceBox.getValue() == null ? "" : priceTypeChoiceBox.getValue().toString()));
             }
 
             if (thinknessPriceTypeCell != null) {
-                if (thinknessTypeChoiceBox.getValue() != null && !thinknessTypeChoiceBox.getValue().equals("")) {
-                    setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), thinknessTypeChoiceBox.getValue().toString());
-                } else {
-                    setValueToCell(thinknessPriceTypeCell.getRow(), thinknessPriceTypeCell.getColumnIndex(), "");
-                }
+                eraseOrSetCell(thinknessPriceTypeCell, trimToEmpty(thinknessTypeChoiceBox.getValue() == null ? "" : thinknessTypeChoiceBox.getValue().toString()));
             }
 
             if (laserDiscountCell != null) {
@@ -581,7 +573,12 @@ public class Controller3 extends Controller {
         if (value.isEmpty()) {
             eraseCell(locksmithCell);
         } else {
-            setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), Double.valueOf(value));
+            try {
+                Double dValue = Double.valueOf(value);
+                setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), dValue);
+            } catch (NumberFormatException e) {
+                setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), value);
+            }
         }
     }
 
