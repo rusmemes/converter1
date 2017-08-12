@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -37,16 +38,15 @@ import org.xml.sax.SAXException;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -56,7 +56,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.FileChooser;
-import javafx.util.Callback;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import ru.ewromet.Controller;
@@ -78,10 +77,18 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static ru.ewromet.Preferences.Key.MATERIAL_DENSITY_ALUMINIUM;
+import static ru.ewromet.Preferences.Key.MATERIAL_DENSITY_BRASS;
+import static ru.ewromet.Preferences.Key.MATERIAL_DENSITY_COPPER;
+import static ru.ewromet.Preferences.Key.MATERIAL_DENSITY_CUSTOM;
+import static ru.ewromet.Preferences.Key.MATERIAL_DENSITY_OTHER;
+import static ru.ewromet.Preferences.Key.MATERIAL_DENSITY_STEEL_ZINTEC;
 import static ru.ewromet.Preferences.Key.PRODUCE_ORDER_TEMPLATE_PATH;
 import static ru.ewromet.Utils.containsIgnoreCase;
 import static ru.ewromet.Utils.equalsBy;
@@ -95,6 +102,12 @@ public class Controller3 extends Controller {
 
     @FXML
     private ChoiceBox thinknessTypeChoiceBox;
+
+    @FXML
+    private ChoiceBox polymerTypeChoiceBox;
+
+    @FXML
+    private CheckBox weldingCheckBox;
 
     @FXML
     private TextField laserDiscount;
@@ -132,6 +145,21 @@ public class Controller3 extends Controller {
 
     private String clientName;
 
+    private Map<String, Double> customMaterialDensities = new HashMap<>();
+
+    private void saveCustomMaterialDensity(String material, Double density) {
+        customMaterialDensities.put(material, density);
+        try {
+            preferences.update(MATERIAL_DENSITY_CUSTOM, customMaterialDensities.entrySet().stream()
+                    .map(stringDoubleEntry -> stringDoubleEntry.getKey() + ":" + stringDoubleEntry.getValue())
+                    .collect(Collectors.joining(";")));
+        } catch (IOException e) {
+            logError("Не удалось сохранить кастомное значение плотности материала: " + e.getMessage());
+            e.printStackTrace();
+            e.printStackTrace();
+        }
+    }
+
     public void setOrderFilePath(String orderFilePath) {
         this.orderFilePath = orderFilePath;
         clientName = getClientName(orderFilePath);
@@ -139,6 +167,7 @@ public class Controller3 extends Controller {
 
     public void setSpecFile(File specFile) {
         this.specFile = specFile;
+        polymerTypeChoiceBox.setItems(FXCollections.observableArrayList(getPolymerTypeList()));
     }
 
     public void setCompoundsPath(String compoundsDirPath) throws Exception {
@@ -146,9 +175,7 @@ public class Controller3 extends Controller {
         if (!compoundsDir.exists() || !compoundsDir.isDirectory()) {
             throw new Exception("Не найдена папка с компоновками");
         }
-        files = compoundsDir.listFiles((file, name) -> {
-            return name.toLowerCase().endsWith(".drg");
-        });
+        files = compoundsDir.listFiles((file, name) -> name.toLowerCase().endsWith(".drg"));
         if (ArrayUtils.isEmpty(files)) {
             throw new Exception("В папке " + compoundsDir + " drg-файлы не найдены");
         }
@@ -170,82 +197,83 @@ public class Controller3 extends Controller {
         initializeTextField();
         initializeTable1();
         initializeTable2();
+
+        String densitiesString = preferences.get(MATERIAL_DENSITY_CUSTOM);
+        if (isNotBlank(densitiesString) && !densitiesString.equals("null")) {
+            Stream.of(densitiesString)
+                    .flatMap(ds -> Stream.of(split(ds, ';')))
+                    .forEach(kvStringPair -> {
+                        String[] split = split(kvStringPair, ':');
+                        customMaterialDensities.put(split[0], Double.valueOf(split[1]));
+                    });
+        }
     }
 
     private ChangeListener<String> getChangeListenerFor(TextField textField) {
         if (textField == laserDiscount || textField == thinknessDiscount) {
-            return new ChangeListener<String>() {
-                @Override
-                public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+            return (observable, oldValue, newValue) -> {
+                try {
+                    if (isBlank(newValue) || newValue.equals("-") || newValue.equals("+")) {
+                        return;
+                    }
+                    if (newValue.endsWith(".")) {
+                        if (newValue.indexOf('.') != newValue.length() - 1) {
+                            textField.setText(oldValue);
+                        }
+                        return;
+                    }
+                    int anInt = Integer.parseInt(newValue);
+                    if (anInt < -100 || anInt > 500) {
+                        textField.setText(oldValue);
+                    }
+                } catch (NumberFormatException e) {
                     try {
-                        if (isBlank(newValue) || newValue.equals("-") || newValue.equals("+")) {
-                            return;
-                        }
-                        if (newValue.endsWith(".")) {
-                            if (newValue.indexOf('.') != newValue.length() - 1) {
-                                textField.setText(oldValue);
-                            }
-                            return;
-                        }
-                        int anInt = Integer.parseInt(newValue);
-                        if (anInt < -100 || anInt > 500) {
+                        double value = Double.parseDouble(newValue);
+                        if (value < -100D || value > 500D) {
                             textField.setText(oldValue);
+                        } else {
+                            textField.setText(Double.toString(round(value, 1)));
                         }
-                    } catch (NumberFormatException e) {
-                        try {
-                            double value = Double.parseDouble(newValue);
-                            if (value < -100D || value > 500D) {
-                                textField.setText(oldValue);
-                            } else {
-                                textField.setText(Double.toString(round(value, 1)));
-                            }
-                        } catch (NumberFormatException e1) {
-                            textField.setText(oldValue);
-                        }
+                    } catch (NumberFormatException e1) {
+                        textField.setText(oldValue);
                     }
                 }
             };
         } else if (textField == draftingTime || textField == locksmith) {
-            return new ChangeListener<String>() {
-                @Override
-                public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                    try {
-                        if (isBlank(newValue)) {
-                            return;
-                        }
-                        if (newValue.endsWith(".")) {
-                            if (newValue.indexOf('.') != newValue.length() - 1) {
-                                textField.setText(oldValue);
-                            }
-                            return;
-                        }
-                        Integer.parseUnsignedInt(newValue);
-                    } catch (NumberFormatException e) {
-                        try {
-                            double value = Double.parseDouble(newValue);
-                            if (value < 0) {
-                                textField.setText(oldValue);
-                            } else {
-                                textField.setText(Double.toString(round(value, 2)));
-                            }
-                        } catch (NumberFormatException e1) {
+            return (observable, oldValue, newValue) -> {
+                try {
+                    if (isBlank(newValue)) {
+                        return;
+                    }
+                    if (newValue.endsWith(".")) {
+                        if (newValue.indexOf('.') != newValue.length() - 1) {
                             textField.setText(oldValue);
                         }
+                        return;
+                    }
+                    Integer.parseUnsignedInt(newValue);
+                } catch (NumberFormatException e) {
+                    try {
+                        double value = Double.parseDouble(newValue);
+                        if (value < 0) {
+                            textField.setText(oldValue);
+                        } else {
+                            textField.setText(Double.toString(round(value, 2)));
+                        }
+                    } catch (NumberFormatException e1) {
+                        textField.setText(oldValue);
                     }
                 }
             };
         } else {
-            return new ChangeListener<String>() {
-                @Override
-                public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                    try {
-                        if (isBlank(newValue)) {
-                            return;
-                        }
-                        Integer.parseUnsignedInt(newValue);
-                    } catch (NumberFormatException e) {
-                        textField.setText(oldValue);
+            return (observable, oldValue, newValue) -> {
+                try {
+                    if (isBlank(newValue)) {
+                        return;
                     }
+                    Integer.parseUnsignedInt(newValue);
+                } catch (NumberFormatException e) {
+                    textField.setText(oldValue);
                 }
             };
         }
@@ -310,6 +338,8 @@ public class Controller3 extends Controller {
         Set<Pair<String, Double>> alreadyDefinedMaterials = new HashSet<>();
         Map<Pair<String, String>, String> materials = Controller1.getMATERIALS();
 
+        Double polymerTypeChoiceBoxValue = (Double) polymerTypeChoiceBox.getValue();
+
         try (FileInputStream inputStream = new FileInputStream(sourceFile);
              Workbook workbook = getWorkbook(inputStream, sourceFile.getAbsolutePath());
              OutputStream out = new FileOutputStream(specFile);
@@ -319,6 +349,7 @@ public class Controller3 extends Controller {
             boolean hearedRowFound = false;
             int posNumberCellNum = -1;
             int metallCellNum = -1;
+            int polymerCellNum = -1;
             int priceCellNum = -1;
             int materialCellNum = -1;
             int materialBrandCellNum = -1;
@@ -411,6 +442,8 @@ public class Controller3 extends Controller {
                                     materialBrandCellNum = k;
                                 } else if (containsIgnoreCase(value, "Тощлина металла, мм") || containsIgnoreCase(value, "Толщина металла, мм")) {
                                     thinknessCellNum = k;
+                                } else if (containsIgnoreCase(value, "Полимер, тип")) {
+                                    polymerCellNum = k;
                                 }
                                 if (hearedRowFound
                                         && metallCellNum != -1
@@ -418,6 +451,7 @@ public class Controller3 extends Controller {
                                         && materialCellNum != -1
                                         && materialBrandCellNum != -1
                                         && thinknessCellNum != -1
+                                        && polymerCellNum != -1
                                         ) {
                                     break;
                                 }
@@ -446,15 +480,19 @@ public class Controller3 extends Controller {
                     if (thinknessCellNum == -1) {
                         throw new RuntimeException("В файле " + specFile + " на вкладке 'расчет' в шапке таблицы не найдена колонка, содержащая фразу 'Толщина металла, мм'");
                     }
+                    if (polymerCellNum == -1) {
+                        throw new RuntimeException("В файле " + specFile + " на вкладке 'расчет' в шапке таблицы не найдена колонка, содержащая фразу 'Полимер, тип'");
+                    }
                 }
 
                 Cell cell = row.getCell(posNumberCellNum);
+                int posNumber;
                 if (cell == null) {
                     continue;
                 } else {
                     try {
-                        double numericCellValue = cell.getNumericCellValue();
-                        if (numericCellValue < 1) {
+                        posNumber = (int) cell.getNumericCellValue();
+                        if (posNumber < 1) {
                             continue;
                         }
                     } catch (Exception ignored) {
@@ -462,13 +500,25 @@ public class Controller3 extends Controller {
                     }
                 }
 
+                if (polymerTypeChoiceBoxValue != null) {
+                    for (OrderRow orderRow : orderRows) {
+                        if (orderRow.getPosNumber() == posNumber) {
+                            if (isNotBlank(orderRow.getColor())) {
+                                setValueToCell(row, polymerCellNum, polymerTypeChoiceBoxValue);
+                            }
+                            break;
+                        }
+                    }
+                }
+
                 cell = row.getCell(materialCellNum);
-                String material = null;
+                String material;
                 if (cell != null) {
                     try {
                         material = cell.getStringCellValue();
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найден вид металла");
+                        e.printStackTrace();
                         continue;
                     }
                 } else {
@@ -476,12 +526,13 @@ public class Controller3 extends Controller {
                 }
 
                 cell = row.getCell(materialBrandCellNum);
-                String materialBrand = null;
+                String materialBrand;
                 if (cell != null) {
                     try {
                         materialBrand = cell.getStringCellValue();
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена марка металла");
+                        e.printStackTrace();
                         continue;
                     }
                 } else {
@@ -489,12 +540,13 @@ public class Controller3 extends Controller {
                 }
 
                 cell = row.getCell(thinknessCellNum);
-                double thinkness = -1;
+                double thinkness;
                 if (cell != null) {
                     try {
                         thinkness = cell.getNumericCellValue();
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена толщина металла");
+                        e.printStackTrace();
                         continue;
                     }
                 } else {
@@ -557,6 +609,7 @@ public class Controller3 extends Controller {
             workbook.write(out);
         } catch (Exception e) {
             logError("Ошибка при заполнении спецификации: " + e.getClass().getName() + ' ' + e.getMessage());
+            e.printStackTrace();
             return;
         } finally {
             if (!sourceFile.delete()) {
@@ -650,8 +703,8 @@ public class Controller3 extends Controller {
                 Cell coloringCell = null; // окраска
                 Cell wasteReturnCell = null; // возврат отходов
                 Cell cuttingReturnCell = null; // возврат высечки
+                Cell weldingCell = null; // сварка
 
-                ROWS:
                 for (
                         int lineNumber = sheet.getFirstRowNum(),
                         savedRowsNumber = 0 // счетчик сохраненных в шаблон компановок
@@ -692,6 +745,8 @@ public class Controller3 extends Controller {
                                                 wasteReturnCell = cell;
                                             } else if (containsIgnoreCase(value, "Высечки")) {
                                                 cuttingReturnCell = cell;
+                                            } else if (contains(value, "Сварка")) {
+                                                weldingCell = cell;
                                             }
                                         }
                                     } else if (containsIgnoreCase(value, "Металл")) {
@@ -707,7 +762,7 @@ public class Controller3 extends Controller {
                                         countCellNum = k;
                                     } else if (containsIgnoreCase(value, "Минимальный размер заготовки")) {
                                         minSizeCellNum = k;
-                                    } else if (StringUtils.contains(value, "Размер заготовки")) {
+                                    } else if (contains(value, "Размер заготовки")) {
                                         sizeCellNum = k;
                                     }
                                     if (hearedRowFound
@@ -727,10 +782,8 @@ public class Controller3 extends Controller {
                         }
                         if (hearedRowFound) {
                             lineNumber += 1;
-                            continue ROWS;
-                        } else {
-                            continue;
                         }
+                        continue;
                     } else {
                         if (metallCellNum == -1) {
                             throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Металл'");
@@ -750,7 +803,7 @@ public class Controller3 extends Controller {
                     }
 
                     if (!compoundIterator.hasNext()) {
-                        endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
+                        endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell, weldingCell);
                         workbook.write(out);
                         break FILES_CYCLE;
                     }
@@ -760,7 +813,7 @@ public class Controller3 extends Controller {
                     setValueToCell(row, compoundNameCellNum, compound.getName());
                     setValueToCell(row, countCellNum, compound.getN());
                     setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000D, 2) + " x " + round(compound.getYmin() / 1000D, 2));
-                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000D, 2) + " x " + round(compound.getYst() / 1000D, 2));
+                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000D, 2) + " x " + round(compound.getYst() / 1000D, 2) + (compound.isDin() ? " (ДИН)" : ""));
 
                     ORDER_ROWS:
                     for (OrderRow orderRow : orderRows) {
@@ -786,15 +839,16 @@ public class Controller3 extends Controller {
                     lineNumber++;
                 }
 
-                endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell);
+                endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell, weldingCell);
                 workbook.write(out);
             } catch (Exception e) {
                 logError("Ошибка при создании заказа на производство " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
 
-    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell clientCell, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell) {
+    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell clientCell, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell, Cell weldingCell) {
 
         if (clientCell != null) {
             setValueToCell(clientCell.getRow(), clientCell.getColumnIndex(), clientName);
@@ -806,6 +860,10 @@ public class Controller3 extends Controller {
 
         if (bending && bendingCell != null) { // гибка
             setValueToCell(bendingCell.getRow(), bendingCell.getColumnIndex(), "Гибка: да");
+        }
+
+        if (weldingCheckBox.isSelected() && weldingCell != null) {
+            setValueToCell(weldingCell.getRow(), weldingCell.getColumnIndex(), "Сварка: да");
         }
 
         if (cuttingReturn && cuttingReturnCell != null) { // высечка
@@ -841,7 +899,6 @@ public class Controller3 extends Controller {
                     oldItemsMaterialsPrices.computeIfAbsent(triple, (key) -> oldItem.getPrice());
                 }
             }
-            oldItems = null;
             table2.getItems().clear();
         }
 
@@ -860,16 +917,21 @@ public class Controller3 extends Controller {
             compoundAggregation.setListsCount(compound.getN());
 
             String material = compound.getMaterial();
-            if (isAluminium(material)) {
-                compoundAggregation.setMaterialDensity(2700);
-            } else if (isBrass(material)) {
-                compoundAggregation.setMaterialDensity(8800);
-            } else if (isCopper(material)) {
-                compoundAggregation.setMaterialDensity(8900);
-            } else if (isSteelOrZintec(material)) {
-                compoundAggregation.setMaterialDensity(7850);
+            Double density = customMaterialDensities.get(material);
+            if (density == null) {
+                if (isAluminium(material)) {
+                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_ALUMINIUM));
+                } else if (isBrass(material)) {
+                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_BRASS));
+                } else if (isCopper(material)) {
+                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_COPPER));
+                } else if (isSteelOrZintec(material)) {
+                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_STEEL_ZINTEC));
+                } else {
+                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_OTHER));
+                }
             } else {
-                compoundAggregation.setMaterialDensity(7850);
+                compoundAggregation.setMaterialDensity(density);
             }
 
             compoundAggregation.setXMin_x_yMin_m(round(compound.getXmin() / 1000D) + " x " + round(compound.getYmin() / 1000D));
@@ -895,7 +957,7 @@ public class Controller3 extends Controller {
             }
         }
 
-        Collections.sort(indexesToDelete, Comparator.reverseOrder());
+        indexesToDelete.sort(Comparator.reverseOrder());
 
         indexesToDelete.forEach(index -> compoundAggregations.remove(index.intValue()));
 
@@ -1023,7 +1085,7 @@ public class Controller3 extends Controller {
             Set<CompoundAggregation> aggregationSet = map.get(triple);
             double sum = round(
                     aggregationSet.stream()
-                            .mapToDouble(aggregation -> aggregation.getSize())
+                            .mapToDouble(CompoundAggregation::getSize)
                             .sum()
             );
             aggregationSet.forEach(aggregation -> {
@@ -1317,27 +1379,38 @@ public class Controller3 extends Controller {
 
         TableColumn<Compound, Boolean> fullListColumn = ColumnFactory.createColumn(
                 "Весь лист", 50, "fullList",
-                new Callback<TableColumn<Compound, Boolean>, TableCell<Compound, Boolean>>() {
-                    @Override
-                    public TableCell<Compound, Boolean> call(TableColumn<Compound, Boolean> param) {
-                        return new CheckBoxTableCell<>(index -> {
-                            BooleanProperty active = new SimpleBooleanProperty(table1.getItems().get(index).isFullList());
-                            active.addListener((obs, wasActive, isNowActive) -> {
-                                Compound compound = table1.getItems().get(index);
-                                compound.setFullList(isNowActive);
-                                recalcXrYr(compound);
-                                refreshTable(table1, null);
-                                fillTable2();
-                            });
-                            return active;
-                        });
-                    }
-                },
+                param -> new CheckBoxTableCell<>(index -> {
+                    BooleanProperty active = new SimpleBooleanProperty(table1.getItems().get(index).isFullList());
+                    active.addListener((obs, wasActive, isNowActive) -> {
+                        Compound compound = table1.getItems().get(index);
+                        compound.setFullList(isNowActive);
+                        recalcXrYr(compound);
+                        refreshTable(table1, null);
+                        fillTable2();
+                    });
+                    return active;
+                }),
                 (Compound compound, Boolean value) -> {
                 }
         );
 
         fullListColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
+
+        TableColumn<Compound, Boolean> dinColumn = ColumnFactory.createColumn(
+                "ДИН", 50, "din",
+                param -> new CheckBoxTableCell<>(index -> {
+                    BooleanProperty active = new SimpleBooleanProperty(table1.getItems().get(index).isDin());
+                    active.addListener((obs, wasActive, isNowActive) -> {
+                        Compound compound = table1.getItems().get(index);
+                        compound.setDin(isNowActive);
+                    });
+                    return active;
+                }),
+                (Compound compound, Boolean value) -> {
+                }
+        );
+
+        dinColumn.setStyle(ALIGNMENT_BASELINE_CENTER);
 
         TableColumn<Compound, Double> skColumn = ColumnFactory.createColumn(
                 "Sk, кв. м.", 50, "sk",
@@ -1368,6 +1441,7 @@ public class Controller3 extends Controller {
                 yrColumn,
                 xrColumn,
                 fullListColumn,
+                dinColumn,
                 skColumn,
                 soColumn
         );
@@ -1475,13 +1549,19 @@ public class Controller3 extends Controller {
                 "Плотность материала, кг/м3", 50, "materialDensity",
                 TextFieldTableCell.forTableColumn(new DoubleStringConverter()),
                 (CompoundAggregation aggreration, Double value) -> {
-                    aggreration.setMaterialDensity(value);
-                    double totalConsumption = aggreration.getTotalConsumption();
-                    double thickness = aggreration.getThickness() / 1000D;
-                    double materialDensity = aggreration.getMaterialDensity();
-                    aggreration.setWeight(round(totalConsumption * thickness * materialDensity));
-                    aggreration.setTotalPrice(round(aggreration.getWeight() * aggreration.getPrice()));
+                    String materialEn = aggreration.getMaterialEn();
+                    for (CompoundAggregation compoundAggregation : table2.getItems()) {
+                        if (compoundAggregation.getMaterialEn().equals(materialEn)) {
+                            compoundAggregation.setMaterialDensity(value);
+                            double totalConsumption = compoundAggregation.getTotalConsumption();
+                            double thickness = compoundAggregation.getThickness() / 1000D;
+                            double materialDensity = compoundAggregation.getMaterialDensity();
+                            compoundAggregation.setWeight(round(totalConsumption * thickness * materialDensity));
+                            compoundAggregation.setTotalPrice(round(compoundAggregation.getWeight() * compoundAggregation.getPrice()));
+                        }
+                    }
                     refreshTable(table2, null);
+                    saveCustomMaterialDensity(materialEn, value);
                 }
         );
 
@@ -1578,6 +1658,7 @@ public class Controller3 extends Controller {
                                         return clientNameCell.getStringCellValue();
                                     } catch (Exception e) {
                                         logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
+                                        e.printStackTrace();
                                     }
                                 }
                                 break SHEET;
@@ -1589,7 +1670,28 @@ public class Controller3 extends Controller {
             }
         } catch (Exception e) {
             logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
+            e.printStackTrace();
         }
         return "";
+    }
+
+    private List<Double> getPolymerTypeList() {
+        List<Double> res = new ArrayList<>(10);
+        try (FileInputStream inputStream = new FileInputStream(this.specFile);
+             Workbook workbook = getWorkbook(inputStream, this.specFile.getAbsolutePath())
+        ) {
+            Sheet sheet = workbook.getSheet("прайс");
+            for (int i = 45; i < 52; i++) {
+                Cell cell = sheet.getRow(i).getCell(10);
+                if (cell != null) {
+                    res.add(cell.getNumericCellValue());
+                }
+            }
+
+        } catch (Exception e) {
+            logError("Не удалось извлечь цифры полимерки с листа \"прайс\": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return res;
     }
 }

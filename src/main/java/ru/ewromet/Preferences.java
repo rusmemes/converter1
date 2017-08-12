@@ -26,7 +26,17 @@ public class Preferences {
     }
 
     public enum Key {
-        LAST_PATH(System.getProperty("user.home")), RENAME_FILES(true), SPECIFICATION_TEMPLATE_PATH(""), PRODUCE_ORDER_TEMPLATE_PATH(""), NESTS_BASE_PATH("");
+        LAST_PATH(System.getProperty("user.home")),
+        RENAME_FILES(true),
+        SPECIFICATION_TEMPLATE_PATH(""),
+        PRODUCE_ORDER_TEMPLATE_PATH(""),
+        NESTS_BASE_PATH(""),
+        MATERIAL_DENSITY_CUSTOM(""),
+        MATERIAL_DENSITY_ALUMINIUM(2700D),
+        MATERIAL_DENSITY_BRASS(8800D),
+        MATERIAL_DENSITY_COPPER(8900D),
+        MATERIAL_DENSITY_STEEL_ZINTEC(7850D),
+        MATERIAL_DENSITY_OTHER(7850D),;
 
         private Method valueOfMethod;
         private Object defaultValue;
@@ -52,7 +62,7 @@ public class Preferences {
         }
     }};
 
-    public Preferences() throws IOException, InvocationTargetException, IllegalAccessException {
+    Preferences() throws IOException, InvocationTargetException, IllegalAccessException {
         if (file.exists()) {
             try (InputStream in = new FileInputStream(file)) {
                 Properties properties = new Properties();

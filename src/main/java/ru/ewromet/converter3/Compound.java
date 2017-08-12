@@ -25,6 +25,7 @@ public class Compound {
     private final SimpleDoubleProperty so = new SimpleDoubleProperty();
 
     private final SimpleBooleanProperty fullList = new SimpleBooleanProperty();
+    private final SimpleBooleanProperty din = new SimpleBooleanProperty();
 
     public int getPosNumber() {
         return posNumber.get();
@@ -146,7 +147,11 @@ public class Compound {
         this.fullList.set(fullList);
     }
 
-    public SimpleBooleanProperty fullListProperty() {
-        return fullList;
+    public boolean isDin() {
+        return din.get();
+    }
+
+    public void setDin(boolean din) {
+        this.din.set(din);
     }
 }
