@@ -812,8 +812,8 @@ public class Controller3 extends Controller {
                     setValueToCell(row, posNumberCellNum, compoundPosition++);
                     setValueToCell(row, compoundNameCellNum, compound.getName());
                     setValueToCell(row, countCellNum, compound.getN());
-                    setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000D, 2) + " x " + round(compound.getYmin() / 1000D, 2));
-                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000D, 2) + " x " + round(compound.getYst() / 1000D, 2) + (compound.isDin() ? " (ДИН)" : ""));
+                    setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000D) + " x " + round(compound.getYmin() / 1000D));
+                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000D) + " x " + round(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
 
                     ORDER_ROWS:
                     for (OrderRow orderRow : orderRows) {
