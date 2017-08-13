@@ -156,7 +156,6 @@ public class Controller3 extends Controller {
         } catch (IOException e) {
             logError("Не удалось сохранить кастомное значение плотности материала: " + e.getMessage());
             e.printStackTrace();
-            e.printStackTrace();
         }
     }
 
@@ -289,8 +288,8 @@ public class Controller3 extends Controller {
     }
 
     private void initializeChoiceBoxes() {
-        priceTypeChoiceBox.setItems(FXCollections.observableArrayList("", "розн", "мелк опт", "опт"));
-        thinknessTypeChoiceBox.setItems(FXCollections.observableArrayList("", "розн", "мелк опт", "опт"));
+        priceTypeChoiceBox.setItems(FXCollections.observableArrayList(null, "розн", "мелк опт", "опт"));
+        thinknessTypeChoiceBox.setItems(FXCollections.observableArrayList(null, "розн", "мелк опт", "опт"));
     }
 
     private void initializeMenu() {
@@ -342,7 +341,7 @@ public class Controller3 extends Controller {
 
         try (FileInputStream inputStream = new FileInputStream(sourceFile);
              Workbook workbook = getWorkbook(inputStream, sourceFile.getAbsolutePath());
-             OutputStream out = new FileOutputStream(specFile);
+             OutputStream out = new FileOutputStream(specFile)
         ) {
             Sheet sheet = workbook.getSheet("расчет");
 
@@ -605,6 +604,13 @@ public class Controller3 extends Controller {
                 eraseOrSetCell(boxesAndBagsCell, trimToEmpty(boxesAndBags.getText()));
             }
 
+            try {
+                fillMaterialConsumptionList(workbook);
+            } catch (Exception e) {
+                logError("Ошибка при заполнении листа расхода материалов: " + e.getClass().getName() + ' ' + e.getMessage());
+                e.printStackTrace();
+            }
+
             workbook.setForceFormulaRecalculation(true);
             workbook.write(out);
         } catch (Exception e) {
@@ -620,6 +626,94 @@ public class Controller3 extends Controller {
         createProduceOrder();
 
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
+    }
+
+    private void fillMaterialConsumptionList(Workbook workbook) {
+
+        Sheet sheet = workbook.getSheet("Расход материалов");
+
+        if (sheet == null) {
+            return;
+        }
+
+        if (isNotBlank(clientName)) {
+            sheet.getRow(0).getCell(2).setCellValue(clientName);
+        }
+
+        int rowNumber = 4;
+
+        for (Compound compound : table1.getItems()) {
+            Row row = sheet.getRow(rowNumber);
+            if (row == null) {
+                row = sheet.createRow(rowNumber);
+            }
+
+            setValueToCell(row, 0, compound.getPosNumber());
+            setValueToCell(row, 1, compound.getName());
+            setValueToCell(row, 2, compound.getN());
+
+            double thickness = compound.getThickness();
+            setValueToCell(row, 5, thickness);
+            setValueToCell(row, 6, round(compound.getXmin() / 1000D));
+            setValueToCell(row, 7, round(compound.getYmin() / 1000D));
+
+            double xrM = round(compound.getXr() / 1000D);
+            setValueToCell(row, 8, xrM);
+            double yrM = round(compound.getYr() / 1000D);
+            setValueToCell(row, 9, yrM);
+
+            Double density = getDensity(compound.getMaterial());
+
+            setValueToCell(row, 10, round(xrM * yrM * thickness * round(density / 1000D), 1));
+
+            setValueToCell(row, 11, round(compound.getXst() / 1000D));
+            setValueToCell(row, 12, round(compound.getYst() / 1000D));
+
+            if (compound.isDin()) {
+                setValueToCell(row, 13, "V");
+            }
+
+            ORDER_ROWS:
+            for (OrderRow orderRow : orderRows) {
+                if (Double.compare(orderRow.getThickness(), thickness) == 0) {
+                    for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
+                        if (compound.getMaterial().equals(pairStringEntry.getValue())
+                                && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
+                                ) {
+                            setValueToCell(row, 3, orderRow.getOriginalMaterial());
+                            setValueToCell(row, 4, orderRow.getMaterialBrand());
+                            if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
+                                setValueToCell(row, 14, "заказчик");
+                            } else {
+                                setValueToCell(row, 14, "исполнитель");
+                            }
+
+                            break ORDER_ROWS;
+                        }
+                    }
+                }
+            }
+
+            rowNumber++;
+        }
+    }
+
+    private Double getDensity(String material) {
+        Double density = customMaterialDensities.get(material);
+        if (density == null) {
+            if (isAluminium(material)) {
+                density = preferences.get(MATERIAL_DENSITY_ALUMINIUM);
+            } else if (isBrass(material)) {
+                density = preferences.get(MATERIAL_DENSITY_BRASS);
+            } else if (isCopper(material)) {
+                density = preferences.get(MATERIAL_DENSITY_COPPER);
+            } else if (isSteelOrZintec(material)) {
+                density = preferences.get(MATERIAL_DENSITY_STEEL_ZINTEC);
+            } else {
+                density = preferences.get(MATERIAL_DENSITY_OTHER);
+            }
+        }
+        return density;
     }
 
     private void eraseOrSetCell(Cell locksmithCell, String value) {
@@ -916,23 +1010,9 @@ public class Controller3 extends Controller {
             compoundAggregation.setSize(round(compound.getXr() / 1000D * compound.getYr() / 1000D) * compound.getN());
             compoundAggregation.setListsCount(compound.getN());
 
-            String material = compound.getMaterial();
-            Double density = customMaterialDensities.get(material);
-            if (density == null) {
-                if (isAluminium(material)) {
-                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_ALUMINIUM));
-                } else if (isBrass(material)) {
-                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_BRASS));
-                } else if (isCopper(material)) {
-                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_COPPER));
-                } else if (isSteelOrZintec(material)) {
-                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_STEEL_ZINTEC));
-                } else {
-                    compoundAggregation.setMaterialDensity(preferences.get(MATERIAL_DENSITY_OTHER));
-                }
-            } else {
-                compoundAggregation.setMaterialDensity(density);
-            }
+            Double density = getDensity(compound.getMaterial());
+            compoundAggregation.setMaterialDensity(density);
+
 
             compoundAggregation.setXMin_x_yMin_m(round(compound.getXmin() / 1000D) + " x " + round(compound.getYmin() / 1000D));
             compoundAggregation.setXSt_x_ySt_m(round(compound.getXst() / 1000D) + " x " + round(compound.getYst() / 1000D));
@@ -1002,7 +1082,7 @@ public class Controller3 extends Controller {
     }
 
     private static double round(double value) {
-        return round(value, 3);
+        return round(value, 2);
     }
 
     private static double round(double value, int precision) {
@@ -1692,6 +1772,7 @@ public class Controller3 extends Controller {
             logError("Не удалось извлечь цифры полимерки с листа \"прайс\": " + e.getMessage());
             e.printStackTrace();
         }
+        res.set(0, null);
         return res;
     }
 }
