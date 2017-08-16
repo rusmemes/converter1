@@ -2,7 +2,6 @@ package ru.ewromet.converter1;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -195,7 +194,7 @@ public class OrderParser {
 
                 final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
 
-                if (Objects.equals(Paths.get(fileNameLowerCased.trim()).toFile().getName(), detailNameLowerCased.trim())) {
+                if (Objects.equals(fileNameLowerCased, detailNameLowerCased)) {
                     orderRow.setFilePath(relativeFilePath);
                     fileRow.setPosNumber(orderRow.getPosNumber());
                     fileOrderRows.add(orderRow);
