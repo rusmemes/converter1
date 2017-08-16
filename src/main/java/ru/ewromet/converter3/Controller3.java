@@ -1134,8 +1134,17 @@ public class Controller3 extends Controller {
             compound.setN(Integer.valueOf(getAttrValue(radanAttributes, "137")));
 
             QuotationInfo quotationInfo = radanCompoundDocument.getQuotationInfo();
-            compound.setXmin(Math.min(compound.getXst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "1")))));
-            compound.setYmin(Math.min(compound.getYst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "2")))));
+
+            try {
+                compound.setXmin(Math.min(compound.getXst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "1")))));
+            } catch (Exception ignored) {
+                compound.setXmin(compound.getXst());
+            }
+            try {
+                compound.setYmin(Math.min(compound.getYst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "2")))));
+            } catch (Exception ignored) {
+                compound.setYmin(compound.getYst());
+            }
 
             compound.setMaterialBrand(getBrand(orderRows, quotationInfo));
 

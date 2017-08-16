@@ -195,7 +195,7 @@ public class OrderParser {
 
                 final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
 
-                if (Objects.equals(Paths.get(fileNameLowerCased).toFile().getName(), detailNameLowerCased)) {
+                if (Objects.equals(Paths.get(fileNameLowerCased.trim()).toFile().getName(), detailNameLowerCased.trim())) {
                     orderRow.setFilePath(relativeFilePath);
                     fileRow.setPosNumber(orderRow.getPosNumber());
                     fileOrderRows.add(orderRow);
