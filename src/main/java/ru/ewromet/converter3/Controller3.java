@@ -1200,17 +1200,21 @@ public class Controller3 extends Controller {
             int ySt = compound.getYst();
             compound.setYr(round(yMin < ySt / 2 ? ySt / 2 : ySt));
 
+            fixXrYrForMildSteelOrZintec(compound);
+
         } else if (isMildSteelGk(material)) {
 
             // Если Xmin > или = 90% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(round(xMin >= xSt * 0.9 ? xSt : xMin * 1.2));
+            compound.setXr(round(xMin >= xSt * 0.9 ? xSt : xMin * 1.1));
 
             // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
             int yMin = compound.getYmin();
             int ySt = compound.getYst();
             compound.setYr(round(yMin < ySt / 2 ? ySt / 2 : ySt));
+
+            fixXrYrForMildSteelOrZintec(compound);
 
         } else if ((thickness > 2 && isAluminium(material)) || isStainlessSteelNoFoilNoShlif(material)) {
 
@@ -1256,6 +1260,16 @@ public class Controller3 extends Controller {
 
             // Yr = Yst - всегда
             compound.setYr(compound.getYst());
+        }
+    }
+
+    private void fixXrYrForMildSteelOrZintec(Compound compound) {
+        if (compound.getXr() < compound.getXst() || compound.getYr() < compound.getYst()) {
+            if (compound.getXmin() <= compound.getXst() / 2) {
+                compound.setYr(compound.getYst());
+            } else {
+                compound.setXr(compound.getXst());
+            }
         }
     }
 
