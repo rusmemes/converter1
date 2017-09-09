@@ -1264,7 +1264,7 @@ public class Controller3 extends Controller {
     }
 
     private void fixXrYrForMildSteelOrZintec(Compound compound) {
-        if (compound.getXr() < compound.getXst() || compound.getYr() < compound.getYst()) {
+        if (compound.getYmin() <= compound.getYst() / 2 && (compound.getXr() < compound.getXst() || compound.getYr() < compound.getYst())) {
             if (compound.getXmin() <= compound.getXst() / 2) {
                 compound.setYr(compound.getYst());
             } else {
