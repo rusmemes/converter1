@@ -46,18 +46,18 @@ public class OrderRowsFileUtil {
     private String createCsvLine(OrderRow orderRow) {
         return String.format("%d;%s;%s;%d;%s;%s;%s;%s;%d;%s;%s;%s;%s",
                 orderRow.getPosNumber(),
-                trimToEmpty(orderRow.getDetailName()),
-                trimToEmpty(orderRow.getDetailResultName()),
+                trimToEmpty(orderRow.getDetailName()).replace("\n", ""),
+                trimToEmpty(orderRow.getDetailResultName()).replace("\n", ""),
                 orderRow.getCount(),
-                trimToEmpty(orderRow.getOriginalMaterial()),
-                trimToEmpty(orderRow.getMaterialBrand()),
+                trimToEmpty(orderRow.getOriginalMaterial()).replace("\n", ""),
+                trimToEmpty(orderRow.getMaterialBrand()).replace("\n", ""),
                 orderRow.getThickness(),
-                trimToEmpty(orderRow.getColor()),
+                trimToEmpty(orderRow.getColor()).replace("\n", ""),
                 orderRow.getBendsCount(),
-                trimToEmpty(orderRow.getFilePath()),
-                trimToEmpty(orderRow.getOwner()),
-                trimToEmpty(orderRow.getCuttingReturn()), // высечка
-                trimToEmpty(orderRow.getWasteReturn()) // отходы
+                trimToEmpty(orderRow.getFilePath()).replace("\n", ""),
+                trimToEmpty(orderRow.getOwner()).replace("\n", ""),
+                trimToEmpty(orderRow.getCuttingReturn()).replace("\n", ""), // высечка
+                trimToEmpty(orderRow.getWasteReturn()).replace("\n", "") // отходы
         );
     }
 
