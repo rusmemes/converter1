@@ -231,7 +231,7 @@ public class Controller3 extends Controller {
                         if (value < -100D || value > 500D) {
                             textField.setText(oldValue);
                         } else {
-                            textField.setText(Double.toString(round(value, 1)));
+                            textField.setText(Double.toString(roundByCeil(value, 1)));
                         }
                     } catch (NumberFormatException e1) {
                         textField.setText(oldValue);
@@ -257,7 +257,7 @@ public class Controller3 extends Controller {
                         if (value < 0) {
                             textField.setText(oldValue);
                         } else {
-                            textField.setText(Double.toString(round(value, 2)));
+                            textField.setText(Double.toString(roundByCeil(value, 2)));
                         }
                     } catch (NumberFormatException e1) {
                         textField.setText(oldValue);
@@ -628,74 +628,9 @@ public class Controller3 extends Controller {
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
     }
 
-    private void fillMaterialConsumptionList(Workbook workbook) {
-
-        Sheet sheet = workbook.getSheet("Расход материалов");
-
-        if (sheet == null) {
-            return;
-        }
-
-        if (isNotBlank(clientName)) {
-            sheet.getRow(0).getCell(2).setCellValue(clientName);
-        }
-
-        int rowNumber = 4;
-
-        for (Compound compound : table1.getItems()) {
-            Row row = sheet.getRow(rowNumber);
-            if (row == null) {
-                row = sheet.createRow(rowNumber);
-            }
-
-            setValueToCell(row, 0, compound.getPosNumber());
-            setValueToCell(row, 1, compound.getName());
-            setValueToCell(row, 2, compound.getN());
-
-            double thickness = compound.getThickness();
-            setValueToCell(row, 5, thickness);
-            setValueToCell(row, 6, round(compound.getXmin() / 1000D));
-            setValueToCell(row, 7, round(compound.getYmin() / 1000D));
-
-            double xrM = round(compound.getXr() / 1000D);
-            setValueToCell(row, 8, xrM);
-            double yrM = round(compound.getYr() / 1000D);
-            setValueToCell(row, 9, yrM);
-
-            Double density = getDensity(compound.getMaterial());
-
-            setValueToCell(row, 10, round(xrM * yrM * thickness * round(density / 1000D), 1));
-
-            setValueToCell(row, 11, round(compound.getXst() / 1000D));
-            setValueToCell(row, 12, round(compound.getYst() / 1000D));
-
-            if (compound.isDin()) {
-                setValueToCell(row, 13, "V");
-            }
-
-            ORDER_ROWS:
-            for (OrderRow orderRow : orderRows) {
-                if (Double.compare(orderRow.getThickness(), thickness) == 0) {
-                    for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
-                        if (compound.getMaterial().equals(pairStringEntry.getValue())
-                                && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
-                                ) {
-                            setValueToCell(row, 3, orderRow.getOriginalMaterial());
-                            setValueToCell(row, 4, orderRow.getMaterialBrand());
-                            if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
-                                setValueToCell(row, 14, "заказчик");
-                            } else {
-                                setValueToCell(row, 14, "исполнитель");
-                            }
-
-                            break ORDER_ROWS;
-                        }
-                    }
-                }
-            }
-
-            rowNumber++;
-        }
+    private static double roundByCeil(double value, int precision) {
+        double v = Math.pow(10, precision);
+        return Math.ceil(value * v) / v;
     }
 
     private Double getDensity(String material) {
@@ -732,6 +667,125 @@ public class Controller3 extends Controller {
     private static void eraseCell(Cell cell) {
         cell.setCellType(CellType.BLANK);
         cell.setCellType(CellType.NUMERIC);
+    }
+
+    private void fillMaterialConsumptionList(Workbook workbook) {
+
+        Sheet sheet = workbook.getSheet("Расход материалов");
+
+        if (sheet == null) {
+            return;
+        }
+
+        if (isNotBlank(clientName)) {
+            sheet.getRow(0).getCell(2).setCellValue(clientName);
+        }
+
+        int rowNumber = 4;
+
+        for (Compound compound : table1.getItems()) {
+            Row row = sheet.getRow(rowNumber);
+            if (row == null) {
+                row = sheet.createRow(rowNumber);
+            }
+
+            setValueToCell(row, 0, compound.getPosNumber());
+            setValueToCell(row, 1, compound.getName());
+            setValueToCell(row, 2, compound.getN());
+
+            double thickness = compound.getThickness();
+            setValueToCell(row, 5, thickness);
+            setValueToCell(row, 6, roundByCeil(compound.getXmin() / 1000D));
+            setValueToCell(row, 7, roundByCeil(compound.getYmin() / 1000D));
+
+            double xrM = roundByCeil(compound.getXr() / 1000D);
+            setValueToCell(row, 8, xrM);
+            double yrM = roundByCeil(compound.getYr() / 1000D);
+            setValueToCell(row, 9, yrM);
+
+            Double density = getDensity(compound.getMaterial());
+
+            setValueToCell(row, 10, round(xrM * yrM * thickness * roundByCeil(density / 1000D), 1));
+
+            setValueToCell(row, 11, roundByCeil(compound.getXst() / 1000D));
+            setValueToCell(row, 12, roundByCeil(compound.getYst() / 1000D));
+
+            if (compound.isDin()) {
+                setValueToCell(row, 13, "V");
+            }
+
+            ORDER_ROWS:
+            for (OrderRow orderRow : orderRows) {
+                if (Double.compare(orderRow.getThickness(), thickness) == 0) {
+                    for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
+                        if (compound.getMaterial().equals(pairStringEntry.getValue())
+                                && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
+                                ) {
+                            setValueToCell(row, 3, orderRow.getOriginalMaterial());
+                            setValueToCell(row, 4, orderRow.getMaterialBrand());
+                            if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
+                                setValueToCell(row, 14, "заказчик");
+                            } else {
+                                setValueToCell(row, 14, "исполнитель");
+                            }
+
+                            break ORDER_ROWS;
+                        }
+                    }
+                }
+            }
+
+            rowNumber++;
+        }
+    }
+
+    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell clientCell, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell, Cell weldingCell) {
+
+        if (clientCell != null) {
+            setValueToCell(clientCell.getRow(), clientCell.getColumnIndex(), clientName);
+        }
+
+        if (orderCell != null) {
+            setValueToCell(orderCell.getRow(), orderCell.getColumnIndex(), orderNumber);
+        }
+
+        if (bending && bendingCell != null) { // гибка
+            setValueToCell(bendingCell.getRow(), bendingCell.getColumnIndex(), "Гибка: да");
+        }
+
+        if (weldingCheckBox.isSelected() && weldingCell != null) {
+            setValueToCell(weldingCell.getRow(), weldingCell.getColumnIndex(), "Сварка: да");
+        }
+
+        if (cuttingReturn && cuttingReturnCell != null) { // высечка
+            setValueToCell(cuttingReturnCell.getRow(), cuttingReturnCell.getColumnIndex(), "Высечки: да");
+        }
+
+        if (wasteReturn && wasteReturnCell != null) { // отходы
+            setValueToCell(wasteReturnCell.getRow(), wasteReturnCell.getColumnIndex(), "Возврат отходов: да");
+        }
+
+        if (isNotEmpty(colors) && coloringCell != null) { // окраска
+            if (colors.size() == 1) {
+                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: " + colors.get(0));
+            } else {
+                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: да");
+            }
+        }
+    }
+
+    public void fillTables() throws Exception {
+        fillTable1();
+        fillTable2();
+    }
+
+    private static double roundByCeil(double value) {
+        return roundByCeil(value, 2);
+    }
+
+    private static double round(double value, int precision) {
+        double v = Math.pow(10, precision);
+        return Math.round(value * v) / v;
     }
 
     private void createProduceOrder() {
@@ -906,8 +960,15 @@ public class Controller3 extends Controller {
                     setValueToCell(row, posNumberCellNum, compoundPosition++);
                     setValueToCell(row, compoundNameCellNum, compound.getName());
                     setValueToCell(row, countCellNum, compound.getN());
-                    setValueToCell(row, minSizeCellNum, round(compound.getXmin() / 1000D) + " x " + round(compound.getYmin() / 1000D));
-                    setValueToCell(row, sizeCellNum, round(compound.getXst() / 1000D) + " x " + round(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+                    setValueToCell(row, minSizeCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+
+                    if (compound.getYr() == compound.getYst()) {
+                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getYr() / 1000D) + " x " + roundByCeil(compound.getXmin() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+                    } else if (compound.getXr() == compound.getXst()) {
+                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getYr() / 1000D) + " x " + roundByCeil(compound.getXr() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+                    } else {
+                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+                    }
 
                     ORDER_ROWS:
                     for (OrderRow orderRow : orderRows) {
@@ -942,46 +1003,6 @@ public class Controller3 extends Controller {
         }
     }
 
-    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell clientCell, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell, Cell weldingCell) {
-
-        if (clientCell != null) {
-            setValueToCell(clientCell.getRow(), clientCell.getColumnIndex(), clientName);
-        }
-
-        if (orderCell != null) {
-            setValueToCell(orderCell.getRow(), orderCell.getColumnIndex(), orderNumber);
-        }
-
-        if (bending && bendingCell != null) { // гибка
-            setValueToCell(bendingCell.getRow(), bendingCell.getColumnIndex(), "Гибка: да");
-        }
-
-        if (weldingCheckBox.isSelected() && weldingCell != null) {
-            setValueToCell(weldingCell.getRow(), weldingCell.getColumnIndex(), "Сварка: да");
-        }
-
-        if (cuttingReturn && cuttingReturnCell != null) { // высечка
-            setValueToCell(cuttingReturnCell.getRow(), cuttingReturnCell.getColumnIndex(), "Высечки: да");
-        }
-
-        if (wasteReturn && wasteReturnCell != null) { // отходы
-            setValueToCell(wasteReturnCell.getRow(), wasteReturnCell.getColumnIndex(), "Возврат отходов: да");
-        }
-
-        if (isNotEmpty(colors) && coloringCell != null) { // окраска
-            if (colors.size() == 1) {
-                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: " + colors.get(0));
-            } else {
-                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: да");
-            }
-        }
-    }
-
-    public void fillTables() throws Exception {
-        fillTable1();
-        fillTable2();
-    }
-
     private void fillTable2() {
         List<CompoundAggregation> oldItems = new ArrayList(table2.getItems());
         Map<Triple<Double, String, String>, Double> oldItemsMaterialsPrices = new HashMap<>();
@@ -1007,15 +1028,15 @@ public class Controller3 extends Controller {
             compoundAggregation.setMaterial(compound.getMaterial());
             compoundAggregation.setMaterialBrand(compound.getMaterialBrand());
             compoundAggregation.setThickness(compound.getThickness());
-            compoundAggregation.setSize(round(compound.getXr() / 1000D * compound.getYr() / 1000D) * compound.getN());
+            compoundAggregation.setSize(roundByCeil(compound.getXr() / 1000D * compound.getYr() / 1000D) * compound.getN());
             compoundAggregation.setListsCount(compound.getN());
 
             Double density = getDensity(compound.getMaterial());
             compoundAggregation.setMaterialDensity(density);
 
 
-            compoundAggregation.setXMin_x_yMin_m(round(compound.getXmin() / 1000D) + " x " + round(compound.getYmin() / 1000D));
-            compoundAggregation.setXSt_x_ySt_m(round(compound.getXst() / 1000D) + " x " + round(compound.getYst() / 1000D));
+            compoundAggregation.setXMin_x_yMin_m(roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+            compoundAggregation.setXSt_x_ySt_m(roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
 
             compoundAggregations.add(compoundAggregation);
         }
@@ -1054,7 +1075,7 @@ public class Controller3 extends Controller {
                 Double price;
                 if ((price = oldItemsMaterialsPrices.get(item.materialTriple())) != null) {
                     item.setPrice(price);
-                    item.setTotalPrice(round(item.getWeight() * item.getPrice()));
+                    item.setTotalPrice(roundByCeil(item.getWeight() * item.getPrice()));
                 }
             }
         }
@@ -1081,20 +1102,33 @@ public class Controller3 extends Controller {
         table2.setItems(items);
     }
 
-    private static double round(double value) {
-        return round(value, 2);
-    }
-
-    private static double round(double value, int precision) {
-        double v = Math.pow(10, precision);
-        return Math.ceil(value * v) / v;
-    }
-
     private boolean needToAggregate(CompoundAggregation first, CompoundAggregation second) {
         return first.materialTriple().equals(second.materialTriple())
                 && first.getXMin_x_yMin_m().equals(second.getXMin_x_yMin_m())
                 && first.getXSt_x_ySt_m().equals(second.getXSt_x_ySt_m())
                 ;
+    }
+
+    private void calcTotalConsumption(List<CompoundAggregation> aggregations) {
+        if (isEmpty(aggregations)) {
+            return;
+        }
+        Map<Triple<Double, String, String>, Set<CompoundAggregation>> map = aggregations.stream().collect(Collectors.groupingBy(
+                CompoundAggregation::materialTriple, Collectors.toSet()
+        ));
+
+        for (Triple<Double, String, String> triple : map.keySet()) {
+            Set<CompoundAggregation> aggregationSet = map.get(triple);
+            double sum = roundByCeil(
+                    aggregationSet.stream()
+                            .mapToDouble(CompoundAggregation::getSize)
+                            .sum()
+            );
+            aggregationSet.forEach(aggregation -> {
+                aggregation.setTotalConsumption(sum);
+                aggregation.setWeight(roundByCeil(sum * (aggregation.getThickness() / 1000D) * (aggregation.getMaterialDensity())));
+            });
+        }
     }
 
     private void fillTable1() throws Exception {
@@ -1129,19 +1163,19 @@ public class Controller3 extends Controller {
 
             compound.setMaterial(getAttrValue(radanAttributes, "119"));
             compound.setThickness(Double.valueOf(getAttrValue(radanAttributes, "120")));
-            compound.setXst((int) Math.ceil(Double.valueOf(getAttrValue(radanAttributes, "124"))));
-            compound.setYst((int) Math.ceil(Double.valueOf(getAttrValue(radanAttributes, "125"))));
+            compound.setXst((int) Math.round(Double.valueOf(getAttrValue(radanAttributes, "124"))));
+            compound.setYst((int) Math.round(Double.valueOf(getAttrValue(radanAttributes, "125"))));
             compound.setN(Integer.valueOf(getAttrValue(radanAttributes, "137")));
 
             QuotationInfo quotationInfo = radanCompoundDocument.getQuotationInfo();
 
             try {
-                compound.setXmin(Math.min(compound.getXst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "1")))));
+                compound.setXmin(Math.min(compound.getXst(), 20 + (int) Math.round(Double.valueOf(getInfoValue(quotationInfo, "1")))));
             } catch (Exception ignored) {
                 compound.setXmin(compound.getXst());
             }
             try {
-                compound.setYmin(Math.min(compound.getYst(), 20 + (int) Math.ceil(Double.valueOf(getInfoValue(quotationInfo, "2")))));
+                compound.setYmin(Math.min(compound.getYst(), 20 + (int) Math.round(Double.valueOf(getInfoValue(quotationInfo, "2")))));
             } catch (Exception ignored) {
                 compound.setYmin(compound.getYst());
             }
@@ -1158,30 +1192,8 @@ public class Controller3 extends Controller {
     }
 
     private void calcCompoundEditableCells(Compound compound) {
-        compound.setSk(round(compound.getXr() / 1000D * compound.getYr() / 1000D));
-        compound.setSo(round(compound.getN() * compound.getSk()));
-    }
-
-    private void calcTotalConsumption(List<CompoundAggregation> aggregations) {
-        if (isEmpty(aggregations)) {
-            return;
-        }
-        Map<Triple<Double, String, String>, Set<CompoundAggregation>> map = aggregations.stream().collect(Collectors.groupingBy(
-                CompoundAggregation::materialTriple, Collectors.toSet()
-        ));
-
-        for (Triple<Double, String, String> triple : map.keySet()) {
-            Set<CompoundAggregation> aggregationSet = map.get(triple);
-            double sum = round(
-                    aggregationSet.stream()
-                            .mapToDouble(CompoundAggregation::getSize)
-                            .sum()
-            );
-            aggregationSet.forEach(aggregation -> {
-                aggregation.setTotalConsumption(sum);
-                aggregation.setWeight(round(sum * (aggregation.getThickness() / 1000D) * (aggregation.getMaterialDensity())));
-            });
-        }
+        compound.setSk(roundByCeil(compound.getXr() / 1000D * compound.getYr() / 1000D));
+        compound.setSo(roundByCeil(compound.getN() * compound.getSk()));
     }
 
     private void setXrYr(Compound compound) {
@@ -1193,12 +1205,12 @@ public class Controller3 extends Controller {
             // Если Xmin > или = 80% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(round(xMin >= xSt * 0.8 ? xSt : xMin * 1.2));
+            compound.setXr(roundByCeil(xMin >= xSt * 0.8 ? xSt : xMin * 1.2));
 
             // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
             int yMin = compound.getYmin();
             int ySt = compound.getYst();
-            compound.setYr(round(yMin < ySt / 2 ? ySt / 2 : ySt));
+            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
 
             fixXrYrForMildSteelOrZintec(compound);
 
@@ -1207,12 +1219,12 @@ public class Controller3 extends Controller {
             // Если Xmin > или = 90% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(round(xMin >= xSt * 0.9 ? xSt : xMin * 1.1));
+            compound.setXr(roundByCeil(xMin >= xSt * 0.8 ? xSt : xMin * 1.1));
 
             // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
             int yMin = compound.getYmin();
             int ySt = compound.getYst();
-            compound.setYr(round(yMin < ySt / 2 ? ySt / 2 : ySt));
+            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
 
             fixXrYrForMildSteelOrZintec(compound);
 
@@ -1221,10 +1233,10 @@ public class Controller3 extends Controller {
             // Если Xmin > или = 70% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(round(xMin >= xSt * 0.7 ? xSt : xMin * 1.2));
+            compound.setXr(roundByCeil(xMin >= xSt * 0.7 ? xSt : xMin * 1.2));
 
             // Yr = Yst - всегда
-            compound.setYr(round(compound.getYst()));
+            compound.setYr(roundByCeil(compound.getYst()));
 
         } else if (
             // @formatter:off
@@ -1659,8 +1671,8 @@ public class Controller3 extends Controller {
                             double totalConsumption = compoundAggregation.getTotalConsumption();
                             double thickness = compoundAggregation.getThickness() / 1000D;
                             double materialDensity = compoundAggregation.getMaterialDensity();
-                            compoundAggregation.setWeight(round(totalConsumption * thickness * materialDensity));
-                            compoundAggregation.setTotalPrice(round(compoundAggregation.getWeight() * compoundAggregation.getPrice()));
+                            compoundAggregation.setWeight(roundByCeil(totalConsumption * thickness * materialDensity));
+                            compoundAggregation.setTotalPrice(roundByCeil(compoundAggregation.getWeight() * compoundAggregation.getPrice()));
                         }
                     }
                     refreshTable(table2, null);
@@ -1686,7 +1698,7 @@ public class Controller3 extends Controller {
                             .filter(aggregation -> aggregation.materialTriple().equals(aggr.materialTriple()))
                             .forEach(aggregation -> {
                                 aggregation.setPrice(value);
-                                aggregation.setTotalPrice(round(aggregation.getWeight() * value));
+                                aggregation.setTotalPrice(roundByCeil(aggregation.getWeight() * value));
                             });
                     refreshTable(table2, null);
                 }
