@@ -962,10 +962,12 @@ public class Controller3 extends Controller {
                     setValueToCell(row, countCellNum, compound.getN());
                     setValueToCell(row, minSizeCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
 
-                    if (compound.getYr() == compound.getYst()) {
-                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getYr() / 1000D) + " x " + roundByCeil(compound.getXmin() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+                    if (compound.isFullList()) {
+                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+                    } else if (compound.getYr() == compound.getYst()) {
+                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
                     } else if (compound.getXr() == compound.getXst()) {
-                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getYr() / 1000D) + " x " + roundByCeil(compound.getXr() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXr() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
                     } else {
                         setValueToCell(row, sizeCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
                     }

@@ -57,7 +57,6 @@ import static ru.ewromet.Utils.replaceLast;
 
 public class Controller2 extends Controller {
 
-    private Controller1 controller1;
     private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
 
     @FXML
@@ -82,8 +81,6 @@ public class Controller2 extends Controller {
     public Button calcButton;
 
     public void setController1(Controller1 controller1) {
-        this.controller1 = controller1;
-
         File orderFile = controller1.getSelectedFile();
         if (orderFile != null) {
             orderFilePathField.setText(orderFile.getAbsolutePath());
@@ -92,10 +89,6 @@ public class Controller2 extends Controller {
                 compoundsField.setText(Paths.get(nestsBasePath, orderFile.getParentFile().getName(), "nests").toFile().getAbsolutePath());
             }
         }
-    }
-
-    public TextField getCompoundsField() {
-        return compoundsField;
     }
 
     @FXML
@@ -161,7 +154,7 @@ public class Controller2 extends Controller {
         }
     }
 
-    public void changePathAction(TextField field) {
+    private void changePathAction(TextField field) {
         logArea.getItems().clear();
 
         chooseFileAndAccept(
