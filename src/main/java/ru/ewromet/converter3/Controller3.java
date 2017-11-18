@@ -79,6 +79,7 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.split;
@@ -606,7 +607,13 @@ public class Controller3 extends Controller {
             }
         }
 
-        createProduceOrder();
+        try {
+            createProduceOrder();
+        } catch (Exception e) {
+            logError("Ошибка при заполнении заявки на производство: " + e.getClass().getName() + ' ' + e.getMessage());
+            e.printStackTrace();
+            return;
+        }
 
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
     }
@@ -1134,7 +1141,7 @@ public class Controller3 extends Controller {
                                         countCellNum = k;
                                     } else if (containsIgnoreCase(value, "Размер заготовки для клиента")) {
                                         sizeForClientCellNum = k;
-                                    } else if (contains(value, "Размер заготовки")) {
+                                    } else if (equalsIgnoreCase(value, "Размер заготовки")) {
                                         sizeCellNum = k;
                                     }
                                     if (hearedRowFound
@@ -1249,6 +1256,7 @@ public class Controller3 extends Controller {
             } catch (Exception e) {
                 logError("Ошибка при создании заказа на производство " + e.getMessage());
                 e.printStackTrace();
+                break;
             }
         }
     }

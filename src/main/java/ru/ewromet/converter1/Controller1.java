@@ -188,11 +188,11 @@ public class Controller1 extends Controller {
         menuBar.getMenus().add(menu);
     }
 
-    public static Map<String, String> getMATERIALS2DIR() {
+    static Map<String, String> getMATERIALS2DIR() {
         return MATERIALS2DIR;
     }
 
-    public static Map<String, String> getBRANDS2DIR() {
+    static Map<String, String> getBRANDS2DIR() {
         return BRANDS2DIR;
     }
 
@@ -469,7 +469,19 @@ public class Controller1 extends Controller {
         });
     }
 
-    public void newOrderMenuItemAction() {
+    private static boolean isEmptyDirectory(File directory) {
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (ArrayUtils.isEmpty(files)) {
+                return true;
+            }
+            assert files != null;
+            return Arrays.stream(files).allMatch(Controller1::isEmptyDirectory);
+        }
+        return false;
+    }
+
+    private void newOrderMenuItemAction() {
         progressBar.setProgress(0);
         logArea.getItems().clear();
 
@@ -585,6 +597,7 @@ public class Controller1 extends Controller {
             }
             File[] emptyDirs = directory.listFiles(Controller1::isEmptyDirectory);
             if (ArrayUtils.isNotEmpty(emptyDirs)) {
+                assert emptyDirs != null;
                 for (File emptyDir : emptyDirs) {
                     FileUtils.deleteQuietly(emptyDir);
                 }
@@ -605,17 +618,6 @@ public class Controller1 extends Controller {
         } catch (Exception e) {
             logError(e.getMessage());
         }
-    }
-
-    private static boolean isEmptyDirectory(File directory) {
-        if (directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (ArrayUtils.isEmpty(files)) {
-                return true;
-            }
-            return Arrays.stream(files).allMatch(Controller1::isEmptyDirectory);
-        }
-        return false;
     }
 
     private static final String CSV_HEADER_ROW = "000 | ;110 | Название;119 | Материал;120 | Толщина;121 | Толщин.велич.;177 | Последнее плановое количество";

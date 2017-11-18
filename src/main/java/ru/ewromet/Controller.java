@@ -2,7 +2,6 @@ package ru.ewromet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -37,7 +36,7 @@ public abstract class Controller implements Logger {
         }
     }
 
-    protected Stage stage;
+    private Stage stage;
 
     @FXML
     protected ListView<Text> logArea;
@@ -55,7 +54,7 @@ public abstract class Controller implements Logger {
             return;
         }
         if (comparator != null) {
-            Collections.sort(items, comparator);
+            items.sort(comparator);
         }
         tableView.refresh();
     }
@@ -71,7 +70,7 @@ public abstract class Controller implements Logger {
         this.stage = stage;
     }
 
-    public void chooseDirAndAccept(String title, ExtendedConsumer<File> fileConsumer) {
+    protected void chooseDirAndAccept(String title, ExtendedConsumer<File> fileConsumer) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         if (title != null) {
             directoryChooser.setTitle(title);
@@ -85,14 +84,18 @@ public abstract class Controller implements Logger {
         directoryChooser.setInitialDirectory(dirFromConfig);
         File dir = directoryChooser.showDialog(stage);
 
-        if (dir != null) {
+        acceptFileAndSaveLastPath(fileConsumer, dir);
+    }
+
+    private void acceptFileAndSaveLastPath(ExtendedConsumer<File> fileConsumer, File file) {
+        if (file != null) {
             try {
-                fileConsumer.accept(dir);
+                fileConsumer.accept(file);
             } catch (Exception e) {
                 logError(e.getMessage());
             }
             try {
-                preferences.update(LAST_PATH, dir.getParent());
+                preferences.update(LAST_PATH, file.getParent());
             } catch (IOException e) {
                 logError("Ошибка записи настроек " + e.getMessage());
             }
@@ -101,7 +104,7 @@ public abstract class Controller implements Logger {
         }
     }
 
-    public void chooseFileAndAccept(FileChooser.ExtensionFilter extensionFilter, String title, ExtendedConsumer<File> fileConsumer) {
+    protected void chooseFileAndAccept(FileChooser.ExtensionFilter extensionFilter, String title, ExtendedConsumer<File> fileConsumer) {
 
         final FileChooser fileChooser = new FileChooser();
 
@@ -123,20 +126,7 @@ public abstract class Controller implements Logger {
 
         File file = fileChooser.showOpenDialog(stage);
 
-        if (file != null) {
-            try {
-                fileConsumer.accept(file);
-            } catch (Exception e) {
-                logError(e.getMessage());
-            }
-            try {
-                preferences.update(LAST_PATH, file.getParent());
-            } catch (IOException e) {
-                logError("Ошибка записи настроек " + e.getMessage());
-            }
-        } else {
-            logMessage("Файл не был выбран");
-        }
+        acceptFileAndSaveLastPath(fileConsumer, file);
     }
 
     protected static void setValueToCell(Row row, int cellIndex, Object value) {
