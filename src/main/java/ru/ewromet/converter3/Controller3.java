@@ -110,6 +110,9 @@ public class Controller3 extends Controller {
     private CheckBox weldingCheckBox;
 
     @FXML
+    private CheckBox allListsCheckBox;
+
+    @FXML
     private TextField laserDiscount;
 
     @FXML
@@ -181,31 +184,11 @@ public class Controller3 extends Controller {
         Arrays.sort(files, new WindowsExplorerFilesComparator());
     }
 
-    @FXML
-    private void initialize() {
-
-        String template = preferences.get(PRODUCE_ORDER_TEMPLATE_PATH);
-        if (StringUtils.isBlank(template)) {
-            logError("Необходимо указать шаблон для заявки на производство в 'Меню' -> 'Указать шаблон заказа на производство'");
-        } else {
-            logMessage("Шаблон заказа на производство будет взят из " + template);
-        }
-
-        initializeMenu();
-        initializeChoiceBoxes();
-        initializeTextField();
-        initializeTable1();
-        initializeTable2();
-
-        String densitiesString = preferences.get(MATERIAL_DENSITY_CUSTOM);
-        if (isNotBlank(densitiesString) && !densitiesString.equals("null")) {
-            Stream.of(densitiesString)
-                    .flatMap(ds -> Stream.of(split(ds, ';')))
-                    .forEach(kvStringPair -> {
-                        String[] split = split(kvStringPair, ':');
-                        customMaterialDensities.put(split[0], Double.valueOf(split[1]));
-                    });
-        }
+    /**
+     * сталь х/к или оцинковка
+     */
+    private static boolean isSteelOrZintec(String material) {
+        return isMildSteelHkOrZintec(material) || isStainlessSteel(material);
     }
 
     private ChangeListener<String> getChangeListenerFor(TextField textField) {
@@ -788,320 +771,62 @@ public class Controller3 extends Controller {
         return Math.round(value * v) / v;
     }
 
-    private void createProduceOrder() {
-
-        List<Compound> compounds = table1.getItems();
-
-        if (isEmpty(compounds)) {
-            return;
-        }
-
-        Iterator<Compound> compoundIterator = compounds.iterator();
-
-        logMessage("Создание заказа на производство");
-
-        String templatePath = preferences.get(PRODUCE_ORDER_TEMPLATE_PATH);
-        File template = new File(templatePath);
-        if (!template.exists()) {
-            logError("Не найден шаблон заказа на производство по адресу " + template.getAbsolutePath());
-            return;
-        }
-
-        List<String> colors = orderRows.stream().map(OrderRow::getColor).filter(StringUtils::isNotBlank).distinct().collect(Collectors.toList());
-        boolean bending = orderRows.stream().map(OrderRow::getBendsCount).filter(Objects::nonNull).filter(c -> c > 0).count() > 0;
-        boolean cuttingReturn = orderRows.stream().map(OrderRow::getCuttingReturn).anyMatch(s -> containsIgnoreCase(s, "да"));
-        boolean wasteReturn = orderRows.stream().map(OrderRow::getWasteReturn).anyMatch(s -> containsIgnoreCase(s, "да"));
-
-        int fileNumber = 1;
-        int compoundPosition = 1;
-        FILES_CYCLE:
-        while (compoundIterator.hasNext()) { // цикл создания файлов для заказов на производство
-            String templateName = template.getName();
-            String fileExtension = Utils.getFileExtension(template);
-            File file = Paths.get(
-                    new File(orderFilePath).getParentFile().getPath(),
-                    templateName.replace(fileExtension, (fileNumber++) + fileExtension)
-            )
-                    .toFile();
-            try (
-                    FileInputStream inputStream = new FileInputStream(template);
-                    Workbook workbook = getWorkbook(inputStream, template.getAbsolutePath());
-                    OutputStream out = new FileOutputStream(file);
-            ) {
-                Sheet sheet = workbook.getSheet("Заказ на производство");
-                if (sheet == null) {
-                    logError("Не найдена вкладка 'Заказ на производство' в шаблоне");
-                    return;
-                }
-
-                boolean hearedRowFound = false;
-
-                int posNumberCellNum = -1;
-                int compoundNameCellNum = -1;
-                int countCellNum = -1;
-                int metallCellNum = -1;
-                int minSizeCellNum = -1;
-                int sizeCellNum = -1;
-                int ourMaterialCellNum = -1;
-                int ownerMaterialCellNum = -1;
-
-                Cell clientCell = null; // заказчик
-                Cell orderCell = null; // заказ на производство
-                Cell bendingCell = null; // гибка
-                Cell coloringCell = null; // окраска
-                Cell wasteReturnCell = null; // возврат отходов
-                Cell cuttingReturnCell = null; // возврат высечки
-                Cell weldingCell = null; // сварка
-
-                for (
-                        int lineNumber = sheet.getFirstRowNum(),
-                        savedRowsNumber = 0 // счетчик сохраненных в шаблон компановок
-                        ; lineNumber <= sheet.getLastRowNum() && savedRowsNumber < 16;
-                        lineNumber++
-                        ) {
-                    final Row row = sheet.getRow(lineNumber);
-                    if (row == null) {
-                        continue;
-                    }
-                    if (!hearedRowFound) {
-                        for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
-                            Cell cell = row.getCell(k);
-                            if (cell != null) {
-                                String value;
-                                try {
-                                    value = cell.getStringCellValue();
-                                    if (!hearedRowFound) {
-                                        if (StringUtils.equals(value, "\u2116")) {
-                                            hearedRowFound = true;
-                                            posNumberCellNum = k;
-                                        } else {
-                                            if (containsIgnoreCase(value, "Заказ на производство")) {
-                                                orderCell = row.getCell(cell.getColumnIndex() + 2);
-                                                if (orderCell == null) {
-                                                    orderCell = row.createCell(cell.getColumnIndex() + 2);
-                                                }
-                                            } else if (containsIgnoreCase(value, "Заказчик:")) {
-                                                clientCell = row.getCell(cell.getColumnIndex() + 1);
-                                                if (clientCell == null) {
-                                                    clientCell = row.createCell(cell.getColumnIndex() + 1);
-                                                }
-                                            } else if (containsIgnoreCase(value, "Гибка")) {
-                                                bendingCell = cell;
-                                            } else if (containsIgnoreCase(value, "Окраска")) {
-                                                coloringCell = cell;
-                                            } else if (containsIgnoreCase(value, "Возврат отходов")) {
-                                                wasteReturnCell = cell;
-                                            } else if (containsIgnoreCase(value, "Высечки")) {
-                                                cuttingReturnCell = cell;
-                                            } else if (contains(value, "Сварка")) {
-                                                weldingCell = cell;
-                                            }
-                                        }
-                                    } else if (containsIgnoreCase(value, "Металл")) {
-                                        if (metallCellNum == -1) {
-                                            metallCellNum = k;
-                                        } else {
-                                            ourMaterialCellNum = k;
-                                            ownerMaterialCellNum = k + 1;
-                                        }
-                                    } else if (containsIgnoreCase(value, "Программа")) {
-                                        compoundNameCellNum = k;
-                                    } else if (containsIgnoreCase(value, "Кол-во")) {
-                                        countCellNum = k;
-                                    } else if (containsIgnoreCase(value, "Минимальный размер заготовки")) {
-                                        minSizeCellNum = k;
-                                    } else if (contains(value, "Размер заготовки")) {
-                                        sizeCellNum = k;
-                                    }
-                                    if (hearedRowFound
-                                            && metallCellNum != -1
-                                            && compoundNameCellNum != -1
-                                            && countCellNum != -1
-                                            && minSizeCellNum != -1
-                                            && sizeCellNum != -1
-                                            && ourMaterialCellNum != -1
-                                            && ownerMaterialCellNum != -1
-                                            ) {
-                                        break;
-                                    }
-                                } catch (Exception ignored) {
-                                }
-                            }
-                        }
-                        if (hearedRowFound) {
-                            lineNumber += 1;
-                        }
-                        continue;
-                    } else {
-                        if (metallCellNum == -1) {
-                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Металл'");
-                        }
-                        if (compoundNameCellNum == -1) {
-                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Программа'");
-                        }
-                        if (countCellNum == -1) {
-                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Кол-во'");
-                        }
-                        if (minSizeCellNum == -1) {
-                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Минимальный размер заготовки'");
-                        }
-                        if (sizeCellNum == -1) {
-                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Размер заготовки'");
-                        }
-                    }
-
-                    if (!compoundIterator.hasNext()) {
-                        endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell, weldingCell);
-                        workbook.write(out);
-                        break FILES_CYCLE;
-                    }
-
-                    Compound compound = compoundIterator.next();
-                    setValueToCell(row, posNumberCellNum, compoundPosition++);
-                    setValueToCell(row, compoundNameCellNum, compound.getName());
-                    setValueToCell(row, countCellNum, compound.getN());
-                    setValueToCell(row, minSizeCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
-
-                    if (compound.isFullList()) {
-                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
-                    } else if (compound.getYr() == compound.getYst()) {
-                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
-                    } else if (compound.getXr() == compound.getXst()) {
-                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXr() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
-                    } else {
-                        setValueToCell(row, sizeCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
-                    }
-
-                    ORDER_ROWS:
-                    for (OrderRow orderRow : orderRows) {
-                        if (Double.compare(orderRow.getThickness(), compound.getThickness()) == 0) {
-                            for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
-                                if (compound.getMaterial().equals(pairStringEntry.getValue())
-                                        && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
-                                        ) {
-                                    setValueToCell(row, metallCellNum, "#" + orderRow.getThickness() + " " + orderRow.getOriginalMaterial() + " " + orderRow.getMaterialBrand());
-                                    if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
-                                        setValueToCell(row, ownerMaterialCellNum, "V");
-                                    } else {
-                                        setValueToCell(row, ourMaterialCellNum, "V");
-                                    }
-
-                                    break ORDER_ROWS;
-                                }
-                            }
-                        }
-                    }
-
-                    savedRowsNumber++;
-                    lineNumber++;
-                }
-
-                endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell, weldingCell);
-                workbook.write(out);
-            } catch (Exception e) {
-                logError("Ошибка при создании заказа на производство " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
+    /**
+     * нерж. любая
+     */
+    private static boolean isStainlessSteel(String material) {
+        return isStainlessSteelShlif(material) || isStainlessSteelFoil(material) || isStainlessSteelNoFoilNoShlif(material);
     }
 
-    private void fillTable2() {
-        List<CompoundAggregation> oldItems = new ArrayList(table2.getItems());
-        Map<Triple<Double, String, String>, Double> oldItemsMaterialsPrices = new HashMap<>();
+    /**
+     * оцинковка
+     */
+    private static boolean isZintec(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Zintec");
+    }
 
-        if (isNotEmpty(oldItems)) {
-            for (CompoundAggregation oldItem : oldItems) {
-                if (oldItem.getPrice() > 0) {
-                    Triple<Double, String, String> triple = oldItem.materialTriple();
-                    oldItemsMaterialsPrices.computeIfAbsent(triple, (key) -> oldItem.getPrice());
-                }
-            }
-            table2.getItems().clear();
+    /**
+     * сталь х/к
+     */
+    private static boolean isMildSteelHk(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Mild Steel hk");
+    }
+
+    @FXML
+    private void initialize() {
+
+        String template = preferences.get(PRODUCE_ORDER_TEMPLATE_PATH);
+        if (StringUtils.isBlank(template)) {
+            logError("Необходимо указать шаблон для заявки на производство в 'Меню' -> 'Указать шаблон заказа на производство'");
+        } else {
+            logMessage("Шаблон заказа на производство будет взят из " + template);
         }
 
-        ObservableList<Compound> compounds = table1.getItems();
-        if (isEmpty(compounds)) {
-            return;
-        }
-        List<CompoundAggregation> compoundAggregations = new ArrayList<>();
-        for (Compound compound : compounds) {
-            CompoundAggregation compoundAggregation = new CompoundAggregation();
+        initializeMenu();
+        initializeChoiceBoxes();
+        initializeTextField();
+        initializeTable1();
+        initializeTable2();
 
-            compoundAggregation.setMaterial(compound.getMaterial());
-            compoundAggregation.setMaterialBrand(compound.getMaterialBrand());
-            compoundAggregation.setThickness(compound.getThickness());
-            compoundAggregation.setSize(roundByCeil(compound.getXr() / 1000D * compound.getYr() / 1000D) * compound.getN());
-            compoundAggregation.setListsCount(compound.getN());
-
-            Double density = getDensity(compound.getMaterial());
-            compoundAggregation.setMaterialDensity(density);
-
-
-            compoundAggregation.setXMin_x_yMin_m(roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
-            compoundAggregation.setXSt_x_ySt_m(roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
-
-            compoundAggregations.add(compoundAggregation);
+        String densitiesString = preferences.get(MATERIAL_DENSITY_CUSTOM);
+        if (isNotBlank(densitiesString) && !densitiesString.equals("null")) {
+            Stream.of(densitiesString)
+                    .flatMap(ds -> Stream.of(split(ds, ';')))
+                    .forEach(kvStringPair -> {
+                        String[] split = split(kvStringPair, ':');
+                        customMaterialDensities.put(split[0], Double.valueOf(split[1]));
+                    });
         }
 
-        List<Integer> indexesToDelete = new ArrayList<>();
-        // aggregation
-        for (int i = 0; i < compoundAggregations.size(); i++) {
-            CompoundAggregation first = compoundAggregations.get(i);
-            for (int j = 0; j < compoundAggregations.size(); j++) {
-                if (i == j || indexesToDelete.contains(i) || indexesToDelete.contains(j)) {
-                    continue;
-                }
-                CompoundAggregation second = compoundAggregations.get(j);
-                if (needToAggregate(first, second)) {
-                    first.setSize(first.getSize() + second.getSize());
-                    first.setListsCount(first.getListsCount() + second.getListsCount());
-                    indexesToDelete.add(j);
-                }
-            }
-        }
-
-        indexesToDelete.sort(Comparator.reverseOrder());
-
-        indexesToDelete.forEach(index -> compoundAggregations.remove(index.intValue()));
-
-        for (int i = 0; i < compoundAggregations.size(); i++) {
-            compoundAggregations.get(i).setPosNumber(i + 1);
-        }
-
-        ObservableList<CompoundAggregation> items = FXCollections.observableList(compoundAggregations);
-
-        calcTotalConsumption(items);
-
-        if (MapUtils.isNotEmpty(oldItemsMaterialsPrices)) {
-            for (CompoundAggregation item : items) {
-                Double price;
-                if ((price = oldItemsMaterialsPrices.get(item.materialTriple())) != null) {
-                    item.setPrice(price);
-                    item.setTotalPrice(roundByCeil(item.getWeight() * item.getPrice()));
-                }
-            }
-        }
-
-        if (isNotEmpty(items)) {
-            ITEMS:
-            for (CompoundAggregation item : items) {
-                for (OrderRow orderRow : orderRows) {
-                    if (Double.compare(orderRow.getThickness(), item.getThickness()) == 0) {
-                        for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
-                            if (item.getMaterial().equals(pairStringEntry.getValue())
-                                    && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
-                                    ) {
-                                item.setMaterialEn(item.getMaterial());
-                                item.setMaterial(orderRow.getOriginalMaterial());
-                                continue ITEMS;
-                            }
+        allListsCheckBox
+                .selectedProperty()
+                .addListener(
+                        (observable, oldVal, newVal) -> {
+                            table1.getItems().forEach(compound -> fullListCheckBoxAction(newVal, compound, false));
+                            refreshTable(table1, null);
+                            fillTable2();
                         }
-                    }
-                }
-            }
-        }
-
-        table2.setItems(items);
+                );
     }
 
     private boolean needToAggregate(CompoundAggregation first, CompoundAggregation second) {
@@ -1287,54 +1012,411 @@ public class Controller3 extends Controller {
         }
     }
 
+    private void createProduceOrder() {
+
+        List<Compound> compounds = table1.getItems();
+
+        if (isEmpty(compounds)) {
+            return;
+        }
+
+        Iterator<Compound> compoundIterator = compounds.iterator();
+
+        logMessage("Создание заказа на производство");
+
+        String templatePath = preferences.get(PRODUCE_ORDER_TEMPLATE_PATH);
+        File template = new File(templatePath);
+        if (!template.exists()) {
+            logError("Не найден шаблон заказа на производство по адресу " + template.getAbsolutePath());
+            return;
+        }
+
+        List<String> colors = orderRows.stream().map(OrderRow::getColor).filter(StringUtils::isNotBlank).distinct().collect(Collectors.toList());
+        boolean bending = orderRows.stream().map(OrderRow::getBendsCount).filter(Objects::nonNull).filter(c -> c > 0).count() > 0;
+        boolean cuttingReturn = orderRows.stream().map(OrderRow::getCuttingReturn).anyMatch(s -> containsIgnoreCase(s, "да"));
+        boolean wasteReturn = orderRows.stream().map(OrderRow::getWasteReturn).anyMatch(s -> containsIgnoreCase(s, "да"));
+
+        int fileNumber = 1;
+        int compoundPosition = 1;
+        FILES_CYCLE:
+        while (compoundIterator.hasNext()) { // цикл создания файлов для заказов на производство
+            String templateName = template.getName();
+            String fileExtension = Utils.getFileExtension(template);
+            File file = Paths.get(
+                    new File(orderFilePath).getParentFile().getPath(),
+                    templateName.replace(fileExtension, (fileNumber++) + fileExtension)
+            )
+                    .toFile();
+            try (
+                    FileInputStream inputStream = new FileInputStream(template);
+                    Workbook workbook = getWorkbook(inputStream, template.getAbsolutePath());
+                    OutputStream out = new FileOutputStream(file);
+            ) {
+                Sheet sheet = workbook.getSheet("Заказ на производство");
+                if (sheet == null) {
+                    logError("Не найдена вкладка 'Заказ на производство' в шаблоне");
+                    return;
+                }
+
+                boolean hearedRowFound = false;
+
+                int posNumberCellNum = -1;
+                int compoundNameCellNum = -1;
+                int countCellNum = -1;
+                int metallCellNum = -1;
+                int sizeForClientCellNum = -1;
+                int sizeCellNum = -1;
+                int ourMaterialCellNum = -1;
+                int ownerMaterialCellNum = -1;
+
+                Cell clientCell = null; // заказчик
+                Cell orderCell = null; // заказ на производство
+                Cell bendingCell = null; // гибка
+                Cell coloringCell = null; // окраска
+                Cell wasteReturnCell = null; // возврат отходов
+                Cell cuttingReturnCell = null; // возврат высечки
+                Cell weldingCell = null; // сварка
+
+                for (
+                        int lineNumber = sheet.getFirstRowNum(),
+                        savedRowsNumber = 0 // счетчик сохраненных в шаблон компановок
+                        ; lineNumber <= sheet.getLastRowNum() && savedRowsNumber < 16;
+                        lineNumber++
+                        ) {
+                    final Row row = sheet.getRow(lineNumber);
+                    if (row == null) {
+                        continue;
+                    }
+                    if (!hearedRowFound) {
+                        for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
+                            Cell cell = row.getCell(k);
+                            if (cell != null) {
+                                String value;
+                                try {
+                                    value = cell.getStringCellValue();
+                                    if (!hearedRowFound) {
+                                        if (StringUtils.equals(value, "\u2116")) {
+                                            hearedRowFound = true;
+                                            posNumberCellNum = k;
+                                        } else {
+                                            if (containsIgnoreCase(value, "Заказ на производство")) {
+                                                orderCell = row.getCell(cell.getColumnIndex() + 2);
+                                                if (orderCell == null) {
+                                                    orderCell = row.createCell(cell.getColumnIndex() + 2);
+                                                }
+                                            } else if (containsIgnoreCase(value, "Заказчик:")) {
+                                                clientCell = row.getCell(cell.getColumnIndex() + 1);
+                                                if (clientCell == null) {
+                                                    clientCell = row.createCell(cell.getColumnIndex() + 1);
+                                                }
+                                            } else if (containsIgnoreCase(value, "Гибка")) {
+                                                bendingCell = cell;
+                                            } else if (containsIgnoreCase(value, "Окраска")) {
+                                                coloringCell = cell;
+                                            } else if (containsIgnoreCase(value, "Возврат отходов")) {
+                                                wasteReturnCell = cell;
+                                            } else if (containsIgnoreCase(value, "Высечки")) {
+                                                cuttingReturnCell = cell;
+                                            } else if (contains(value, "Сварка")) {
+                                                weldingCell = cell;
+                                            }
+                                        }
+                                    } else if (containsIgnoreCase(value, "Металл")) {
+                                        if (metallCellNum == -1) {
+                                            metallCellNum = k;
+                                        } else {
+                                            ourMaterialCellNum = k;
+                                            ownerMaterialCellNum = k + 1;
+                                        }
+                                    } else if (containsIgnoreCase(value, "Программа")) {
+                                        compoundNameCellNum = k;
+                                    } else if (containsIgnoreCase(value, "Кол-во")) {
+                                        countCellNum = k;
+                                    } else if (containsIgnoreCase(value, "Размер заготовки для клиента")) {
+                                        sizeForClientCellNum = k;
+                                    } else if (contains(value, "Размер заготовки")) {
+                                        sizeCellNum = k;
+                                    }
+                                    if (hearedRowFound
+                                            && metallCellNum != -1
+                                            && compoundNameCellNum != -1
+                                            && countCellNum != -1
+                                            && sizeForClientCellNum != -1
+                                            && sizeCellNum != -1
+                                            && ourMaterialCellNum != -1
+                                            && ownerMaterialCellNum != -1
+                                            ) {
+                                        break;
+                                    }
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
+                        if (hearedRowFound) {
+                            lineNumber += 1;
+                        }
+                        continue;
+                    } else {
+                        if (metallCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Металл'");
+                        }
+                        if (compoundNameCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Программа'");
+                        }
+                        if (countCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Кол-во'");
+                        }
+                        if (sizeForClientCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Размер заготовки для клиента'");
+                        }
+                        if (sizeCellNum == -1) {
+                            throw new RuntimeException("В шаблоне на вкладке 'Заявка на производство' в шапке таблицы не найдена колонка, содержащая фразу 'Размер заготовки'");
+                        }
+                    }
+
+                    if (!compoundIterator.hasNext()) {
+                        endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell, weldingCell);
+                        workbook.write(out);
+                        break FILES_CYCLE;
+                    }
+
+                    Compound compound = compoundIterator.next();
+                    setValueToCell(row, posNumberCellNum, compoundPosition++);
+                    setValueToCell(row, compoundNameCellNum, compound.getName());
+                    setValueToCell(row, countCellNum, compound.getN());
+
+                    String material = compound.getMaterial();
+                    if (isMildSteelGk(material) || isMildSteelHkOrZintec(material)) {
+
+                        if (compare(compound.getYr(), compound.getYst()) == 0) {
+                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D));
+                        } else if (compare(compound.getYr(), compound.getYst() / 2D) == 0) {
+                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D));
+                        } else { // old behavior
+                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+                        }
+
+                    } else if (isCopper(material) || isBrass(material) || (isAluminium(material) && compound.getThickness() > 2) || isStainlessSteelNoFoilNoShlif(material)) {
+
+                        setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+
+                    } else if ((compound.getThickness() <= 0.8 && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))) || (isAluminium(material) && compound.getThickness() <= 2)) {
+
+                        setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+
+                    } else if ((isStainlessSteelFoil(material) && compound.getThickness() >= 1) || (isStainlessSteelShlif(material) && compound.getThickness() >= 1)) {
+
+                        if (compare(compound.getXr(), compound.getXst()) == 0) {
+                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+                        } else if (compare(compound.getXr(), compound.getXst() / 2D) == -1) {
+                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+                        } else { // old behavior
+                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+                        }
+
+                    } else { // old behavior
+                        setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+                    }
+
+                    setValueToCell(row, sizeCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
+
+                    ORDER_ROWS:
+                    for (OrderRow orderRow : orderRows) {
+                        if (compare(orderRow.getThickness(), compound.getThickness()) == 0) {
+                            for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
+                                if (material.equals(pairStringEntry.getValue())
+                                        && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
+                                        ) {
+                                    setValueToCell(row, metallCellNum, "#" + orderRow.getThickness() + " " + orderRow.getOriginalMaterial() + " " + orderRow.getMaterialBrand());
+                                    if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
+                                        setValueToCell(row, ownerMaterialCellNum, "V");
+                                    } else {
+                                        setValueToCell(row, ourMaterialCellNum, "V");
+                                    }
+
+                                    break ORDER_ROWS;
+                                }
+                            }
+                        }
+                    }
+
+                    savedRowsNumber++;
+                    lineNumber++;
+                }
+
+                endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell, weldingCell);
+                workbook.write(out);
+            } catch (Exception e) {
+                logError("Ошибка при создании заказа на производство " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * сталь г/к
+     */
+    private static boolean isMildSteelGk(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Mild Steel gk");
+    }
+
+    private static int compare(double d1, double d2) {
+        return compare(d1, d2, 0.0001);
+    }
+
+    /**
+     * медь
+     */
     private static boolean isCopper(String material) {
         return StringUtils.startsWithIgnoreCase(material, "Copper");
     }
 
+    /**
+     * латунь
+     */
     private static boolean isBrass(String material) {
         return StringUtils.startsWithIgnoreCase(material, "Brass");
     }
 
-    private static boolean isStainlessSteelFoil(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Foil");
-    }
-
-    private static boolean isStainlessSteelShlif(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Shlif");
-    }
-
-    private static boolean isSteelOrZintec(String material) {
-        return isMildSteelHkOrZintec(material) || isStainlessSteel(material);
-    }
-
-    private static boolean isStainlessSteel(String material) {
-        return isStainlessSteelShlif(material) || isStainlessSteelFoil(material) || isStainlessSteelNoFoilNoShlif(material);
-    }
-
+    /**
+     * алюминий
+     */
     private static boolean isAluminium(String material) {
         return StringUtils.startsWithIgnoreCase(material, "Aluminium");
     }
 
+    /**
+     * нерж. мат
+     */
     private static boolean isStainlessSteelNoFoilNoShlif(String material) {
         return StringUtils.startsWithIgnoreCase(material, "Stainless Steel")
                 && !containsIgnoreCase(material, "foil")
                 && !containsIgnoreCase(material, "shlif");
     }
 
+    /**
+     * нерж. зерк
+     */
+    private static boolean isStainlessSteelFoil(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Foil");
+    }
+
     private static boolean isMildSteelHkOrZintec(String material) {
         return isZintec(material) || isMildSteelHk(material);
     }
 
-    private static boolean isZintec(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Zintec");
+    /**
+     * нерж. шлиф
+     */
+    private static boolean isStainlessSteelShlif(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Shlif");
     }
 
-    private static boolean isMildSteelHk(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Mild Steel hk");
+    private static int compare(double d1, double d2, double precision) {
+        double diff = d1 - d2;
+        if (Math.abs(diff) <= precision) {
+            return 0;
+        }
+        return Double.compare(d1, d2);
     }
 
-    private static boolean isMildSteelGk(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Mild Steel gk");
+    private void fillTable2() {
+        List<CompoundAggregation> oldItems = new ArrayList<>(table2.getItems());
+        Map<Triple<Double, String, String>, Double> oldItemsMaterialsPrices = new HashMap<>();
+
+        if (isNotEmpty(oldItems)) {
+            for (CompoundAggregation oldItem : oldItems) {
+                if (oldItem.getPrice() > 0) {
+                    Triple<Double, String, String> triple = oldItem.materialTriple();
+                    oldItemsMaterialsPrices.computeIfAbsent(triple, (key) -> oldItem.getPrice());
+                }
+            }
+            table2.getItems().clear();
+        }
+
+        ObservableList<Compound> compounds = table1.getItems();
+        if (isEmpty(compounds)) {
+            return;
+        }
+        List<CompoundAggregation> compoundAggregations = new ArrayList<>();
+        for (Compound compound : compounds) {
+            CompoundAggregation compoundAggregation = new CompoundAggregation();
+
+            compoundAggregation.setMaterial(compound.getMaterial());
+            compoundAggregation.setMaterialBrand(compound.getMaterialBrand());
+            compoundAggregation.setThickness(compound.getThickness());
+            compoundAggregation.setSize(roundByCeil(compound.getXr() / 1000D * compound.getYr() / 1000D) * compound.getN());
+            compoundAggregation.setListsCount(compound.getN());
+
+            Double density = getDensity(compound.getMaterial());
+            compoundAggregation.setMaterialDensity(density);
+
+
+            compoundAggregation.setXMin_x_yMin_m(roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+            compoundAggregation.setXSt_x_ySt_m(roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+
+            compoundAggregations.add(compoundAggregation);
+        }
+
+        List<Integer> indexesToDelete = new ArrayList<>();
+        // aggregation
+        for (int i = 0; i < compoundAggregations.size(); i++) {
+            CompoundAggregation first = compoundAggregations.get(i);
+            for (int j = 0; j < compoundAggregations.size(); j++) {
+                if (i == j || indexesToDelete.contains(i) || indexesToDelete.contains(j)) {
+                    continue;
+                }
+                CompoundAggregation second = compoundAggregations.get(j);
+                if (needToAggregate(first, second)) {
+                    first.setSize(first.getSize() + second.getSize());
+                    first.setListsCount(first.getListsCount() + second.getListsCount());
+                    indexesToDelete.add(j);
+                }
+            }
+        }
+
+        indexesToDelete.sort(Comparator.reverseOrder());
+
+        indexesToDelete.forEach(index -> compoundAggregations.remove(index.intValue()));
+
+        for (int i = 0; i < compoundAggregations.size(); i++) {
+            compoundAggregations.get(i).setPosNumber(i + 1);
+        }
+
+        ObservableList<CompoundAggregation> items = FXCollections.observableList(compoundAggregations);
+
+        calcTotalConsumption(items);
+
+        if (MapUtils.isNotEmpty(oldItemsMaterialsPrices)) {
+            for (CompoundAggregation item : items) {
+                Double price;
+                if ((price = oldItemsMaterialsPrices.get(item.materialTriple())) != null) {
+                    item.setPrice(price);
+                    item.setTotalPrice(roundByCeil(item.getWeight() * item.getPrice()));
+                }
+            }
+        }
+
+        if (isNotEmpty(items)) {
+            ITEMS:
+            for (CompoundAggregation item : items) {
+                for (OrderRow orderRow : orderRows) {
+                    if (Double.compare(orderRow.getThickness(), item.getThickness()) == 0) {
+                        for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
+                            if (item.getMaterial().equals(pairStringEntry.getValue())
+                                    && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
+                                    ) {
+                                item.setMaterialEn(item.getMaterial());
+                                item.setMaterial(orderRow.getOriginalMaterial());
+                                continue ITEMS;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        table2.setItems(items);
     }
 
     private static String getAttrValue(RadanAttributes radanAttributes, String attrNum) {
@@ -1500,10 +1582,7 @@ public class Controller3 extends Controller {
                     BooleanProperty active = new SimpleBooleanProperty(table1.getItems().get(index).isFullList());
                     active.addListener((obs, wasActive, isNowActive) -> {
                         Compound compound = table1.getItems().get(index);
-                        compound.setFullList(isNowActive);
-                        recalcXrYr(compound);
-                        refreshTable(table1, null);
-                        fillTable2();
+                        fullListCheckBoxAction(isNowActive, compound, true);
                     });
                     return active;
                 }),
@@ -1581,6 +1660,15 @@ public class Controller3 extends Controller {
                 table1.requestFocus();
             });
         });
+    }
+
+    private void fullListCheckBoxAction(Boolean isNowActive, Compound compound, boolean isSingleAction) {
+        compound.setFullList(isNowActive);
+        recalcXrYr(compound);
+        if (isSingleAction) {
+            refreshTable(table1, null);
+            fillTable2();
+        }
     }
 
     private void recalcXrYr(Compound compound) {

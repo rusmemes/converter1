@@ -61,6 +61,16 @@
                                         <Insets left="10.0" />
                                     </HBox.margin>
                                 </CheckBox>
+                                <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="Все листы">
+                                    <HBox.margin>
+                                        <Insets left="30.0" />
+                                    </HBox.margin>
+                                </Label>
+                                <CheckBox fx:id="allListsCheckBox" maxHeight="-Infinity" minHeight="-Infinity" mnemonicParsing="false" prefHeight="25.0">
+                                    <HBox.margin>
+                                        <Insets left="10.0" />
+                                    </HBox.margin>
+                                </CheckBox>
                             </children>
                         </HBox>
                         <HBox maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" prefWidth="1247.0" AnchorPane.bottomAnchor="70.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="35.0">
@@ -85,7 +95,7 @@
                                         <Insets left="10.0" />
                                     </HBox.margin>
                                 </TextField>
-                                <Label maxHeight="-Infinity" minWidth="-Infinity" prefHeight="25.0" text="Время черчения">
+                                <Label maxHeight="-Infinity" minHeight="-Infinity" prefHeight="25.0" text="Время черчения">
                                     <HBox.margin>
                                         <Insets left="30.0" />
                                     </HBox.margin>
