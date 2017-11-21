@@ -1192,37 +1192,42 @@ public class Controller3 extends Controller {
                     setValueToCell(row, compoundNameCellNum, compound.getName());
                     setValueToCell(row, countCellNum, compound.getN());
 
+
                     String material = compound.getMaterial();
-                    if (isMildSteelGk(material) || isMildSteelHkOrZintec(material)) {
-
-                        if (compare(compound.getYr(), compound.getYst()) == 0) {
-                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D));
-                        } else if (compare(compound.getYr(), compound.getYst() / 2D) == 0) {
-                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D));
-                        } else { // old behavior
-                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
-                        }
-
-                    } else if (isCopper(material) || isBrass(material) || (isAluminium(material) && compound.getThickness() > 2) || isStainlessSteelNoFoilNoShlif(material)) {
-
-                        setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
-
-                    } else if ((compound.getThickness() <= 0.8 && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))) || (isAluminium(material) && compound.getThickness() <= 2)) {
-
+                    if (compound.isFullList()) {
                         setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+                    } else {
+                        if (isMildSteelGk(material) || isMildSteelHkOrZintec(material)) {
 
-                    } else if ((isStainlessSteelFoil(material) && compound.getThickness() >= 1) || (isStainlessSteelShlif(material) && compound.getThickness() >= 1)) {
+                            if (compare(compound.getYr(), compound.getYst()) == 0) {
+                                setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D));
+                            } else if (compare(compound.getYr(), compound.getYst() / 2D) == 0) {
+                                setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYr() / 1000D));
+                            } else { // old behavior
+                                setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+                            }
 
-                        if (compare(compound.getXr(), compound.getXst()) == 0) {
-                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
-                        } else if (compare(compound.getXr(), compound.getXst() / 2D) == -1) {
+                        } else if (isCopper(material) || isBrass(material) || (isAluminium(material) && compound.getThickness() > 2) || isStainlessSteelNoFoilNoShlif(material)) {
+
                             setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+
+                        } else if ((compound.getThickness() <= 0.8 && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))) || (isAluminium(material) && compound.getThickness() <= 2)) {
+
+                            setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+
+                        } else if ((isStainlessSteelFoil(material) && compound.getThickness() >= 1) || (isStainlessSteelShlif(material) && compound.getThickness() >= 1)) {
+
+                            if (compare(compound.getXr(), compound.getXst()) == 0) {
+                                setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+                            } else if (compare(compound.getXr(), compound.getXst() / 2D) == -1) {
+                                setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D));
+                            } else { // old behavior
+                                setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
+                            }
+
                         } else { // old behavior
                             setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
                         }
-
-                    } else { // old behavior
-                        setValueToCell(row, sizeForClientCellNum, roundByCeil(compound.getXmin() / 1000D) + " x " + roundByCeil(compound.getYmin() / 1000D));
                     }
 
                     setValueToCell(row, sizeCellNum, roundByCeil(compound.getXst() / 1000D) + " x " + roundByCeil(compound.getYst() / 1000D) + (compound.isDin() ? " (ДИН)" : ""));
