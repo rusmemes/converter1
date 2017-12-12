@@ -1,9 +1,5 @@
 package ru.ewromet;
 
-import java.time.LocalDate;
-import java.time.Month;
-import java.util.concurrent.TimeUnit;
-
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -13,6 +9,10 @@ import javafx.stage.Stage;
 import ru.ewromet.converter1.Controller1;
 
 public class Main extends Application {
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -30,10 +30,5 @@ public class Main extends Application {
         primaryStage.setMaximized(true);
         primaryStage.setOnCloseRequest(controller::closeApplicationAction);
         primaryStage.show();
-    }
-
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }

@@ -32,8 +32,10 @@ public class FileRow {
     }
 
     @Override
-    public String toString() {
-        return posNumber.get() + " | " + filePath.get();
+    public int hashCode() {
+        int result = posNumber != null ? posNumber.hashCode() : 0;
+        result = 31 * result + (filePath != null ? filePath.hashCode() : 0);
+        return result;
     }
 
     @Override
@@ -58,9 +60,7 @@ public class FileRow {
     }
 
     @Override
-    public int hashCode() {
-        int result = posNumber != null ? posNumber.hashCode() : 0;
-        result = 31 * result + (filePath != null ? filePath.hashCode() : 0);
-        return result;
+    public String toString() {
+        return posNumber.get() + " | " + filePath.get();
     }
 }

@@ -25,6 +25,52 @@ public class Preferences {
         }
     }
 
+    private Map<Key, Object> options = new EnumMap<Key, Object>(Key.class) {{
+        for (Key key : Key.values()) {
+            put(key, key.defaultValue);
+        }
+    }};
+
+    Preferences() throws IOException, InvocationTargetException, IllegalAccessException {
+        if (file.exists()) {
+            try (InputStream in = new FileInputStream(file)) {
+                Properties properties = new Properties();
+                properties.load(in);
+                for (Key key : Key.values()) {
+                    Object value;
+                    try {
+                        value = key.valueOfMethod.invoke(null, properties.getProperty(key.name()));
+                    } catch (Exception ignored) {
+                        value = key.defaultValue;
+                    }
+                    options.put(key, value);
+                }
+            }
+        } else {
+            saveToDisk();
+        }
+    }
+
+    private void saveToDisk() throws IOException {
+        Properties properties = new Properties();
+        options.forEach((key, value) -> {
+            properties.setProperty(key.name(), value.toString());
+        });
+        file.createNewFile();
+        try (OutputStream os = new FileOutputStream(file)) {
+            properties.store(os, "настройки конвертера");
+        }
+    }
+
+    public <T> T get(Key key) {
+        return (T) options.get(key);
+    }
+
+    public void update(Key key, Object value) throws IOException {
+        options.put(key, value);
+        saveToDisk();
+    }
+
     public enum Key {
         LAST_PATH(System.getProperty("user.home")),
         RENAME_FILES(true),
@@ -53,52 +99,6 @@ public class Preferences {
                     throw new RuntimeException(e1);
                 }
             }
-        }
-    }
-
-    private Map<Key, Object> options = new EnumMap<Key, Object>(Key.class) {{
-        for (Key key : Key.values()) {
-            put(key, key.defaultValue);
-        }
-    }};
-
-    Preferences() throws IOException, InvocationTargetException, IllegalAccessException {
-        if (file.exists()) {
-            try (InputStream in = new FileInputStream(file)) {
-                Properties properties = new Properties();
-                properties.load(in);
-                for (Key key : Key.values()) {
-                    Object value;
-                    try {
-                        value = key.valueOfMethod.invoke(null, properties.getProperty(key.name()));
-                    } catch (Exception ignored) {
-                        value = key.defaultValue;
-                    }
-                    options.put(key, value);
-                }
-            }
-        } else {
-            saveToDisk();
-        }
-    }
-
-    public <T> T get(Key key) {
-        return (T) options.get(key);
-    }
-
-    public void update(Key key, Object value) throws IOException {
-        options.put(key, value);
-        saveToDisk();
-    }
-
-    private void saveToDisk() throws IOException {
-        Properties properties = new Properties();
-        options.forEach((key, value) -> {
-            properties.setProperty(key.name(), value.toString());
-        });
-        file.createNewFile();
-        try (OutputStream os = new FileOutputStream(file)) {
-            properties.store(os, "настройки конвертера");
         }
     }
 }

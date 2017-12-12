@@ -57,28 +57,21 @@ import static ru.ewromet.Utils.replaceLast;
 
 public class Controller2 extends Controller {
 
-    private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
-
-    @FXML
-    private Button orderFilePathButton;
-
-    @FXML
-    private TextField orderFilePathField;
-
-    @FXML
-    private Button templateButton;
-
-    @FXML
-    private TextField templateField;
-
-    @FXML
-    private Button compoundsButton;
-
-    @FXML
-    private TextField compoundsField;
-
     @FXML
     public Button calcButton;
+    private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
+    @FXML
+    private Button orderFilePathButton;
+    @FXML
+    private TextField orderFilePathField;
+    @FXML
+    private Button templateButton;
+    @FXML
+    private TextField templateField;
+    @FXML
+    private Button compoundsButton;
+    @FXML
+    private TextField compoundsField;
 
     public void setController1(Controller1 controller1) {
         File orderFile = controller1.getSelectedFile();
@@ -142,16 +135,6 @@ public class Controller2 extends Controller {
         });
 
         calcButton.setOnAction(event -> runCalc());
-    }
-
-    public void setFocus() {
-        if (isBlank(orderFilePathField.getText())) {
-            orderFilePathField.requestLayout();
-        } else if (isBlank(templateField.getText())) {
-            templateField.requestFocus();
-        } else {
-            calcButton.requestFocus();
-        }
     }
 
     private void changePathAction(TextField field) {
@@ -261,6 +244,37 @@ public class Controller2 extends Controller {
         openConverter3Window(specFile);
     }
 
+    private void openConverter3Window(File specFile) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter3.fxml"));
+            Parent root = loader.load();
+            Controller3 controller = loader.getController();
+            controller.setCompoundsPath(compoundsField.getText());
+            controller.setOrderFilePath(orderFilePathField.getText());
+            controller.setSpecFile(specFile);
+            controller.fillTables();
+            Stage stage = new Stage();
+            stage.setHeight(765);
+            stage.setWidth(1550);
+            controller.setStage(stage);
+            stage.setTitle("Обработка компоновок");
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception e) {
+            logError("Ошибка при открытии окна: " + e.getMessage());
+        }
+    }
+
+    public void setFocus() {
+        if (isBlank(orderFilePathField.getText())) {
+            orderFilePathField.requestLayout();
+        } else if (isBlank(templateField.getText())) {
+            templateField.requestFocus();
+        } else {
+            calcButton.requestFocus();
+        }
+    }
+
     private SymFileInfo symFileOf(OrderRow orderRow) {
         String filePath = orderRow.getFilePath();
         if (isBlank(filePath)) {
@@ -357,6 +371,85 @@ public class Controller2 extends Controller {
     }
 
     /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='168']
+     */
+    private int injectCutLength(RadanCompoundDocument radanCompoundDocument) throws Exception {
+        double asDouble = getGroupAttrValueAsDouble(
+                radanCompoundDocument,
+                containsIgnoreCase(Group::getName, "Геометрия"),
+                equalsBy(Attr::getNum, "168")
+        );
+        return (int) Math.ceil(asDouble / 50) * 50;
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@num='0']/@value
+     */
+    private int injectInsertsCount(RadanCompoundDocument radanCompoundDocument) {
+        return ofNullable(radanCompoundDocument.getQuotationInfo())
+                .map(QuotationInfo::getInfos)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(equalsBy(Info::getNum, "0"))
+                .map(Info::getValue)
+                .mapToInt(Integer::valueOf)
+                .findFirst()
+                .getAsInt();
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='162']
+     */
+    private int injectActualArea(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.round(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        containsIgnoreCase(Group::getName, "Геометрия"),
+                        equalsBy(Attr::getNum, "162")
+                )
+        );
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='163']
+     */
+    private int injectAreaWithInternalContours(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.round(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        containsIgnoreCase(Group::getName, "Геометрия"),
+                        equalsBy(Attr::getNum, "163")
+                )
+        );
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='165']
+     */
+    private int injectSizeX(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.ceil(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        containsIgnoreCase(Group::getName, "Геометрия"),
+                        equalsBy(Attr::getNum, "165")
+                )
+        );
+    }
+
+    /**
+     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='166']
+     */
+    private int injectSizeY(RadanCompoundDocument radanCompoundDocument) {
+        return (int) Math.ceil(
+                getGroupAttrValueAsDouble(
+                        radanCompoundDocument,
+                        containsIgnoreCase(Group::getName, "Геометрия"),
+                        equalsBy(Attr::getNum, "166")
+                )
+        );
+    }
+
+    /**
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Производство  ']/rcd:Attr[@num='123']/rcd:MC
      */
     private double injectCutTime(RadanCompoundDocument radanCompoundDocument, String mcMachine) {
@@ -379,85 +472,6 @@ public class Controller2 extends Controller {
         return ((int) (psys_ewr * 100)) / 100D;
     }
 
-    /**
-     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='166']
-     */
-    private int injectSizeY(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.ceil(
-                getGroupAttrValueAsDouble(
-                        radanCompoundDocument,
-                        containsIgnoreCase(Group::getName, "Геометрия"),
-                        equalsBy(Attr::getNum, "166")
-                )
-        );
-    }
-
-    /**
-     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='165']
-     */
-    private int injectSizeX(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.ceil(
-                getGroupAttrValueAsDouble(
-                        radanCompoundDocument,
-                        containsIgnoreCase(Group::getName, "Геометрия"),
-                        equalsBy(Attr::getNum, "165")
-                )
-        );
-    }
-
-    /**
-     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='163']
-     */
-    private int injectAreaWithInternalContours(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.round(
-                getGroupAttrValueAsDouble(
-                        radanCompoundDocument,
-                        containsIgnoreCase(Group::getName, "Геометрия"),
-                        equalsBy(Attr::getNum, "163")
-                )
-        );
-    }
-
-    /**
-     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='162']
-     */
-    private int injectActualArea(RadanCompoundDocument radanCompoundDocument) {
-        return (int) Math.round(
-                getGroupAttrValueAsDouble(
-                        radanCompoundDocument,
-                        containsIgnoreCase(Group::getName, "Геометрия"),
-                        equalsBy(Attr::getNum, "162")
-                )
-        );
-    }
-
-    /**
-     * /rcd:RadanCompoundDocument/rcd:QuotationInfo/rcd:Info[@num='0']/@value
-     */
-    private int injectInsertsCount(RadanCompoundDocument radanCompoundDocument) {
-        return ofNullable(radanCompoundDocument.getQuotationInfo())
-                .map(QuotationInfo::getInfos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(equalsBy(Info::getNum, "0"))
-                .map(Info::getValue)
-                .mapToInt(Integer::valueOf)
-                .findFirst()
-                .getAsInt();
-    }
-
-    /**
-     * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='168']
-     */
-    private int injectCutLength(RadanCompoundDocument radanCompoundDocument) throws Exception {
-        double asDouble = getGroupAttrValueAsDouble(
-                radanCompoundDocument,
-                containsIgnoreCase(Group::getName, "Геометрия"),
-                equalsBy(Attr::getNum, "168")
-        );
-        return (int) Math.ceil(asDouble / 50) * 50;
-    }
-
     private double getGroupAttrValueAsDouble(RadanCompoundDocument radanCompoundDocument, Predicate<Group> groupPredicate, Predicate<Attr> attrPredicate) {
         return ofNullable(radanCompoundDocument.getRadanAttributes())
                 .map(RadanAttributes::getGroups)
@@ -471,26 +485,5 @@ public class Controller2 extends Controller {
                 .mapToDouble(Double::valueOf)
                 .findFirst()
                 .getAsDouble();
-    }
-
-    private void openConverter3Window(File specFile) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter3.fxml"));
-            Parent root = loader.load();
-            Controller3 controller = loader.getController();
-            controller.setCompoundsPath(compoundsField.getText());
-            controller.setOrderFilePath(orderFilePathField.getText());
-            controller.setSpecFile(specFile);
-            controller.fillTables();
-            Stage stage = new Stage();
-            stage.setHeight(765);
-            stage.setWidth(1550);
-            controller.setStage(stage);
-            stage.setTitle("Обработка компоновок");
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception e) {
-            logError("Ошибка при открытии окна: " + e.getMessage());
-        }
     }
 }

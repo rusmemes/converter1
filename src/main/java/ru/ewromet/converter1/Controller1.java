@@ -70,47 +70,64 @@ import static ru.ewromet.Utils.searchFilesRecursively;
 
 public class Controller1 extends Controller {
 
+    private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
+    private static final Comparator<FileRow> FILE_ROW_COMPARATOR
+            = Comparator.comparing(FileRow::getPosNumber).thenComparing(Comparator.comparing(FileRow::getFilePath));
+    private static final String CSV_HEADER_ROW = "000 | ;110 | Название;119 | Материал;120 | Толщина;121 | Толщин.велич.;177 | Последнее плановое количество";
+    private static final String FILENAME_TEMPLATE = "Nz-Np-Q-gK-O.f";
     private static Map<Pair<String, String>, String> MATERIALS;
     private static Map<String, String> MATERIALS2DIR;
     private static Map<String, String> BRANDS2DIR;
-
     private static File materialsFile = Paths.get(CONVERTER_DIR_ABS_PATH, "materials.csv").toFile();
+
     static {
         initMaterials();
     }
 
+    public MenuItem continueWork;
+    protected OrderParser parser = new OrderParser();
     private File selectedFile;
     private OrderRowsFileUtil orderRowsFileUtil = new OrderRowsFileUtil();
-    protected OrderParser parser = new OrderParser();
-
     @FXML
     private MenuBar menuBar;
-
     @FXML
     private ProgressBar progressBar;
-
     @FXML
     private javafx.scene.control.TextField orderPathField;
-
     @FXML
     private javafx.scene.control.TextField orderNumberField;
-
     @FXML
     private TableView<FileRow> filesTable;
-
     @FXML
     private TableView<OrderRow> orderTable;
-
     private MenuItem saveItem;
     private CheckMenuItem renameFilesItem;
-    public MenuItem continueWork;
-
     @FXML
     private Button bindButton;
 
-    private static final Comparator<OrderRow> ORDER_ROW_COMPARATOR = Comparator.comparing(OrderRow::getPosNumber);
-    private static final Comparator<FileRow> FILE_ROW_COMPARATOR
-            = Comparator.comparing(FileRow::getPosNumber).thenComparing(Comparator.comparing(FileRow::getFilePath));
+    static Map<String, String> getMATERIALS2DIR() {
+        return MATERIALS2DIR;
+    }
+
+    static Map<String, String> getBRANDS2DIR() {
+        return BRANDS2DIR;
+    }
+
+    public static Map<Pair<String, String>, String> getMATERIALS() {
+        return MATERIALS;
+    }
+
+    private static boolean isEmptyDirectory(File directory) {
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (ArrayUtils.isEmpty(files)) {
+                return true;
+            }
+            assert files != null;
+            return Arrays.stream(files).allMatch(Controller1::isEmptyDirectory);
+        }
+        return false;
+    }
 
     public File getSelectedFile() {
         return selectedFile;
@@ -186,127 +203,6 @@ public class Controller1 extends Controller {
 
         menu.getItems().addAll(newOrderItem, saveItem, renameFilesItem, continueWork, materialsItem);
         menuBar.getMenus().add(menu);
-    }
-
-    static Map<String, String> getMATERIALS2DIR() {
-        return MATERIALS2DIR;
-    }
-
-    static Map<String, String> getBRANDS2DIR() {
-        return BRANDS2DIR;
-    }
-
-    public static Map<Pair<String, String>, String> getMATERIALS() {
-        return MATERIALS;
-    }
-
-    private static void initMaterials() {
-        if (materialsFile.exists()) {
-            try {
-                List<String> csvLines = IOUtils.readLines(new FileInputStream(materialsFile), forName("windows-1251"));
-                Map<Pair<String, String>, String> map = new HashMap<>();
-                for (String csvLine : csvLines) {
-                    String[] split = split(trimToNull(csvLine), ';');
-                    if (ArrayUtils.isEmpty(split) || split.length != 3) {
-                        throw new RuntimeException(Arrays.toString(split));
-                    }
-                    map.put(
-                            of(
-                                    trimToEmpty(split[0]),
-                                    trimToEmpty(split[1])
-                            ),
-                            trimToEmpty(split[2])
-                    );
-                }
-                MATERIALS = Collections.unmodifiableMap(map);
-                setOtherMaterialMaps();
-                return;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        MATERIALS = getMaterialsMap();
-        setOtherMaterialMaps();
-    }
-
-    private static void setOtherMaterialMaps() {
-        MATERIALS2DIR = new HashMap<>();
-        BRANDS2DIR = new HashMap<>();
-        MATERIALS.forEach((key, value) -> {
-            MATERIALS2DIR.put(key.getLeft(), value);
-            BRANDS2DIR.put(key.getRight(), value);
-        });
-        MATERIALS2DIR = Collections.unmodifiableMap(MATERIALS2DIR);
-        BRANDS2DIR = Collections.unmodifiableMap(BRANDS2DIR);
-    }
-
-    private static Map<Pair<String, String>, String> getMaterialsMap() {
-        return Collections.unmodifiableMap(new HashMap<Pair<String, String>, String>() {{
-            put(of("сталь х/к", "ст08"), "Mild Steel hk");
-            put(of("сталь х/к", "иное"), "Mild Steel hk other");
-            put(of("сталь г/к", "ст3"), "Mild Steel gk");
-            put(of("сталь г/к", "иное"), "Mild Steel gk other");
-            put(of("сталь_хк", "ст08"), "Mild Steel hk");
-            put(of("сталь_хк", "иное"), "Mild Steel hk other");
-            put(of("сталь_гк", "ст3"), "Mild Steel gk");
-            put(of("сталь_гк", "иное"), "Mild Steel gk other");
-            put(of("оцинковка", "ст08"), "Zintec");
-            put(of("оцинковка", "иное"), "Zintec other");
-            put(of("нерж. мат", "430"), "Stainless Steel 430");
-            put(of("нерж. мат", "304"), "Stainless Steel 304");
-            put(of("нерж. мат", "201"), "Stainless Steel 201");
-            put(of("нерж. мат", "321 (12Х18Н10Т)"), "Stainless Steel 321");
-            put(of("нерж. мат", "316 (10Х17Н13М3)"), "Stainless Steel 316");
-            put(of("нерж. мат", "439"), "Stainless Steel 439");
-            put(of("нерж. мат", "иное"), "Stainless Steel other");
-            put(of("нерж. зерк", "430"), "Stainless Steel Foil 430");
-            put(of("нерж. зерк", "304"), "Stainless Steel Foil 304");
-            put(of("нерж. зерк", "иное"), "Stainless Steel Foil other");
-            put(of("нерж. шлиф", "430"), "Stainless Steel Shlif 430");
-            put(of("нерж. шлиф", "304"), "Stainless Steel Shlif 304");
-            put(of("нерж. шлиф", "иное"), "Stainless Steel Shlif other");
-            put(of("алюминий", "АМГ2М"), "Aluminium AMG2M");
-            put(of("алюминий", "АМГ3М"), "Aluminium AMG3M");
-            put(of("алюминий", "АМГ2НР рифл"), "Aluminium AMG2NR ribbed");
-            put(of("алюминий", "АМГ6"), "Aluminium AMG6");
-            put(of("алюминий", "ВД1АНР рифл"), "Aluminium VD1ANR ribbed");
-            put(of("алюминий", "Д16АТ"), "Aluminium D16AT");
-            put(of("алюминий", "Д16АМ"), "Aluminium D16AM");
-            put(of("алюминий", "А5м"), "Aluminium A5m");
-            put(of("алюминий", "А5Н"), "Aluminium A5n");
-            put(of("алюминий", "АМЦМ"), "Aluminium AMCM");
-            put(of("алюминий", "АМЦН2"), "Aluminium AMCN2");
-            put(of("алюминий", "иное"), "Aluminium other");
-            put(of("латунь", "Л63м"), "Brass L63m");
-            put(of("латунь", "Л63т"), "Brass L63t");
-            put(of("латунь", "иное"), "Brass other");
-            put(of("медь", "М1м"), "Copper M1m");
-            put(of("медь", "М1т"), "Copper M1t");
-            put(of("медь", "иное"), "Copper other");
-            put(of("иное", "иное"), "Other");
-        }});
-    }
-
-    private void openConverter2Window() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
-            Parent root = loader.load();
-            Controller2 controller = loader.getController();
-            controller.setController1(this);
-            Stage stage = new Stage();
-            controller.setStage(stage);
-            root.setOnKeyReleased(event -> {
-                if (event.getCode() == KeyCode.R && event.isControlDown()) {
-                    controller.calcButton.fire();
-                }
-            });
-            stage.setTitle("Окно расчёта");
-            stage.setScene(new Scene(root));
-            stage.show();
-            controller.setFocus();
-        } catch (Exception e) {
-            logError("Ошибка при открытии окна: " + e.getMessage());
-        }
     }
 
     private void initializeFilesTable() {
@@ -469,18 +365,6 @@ public class Controller1 extends Controller {
         });
     }
 
-    private static boolean isEmptyDirectory(File directory) {
-        if (directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (ArrayUtils.isEmpty(files)) {
-                return true;
-            }
-            assert files != null;
-            return Arrays.stream(files).allMatch(Controller1::isEmptyDirectory);
-        }
-        return false;
-    }
-
     private void newOrderMenuItemAction() {
         progressBar.setProgress(0);
         logArea.getItems().clear();
@@ -620,32 +504,45 @@ public class Controller1 extends Controller {
         }
     }
 
-    private static final String CSV_HEADER_ROW = "000 | ;110 | Название;119 | Материал;120 | Толщина;121 | Толщин.велич.;177 | Последнее плановое количество";
-
-    private void createCsvFile(File directory, String orderNumber, List<OrderRow> orderRows) throws IOException {
-        List<String> lines = new ArrayList<>();
-        lines.add(CSV_HEADER_ROW);
-        orderRows.forEach(row -> {
-            if (isNotBlank(row.getFilePath())) {
-                lines.add(createCsvLine(row));
+    private static void initMaterials() {
+        if (materialsFile.exists()) {
+            try {
+                List<String> csvLines = IOUtils.readLines(new FileInputStream(materialsFile), forName("windows-1251"));
+                Map<Pair<String, String>, String> map = new HashMap<>();
+                for (String csvLine : csvLines) {
+                    String[] split = split(trimToNull(csvLine), ';');
+                    if (ArrayUtils.isEmpty(split) || split.length != 3) {
+                        throw new RuntimeException(Arrays.toString(split));
+                    }
+                    map.put(
+                            of(
+                                    trimToEmpty(split[0]),
+                                    trimToEmpty(split[1])
+                            ),
+                            trimToEmpty(split[2])
+                    );
+                }
+                MATERIALS = Collections.unmodifiableMap(map);
+                setOtherMaterialMaps();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+        }
+        MATERIALS = getMaterialsMap();
+        setOtherMaterialMaps();
+    }
+
+    private static void setOtherMaterialMaps() {
+        MATERIALS2DIR = new HashMap<>();
+        BRANDS2DIR = new HashMap<>();
+        MATERIALS.forEach((key, value) -> {
+            MATERIALS2DIR.put(key.getLeft(), value);
+            BRANDS2DIR.put(key.getRight(), value);
         });
-        final File csvFile = Paths.get(directory.getAbsolutePath(), orderNumber + ".csv").toFile();
-        FileUtils.writeLines(csvFile, "UTF-8", lines);
+        MATERIALS2DIR = Collections.unmodifiableMap(MATERIALS2DIR);
+        BRANDS2DIR = Collections.unmodifiableMap(BRANDS2DIR);
     }
-
-    private String createCsvLine(OrderRow row) {
-        return String.format(
-                "%s;%s;%s;%s;mm;%d"
-                , row.getFilePath()
-                , row.getDetailResultName()
-                , row.getMaterial()
-                , row.getThickness()
-                , row.getCount()
-        );
-    }
-
-    private static final String FILENAME_TEMPLATE = "Nz-Np-Q-gK-O.f";
 
     /**
      * Nz - номер заказа,
@@ -671,6 +568,98 @@ public class Controller1 extends Controller {
         }
 
         return sourceFile.getName();
+    }
+
+    private static Map<Pair<String, String>, String> getMaterialsMap() {
+        return Collections.unmodifiableMap(new HashMap<Pair<String, String>, String>() {{
+            put(of("сталь х/к", "ст08"), "Mild Steel hk");
+            put(of("сталь х/к", "иное"), "Mild Steel hk other");
+            put(of("сталь г/к", "ст3"), "Mild Steel gk");
+            put(of("сталь г/к", "иное"), "Mild Steel gk other");
+            put(of("сталь_хк", "ст08"), "Mild Steel hk");
+            put(of("сталь_хк", "иное"), "Mild Steel hk other");
+            put(of("сталь_гк", "ст3"), "Mild Steel gk");
+            put(of("сталь_гк", "иное"), "Mild Steel gk other");
+            put(of("оцинковка", "ст08"), "Zintec");
+            put(of("оцинковка", "иное"), "Zintec other");
+            put(of("нерж. мат", "430"), "Stainless Steel 430");
+            put(of("нерж. мат", "304"), "Stainless Steel 304");
+            put(of("нерж. мат", "201"), "Stainless Steel 201");
+            put(of("нерж. мат", "321 (12Х18Н10Т)"), "Stainless Steel 321");
+            put(of("нерж. мат", "316 (10Х17Н13М3)"), "Stainless Steel 316");
+            put(of("нерж. мат", "439"), "Stainless Steel 439");
+            put(of("нерж. мат", "иное"), "Stainless Steel other");
+            put(of("нерж. зерк", "430"), "Stainless Steel Foil 430");
+            put(of("нерж. зерк", "304"), "Stainless Steel Foil 304");
+            put(of("нерж. зерк", "иное"), "Stainless Steel Foil other");
+            put(of("нерж. шлиф", "430"), "Stainless Steel Shlif 430");
+            put(of("нерж. шлиф", "304"), "Stainless Steel Shlif 304");
+            put(of("нерж. шлиф", "иное"), "Stainless Steel Shlif other");
+            put(of("алюминий", "АМГ2М"), "Aluminium AMG2M");
+            put(of("алюминий", "АМГ3М"), "Aluminium AMG3M");
+            put(of("алюминий", "АМГ2НР рифл"), "Aluminium AMG2NR ribbed");
+            put(of("алюминий", "АМГ6"), "Aluminium AMG6");
+            put(of("алюминий", "ВД1АНР рифл"), "Aluminium VD1ANR ribbed");
+            put(of("алюминий", "Д16АТ"), "Aluminium D16AT");
+            put(of("алюминий", "Д16АМ"), "Aluminium D16AM");
+            put(of("алюминий", "А5м"), "Aluminium A5m");
+            put(of("алюминий", "А5Н"), "Aluminium A5n");
+            put(of("алюминий", "АМЦМ"), "Aluminium AMCM");
+            put(of("алюминий", "АМЦН2"), "Aluminium AMCN2");
+            put(of("алюминий", "иное"), "Aluminium other");
+            put(of("латунь", "Л63м"), "Brass L63m");
+            put(of("латунь", "Л63т"), "Brass L63t");
+            put(of("латунь", "иное"), "Brass other");
+            put(of("медь", "М1м"), "Copper M1m");
+            put(of("медь", "М1т"), "Copper M1t");
+            put(of("медь", "иное"), "Copper other");
+            put(of("иное", "иное"), "Other");
+        }});
+    }
+
+    private void openConverter2Window() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
+            Parent root = loader.load();
+            Controller2 controller = loader.getController();
+            controller.setController1(this);
+            Stage stage = new Stage();
+            controller.setStage(stage);
+            root.setOnKeyReleased(event -> {
+                if (event.getCode() == KeyCode.R && event.isControlDown()) {
+                    controller.calcButton.fire();
+                }
+            });
+            stage.setTitle("Окно расчёта");
+            stage.setScene(new Scene(root));
+            stage.show();
+            controller.setFocus();
+        } catch (Exception e) {
+            logError("Ошибка при открытии окна: " + e.getMessage());
+        }
+    }
+
+    private void createCsvFile(File directory, String orderNumber, List<OrderRow> orderRows) throws IOException {
+        List<String> lines = new ArrayList<>();
+        lines.add(CSV_HEADER_ROW);
+        orderRows.forEach(row -> {
+            if (isNotBlank(row.getFilePath())) {
+                lines.add(createCsvLine(row));
+            }
+        });
+        final File csvFile = Paths.get(directory.getAbsolutePath(), orderNumber + ".csv").toFile();
+        FileUtils.writeLines(csvFile, "UTF-8", lines);
+    }
+
+    private String createCsvLine(OrderRow row) {
+        return String.format(
+                "%s;%s;%s;%s;mm;%d"
+                , row.getFilePath()
+                , row.getDetailResultName()
+                , row.getMaterial()
+                , row.getThickness()
+                , row.getCount()
+        );
     }
 
     public void closeApplicationAction(WindowEvent windowEvent) {

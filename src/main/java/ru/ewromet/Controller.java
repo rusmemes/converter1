@@ -36,17 +36,9 @@ public abstract class Controller implements Logger {
         }
     }
 
-    private Stage stage;
-
     @FXML
     protected ListView<Text> logArea;
-
-    @Override
-    public void logError(String line) {
-        Text text = new Text(line);
-        text.setFill(Color.RED);
-        logArea.getItems().add(0, text);
-    }
+    private Stage stage;
 
     protected static <T> void refreshTable(TableView<T> tableView, Comparator<T> comparator) {
         final List<T> items = tableView.getItems();
@@ -59,11 +51,31 @@ public abstract class Controller implements Logger {
         tableView.refresh();
     }
 
-    @Override
-    public void logMessage(String line) {
-        Text text = new Text(line);
-        text.setFill(Color.BLUE);
-        logArea.getItems().add(0, text);
+    protected static void setValueToCell(Row row, int cellIndex, Object value) {
+        if (value == null) {
+            return;
+        }
+        Cell cell = row.getCell(cellIndex);
+        CellType cellType;
+        if (cell == null) {
+            cell = row.createCell(0, (cellType = getCellTypeFor(value)));
+        } else {
+            cell.setCellType((cellType = getCellTypeFor(value)));
+        }
+        switch (cellType) {
+            case NUMERIC:
+                cell.setCellValue(value instanceof Integer ? (int) value : (double) value);
+                break;
+            case STRING:
+            default:
+                cell.setCellValue(value.toString());
+        }
+    }
+
+    private static CellType getCellTypeFor(Object object) {
+        return object instanceof Double || object instanceof Integer
+                ? CellType.NUMERIC
+                : CellType.STRING;
     }
 
     public void setStage(Stage stage) {
@@ -104,6 +116,20 @@ public abstract class Controller implements Logger {
         }
     }
 
+    @Override
+    public void logError(String line) {
+        Text text = new Text(line);
+        text.setFill(Color.RED);
+        logArea.getItems().add(0, text);
+    }
+
+    @Override
+    public void logMessage(String line) {
+        Text text = new Text(line);
+        text.setFill(Color.BLUE);
+        logArea.getItems().add(0, text);
+    }
+
     protected void chooseFileAndAccept(FileChooser.ExtensionFilter extensionFilter, String title, ExtendedConsumer<File> fileConsumer) {
 
         final FileChooser fileChooser = new FileChooser();
@@ -127,32 +153,5 @@ public abstract class Controller implements Logger {
         File file = fileChooser.showOpenDialog(stage);
 
         acceptFileAndSaveLastPath(fileConsumer, file);
-    }
-
-    protected static void setValueToCell(Row row, int cellIndex, Object value) {
-        if (value == null) {
-            return;
-        }
-        Cell cell = row.getCell(cellIndex);
-        CellType cellType;
-        if (cell == null) {
-            cell = row.createCell(0, (cellType = getCellTypeFor(value)));
-        } else {
-            cell.setCellType((cellType = getCellTypeFor(value)));
-        }
-        switch (cellType) {
-            case NUMERIC:
-                cell.setCellValue(value instanceof Integer ? (int) value : (double) value);
-                break;
-            case STRING:
-            default:
-                cell.setCellValue(value.toString());
-        }
-    }
-
-    private static CellType getCellTypeFor(Object object) {
-        return object instanceof Double || object instanceof Integer
-                ? CellType.NUMERIC
-                : CellType.STRING;
     }
 }

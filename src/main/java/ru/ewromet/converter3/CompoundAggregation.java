@@ -34,36 +34,12 @@ public class CompoundAggregation {
         this.posNumber.set(posNumber);
     }
 
-    public String getMaterial() {
-        return material.get();
-    }
-
-    public void setMaterial(String material) {
-        this.material.set(material);
-    }
-
     public String getMaterialEn() {
         return materialEn.get();
     }
 
     public void setMaterialEn(String materialEn) {
         this.materialEn.set(materialEn);
-    }
-
-    public String getMaterialBrand() {
-        return materialBrand.get();
-    }
-
-    public void setMaterialBrand(String materialBrand) {
-        this.materialBrand.set(materialBrand);
-    }
-
-    public double getThickness() {
-        return thickness.get();
-    }
-
-    public void setThickness(double thickness) {
-        this.thickness.set(thickness);
     }
 
     public double getSize() {
@@ -139,6 +115,11 @@ public class CompoundAggregation {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(posNumber, material, materialBrand, thickness, size, listsCount, totalConsumption, materialDensity, weight, price, totalPrice, xMin_x_yMin_m, xSt_x_ySt_m);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -162,15 +143,34 @@ public class CompoundAggregation {
                 Objects.equals(xSt_x_ySt_m, that.xSt_x_ySt_m);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(posNumber, material, materialBrand, thickness, size, listsCount, totalConsumption, materialDensity, weight, price, totalPrice, xMin_x_yMin_m, xSt_x_ySt_m);
-    }
-
     public Triple<Double, String, String> materialTriple() {
         if (materialTriple == null) {
             materialTriple = Triple.of(getThickness(), getMaterial(), getMaterialBrand());
         }
         return materialTriple;
+    }
+
+    public double getThickness() {
+        return thickness.get();
+    }
+
+    public void setThickness(double thickness) {
+        this.thickness.set(thickness);
+    }
+
+    public String getMaterial() {
+        return material.get();
+    }
+
+    public void setMaterial(String material) {
+        this.material.set(material);
+    }
+
+    public String getMaterialBrand() {
+        return materialBrand.get();
+    }
+
+    public void setMaterialBrand(String materialBrand) {
+        this.materialBrand.set(materialBrand);
     }
 }

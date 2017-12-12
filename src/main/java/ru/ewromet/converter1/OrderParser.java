@@ -164,62 +164,6 @@ public class OrderParser {
         return Pair.of(result, withFiles ? searchFiles(result, orderExcelFile) : FXCollections.emptyObservableList());
     }
 
-    private ObservableList<FileRow> searchFiles(ObservableList<OrderRow> result, File orderExcelFile) {
-
-        Map<FileRow, Set<OrderRow>> file2RowMap = new HashMap<>();
-        Map<OrderRow, Set<FileRow>> row2FileMap = new HashMap<>();
-
-        final String parentDirPath = orderExcelFile.getParent() + File.separator;
-        final List<File> files = searchFilesRecursively(new File(parentDirPath), pathname -> {
-            if (pathname.isDirectory()) {
-                return true;
-            }
-            final String lowerCase = pathname.getName().toLowerCase();
-            return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
-        });
-
-        FILES:
-        for (File file : files) {
-            final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, StringUtils.EMPTY);
-            final FileRow fileRow = new FileRow(relativeFilePath);
-            final Set<OrderRow> fileOrderRows = file2RowMap.computeIfAbsent(fileRow, row -> new HashSet<>());
-
-            final String fileNameLowerCased = file.getName().toLowerCase()
-                    .replace(DXF_EXTENSION, StringUtils.EMPTY)
-                    .replace(DWG_EXTENSION, StringUtils.EMPTY);
-
-            for (OrderRow orderRow : result) {
-
-                final Set<FileRow> fileRows = row2FileMap.computeIfAbsent(orderRow, row -> new HashSet<>());
-
-                final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
-
-                if (Objects.equals(fileNameLowerCased, detailNameLowerCased)) {
-                    orderRow.setFilePath(relativeFilePath);
-                    fileRow.setPosNumber(orderRow.getPosNumber());
-                    fileOrderRows.add(orderRow);
-                    fileRows.add(fileRow);
-                    continue FILES;
-                }
-            }
-        }
-
-        file2RowMap.forEach((fileRow, orderRows) -> {
-            if (orderRows.size() != 1) {
-                fileRow.setPosNumber(0);
-            }
-        });
-        row2FileMap.forEach((orderRow, fileRows) -> {
-            if (fileRows.size() != 1) {
-                orderRow.setFilePath(null);
-            }
-        });
-
-        final ObservableList<FileRow> fileRows = FXCollections.observableArrayList(file2RowMap.keySet());
-        fileRows.sort(Comparator.comparing(FileRow::getPosNumber));
-        return fileRows;
-    }
-
     private OrderRow createOrderRowFromExcelRow(Row excelRow) throws Exception {
         final OrderRow orderRow = new OrderRow();
         for (Integer columnIndex : tableColumns.keySet()) {
@@ -388,5 +332,61 @@ public class OrderParser {
             }
         }
         return orderRow;
+    }
+
+    private ObservableList<FileRow> searchFiles(ObservableList<OrderRow> result, File orderExcelFile) {
+
+        Map<FileRow, Set<OrderRow>> file2RowMap = new HashMap<>();
+        Map<OrderRow, Set<FileRow>> row2FileMap = new HashMap<>();
+
+        final String parentDirPath = orderExcelFile.getParent() + File.separator;
+        final List<File> files = searchFilesRecursively(new File(parentDirPath), pathname -> {
+            if (pathname.isDirectory()) {
+                return true;
+            }
+            final String lowerCase = pathname.getName().toLowerCase();
+            return lowerCase.endsWith(DWG_EXTENSION) || lowerCase.endsWith(DXF_EXTENSION);
+        });
+
+        FILES:
+        for (File file : files) {
+            final String relativeFilePath = file.getAbsolutePath().replace(parentDirPath, StringUtils.EMPTY);
+            final FileRow fileRow = new FileRow(relativeFilePath);
+            final Set<OrderRow> fileOrderRows = file2RowMap.computeIfAbsent(fileRow, row -> new HashSet<>());
+
+            final String fileNameLowerCased = file.getName().toLowerCase()
+                    .replace(DXF_EXTENSION, StringUtils.EMPTY)
+                    .replace(DWG_EXTENSION, StringUtils.EMPTY);
+
+            for (OrderRow orderRow : result) {
+
+                final Set<FileRow> fileRows = row2FileMap.computeIfAbsent(orderRow, row -> new HashSet<>());
+
+                final String detailNameLowerCased = orderRow.getDetailName().toLowerCase();
+
+                if (Objects.equals(fileNameLowerCased, detailNameLowerCased)) {
+                    orderRow.setFilePath(relativeFilePath);
+                    fileRow.setPosNumber(orderRow.getPosNumber());
+                    fileOrderRows.add(orderRow);
+                    fileRows.add(fileRow);
+                    continue FILES;
+                }
+            }
+        }
+
+        file2RowMap.forEach((fileRow, orderRows) -> {
+            if (orderRows.size() != 1) {
+                fileRow.setPosNumber(0);
+            }
+        });
+        row2FileMap.forEach((orderRow, fileRows) -> {
+            if (fileRows.size() != 1) {
+                orderRow.setFilePath(null);
+            }
+        });
+
+        final ObservableList<FileRow> fileRows = FXCollections.observableArrayList(file2RowMap.keySet());
+        fileRows.sort(Comparator.comparing(FileRow::getPosNumber));
+        return fileRows;
     }
 }

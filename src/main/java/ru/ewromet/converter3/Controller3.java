@@ -151,6 +151,163 @@ public class Controller3 extends Controller {
 
     private Map<String, Double> customMaterialDensities = new HashMap<>();
 
+    /**
+     * сталь х/к или оцинковка
+     */
+    private static boolean isSteelOrZintec(String material) {
+        return isMildSteelHkOrZintec(material) || isStainlessSteel(material);
+    }
+
+    private static boolean isMildSteelHkOrZintec(String material) {
+        return isZintec(material) || isMildSteelHk(material);
+    }
+
+    /**
+     * нерж. любая
+     */
+    private static boolean isStainlessSteel(String material) {
+        return isStainlessSteelShlif(material) || isStainlessSteelFoil(material) || isStainlessSteelNoFoilNoShlif(material);
+    }
+
+    /**
+     * оцинковка
+     */
+    private static boolean isZintec(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Zintec");
+    }
+
+    /**
+     * сталь х/к
+     */
+    private static boolean isMildSteelHk(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Mild Steel hk");
+    }
+
+    /**
+     * нерж. шлиф
+     */
+    private static boolean isStainlessSteelShlif(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Shlif");
+    }
+
+    /**
+     * нерж. зерк
+     */
+    private static boolean isStainlessSteelFoil(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Foil");
+    }
+
+    /**
+     * нерж. мат
+     */
+    private static boolean isStainlessSteelNoFoilNoShlif(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel")
+                && !containsIgnoreCase(material, "foil")
+                && !containsIgnoreCase(material, "shlif");
+    }
+
+    private static double roundByCeil(double value, int precision) {
+        double v = Math.pow(10, precision);
+        return Math.ceil(value * v) / v;
+    }
+
+    private static void eraseCell(Cell cell) {
+        cell.setCellType(CellType.BLANK);
+        cell.setCellType(CellType.NUMERIC);
+    }
+
+    private static double roundByCeil(double value) {
+        return round(value, 2);
+    }
+
+    private static double round(double value, int precision) {
+        double v = Math.pow(10, precision);
+        return Math.round(value * v) / v;
+    }
+
+    /**
+     * сталь г/к
+     */
+    private static boolean isMildSteelGk(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Mild Steel gk");
+    }
+
+    private static int compare(double d1, double d2) {
+        return compare(d1, d2, 0.0001);
+    }
+
+    private static int compare(double d1, double d2, double precision) {
+        double diff = d1 - d2;
+        if (Math.abs(diff) <= precision) {
+            return 0;
+        }
+        return Double.compare(d1, d2);
+    }
+
+    /**
+     * медь
+     */
+    private static boolean isCopper(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Copper");
+    }
+
+    /**
+     * латунь
+     */
+    private static boolean isBrass(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Brass");
+    }
+
+    /**
+     * алюминий
+     */
+    private static boolean isAluminium(String material) {
+        return StringUtils.startsWithIgnoreCase(material, "Aluminium");
+    }
+
+    private static String getAttrValue(RadanAttributes radanAttributes, String attrNum) {
+        return ofNullable(radanAttributes)
+                .map(RadanAttributes::getGroups)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(containsIgnoreCase(Group::getName, "Производство"))
+                .map(Group::getAttrs)
+                .flatMap(List::stream)
+                .filter(equalsBy(Attr::getNum, attrNum))
+                .map(Attr::getValue)
+                .findFirst().get();
+    }
+
+    private static String getInfoValue(QuotationInfo quotationInfo, String infoNum) {
+        return ofNullable(quotationInfo)
+                .map(QuotationInfo::getInfos)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(equalsBy(Info::getNum, infoNum))
+                .map(Info::getValue)
+                .findFirst().get();
+    }
+
+    private static String getBrand(List<OrderRow> orderRows, QuotationInfo quotationInfo) throws Exception {
+
+        String name = ofNullable(quotationInfo)
+                .map(QuotationInfo::getInfos)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(equalsBy(Info::getNum, "4"))
+                .map(Info::getSymbols)
+                .flatMap(List::stream)
+                .findFirst()
+                .get().getName();
+
+        for (OrderRow orderRow : orderRows) {
+            if (StringUtils.startsWithIgnoreCase(orderRow.getDetailResultName(), name)) {
+                return orderRow.getMaterialBrand();
+            }
+        }
+        throw new Exception("Не найдена марка материала для " + name);
+    }
+
     private void saveCustomMaterialDensity(String material, Double density) {
         customMaterialDensities.put(material, density);
         try {
@@ -168,9 +325,71 @@ public class Controller3 extends Controller {
         clientName = getClientName(orderFilePath);
     }
 
+    private String getClientName(String orderFilePath) {
+        try (FileInputStream inputStream = new FileInputStream(new File(orderFilePath));
+             Workbook workbook = getWorkbook(inputStream, orderFilePath)
+        ) {
+            Sheet sheet = workbook.getSheetAt(0);
+            SHEET:
+            for (int j = sheet.getFirstRowNum(); j <= sheet.getLastRowNum(); j++) {
+                final Row row = sheet.getRow(j);
+                if (row == null) {
+                    continue;
+                }
+                for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
+                    Cell cell = row.getCell(k);
+                    if (cell != null) {
+                        String value;
+                        try {
+                            value = cell.getStringCellValue();
+                            if (containsIgnoreCase(value, "Заказчик:")) {
+                                Cell clientNameCell = row.getCell(cell.getColumnIndex() + 1);
+                                if (clientNameCell != null) {
+                                    try {
+                                        return clientNameCell.getStringCellValue();
+                                    } catch (Exception e) {
+                                        logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
+                                        e.printStackTrace();
+                                    }
+                                }
+                                break SHEET;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return "";
+    }
+
     public void setSpecFile(File specFile) {
         this.specFile = specFile;
         polymerTypeChoiceBox.setItems(FXCollections.observableArrayList(getPolymerTypeList()));
+    }
+
+    private List<Double> getPolymerTypeList() {
+        List<Double> res = new ArrayList<>(10);
+        try (FileInputStream inputStream = new FileInputStream(this.specFile);
+             Workbook workbook = getWorkbook(inputStream, this.specFile.getAbsolutePath())
+        ) {
+            Sheet sheet = workbook.getSheet("прайс");
+            for (int i = 45; i < 52; i++) {
+                Cell cell = sheet.getRow(i).getCell(10);
+                if (cell != null) {
+                    res.add(cell.getNumericCellValue());
+                }
+            }
+
+        } catch (Exception e) {
+            logError("Не удалось извлечь цифры полимерки с листа \"прайс\": " + e.getMessage());
+            e.printStackTrace();
+        }
+        res.set(0, null);
+        return res;
     }
 
     public void setCompoundsPath(String compoundsDirPath) throws Exception {
@@ -183,13 +402,6 @@ public class Controller3 extends Controller {
             throw new Exception("В папке " + compoundsDir + " drg-файлы не найдены");
         }
         Arrays.sort(files, new WindowsExplorerFilesComparator());
-    }
-
-    /**
-     * сталь х/к или оцинковка
-     */
-    private static boolean isSteelOrZintec(String material) {
-        return isMildSteelHkOrZintec(material) || isStainlessSteel(material);
     }
 
     private ChangeListener<String> getChangeListenerFor(TextField textField) {
@@ -618,11 +830,6 @@ public class Controller3 extends Controller {
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
     }
 
-    private static double roundByCeil(double value, int precision) {
-        double v = Math.pow(10, precision);
-        return Math.ceil(value * v) / v;
-    }
-
     private Double getDensity(String material) {
         Double density = customMaterialDensities.get(material);
         if (density == null) {
@@ -652,11 +859,6 @@ public class Controller3 extends Controller {
                 setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), value);
             }
         }
-    }
-
-    private static void eraseCell(Cell cell) {
-        cell.setCellType(CellType.BLANK);
-        cell.setCellType(CellType.NUMERIC);
     }
 
     private void fillMaterialConsumptionList(Workbook workbook) {
@@ -767,36 +969,6 @@ public class Controller3 extends Controller {
     public void fillTables() throws Exception {
         fillTable1();
         fillTable2();
-    }
-
-    private static double roundByCeil(double value) {
-        return roundByCeil(value, 2);
-    }
-
-    private static double round(double value, int precision) {
-        double v = Math.pow(10, precision);
-        return Math.round(value * v) / v;
-    }
-
-    /**
-     * нерж. любая
-     */
-    private static boolean isStainlessSteel(String material) {
-        return isStainlessSteelShlif(material) || isStainlessSteelFoil(material) || isStainlessSteelNoFoilNoShlif(material);
-    }
-
-    /**
-     * оцинковка
-     */
-    private static boolean isZintec(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Zintec");
-    }
-
-    /**
-     * сталь х/к
-     */
-    private static boolean isMildSteelHk(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Mild Steel hk");
     }
 
     @FXML
@@ -1266,73 +1438,6 @@ public class Controller3 extends Controller {
         }
     }
 
-    /**
-     * сталь г/к
-     */
-    private static boolean isMildSteelGk(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Mild Steel gk");
-    }
-
-    private static int compare(double d1, double d2) {
-        return compare(d1, d2, 0.0001);
-    }
-
-    /**
-     * медь
-     */
-    private static boolean isCopper(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Copper");
-    }
-
-    /**
-     * латунь
-     */
-    private static boolean isBrass(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Brass");
-    }
-
-    /**
-     * алюминий
-     */
-    private static boolean isAluminium(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Aluminium");
-    }
-
-    /**
-     * нерж. мат
-     */
-    private static boolean isStainlessSteelNoFoilNoShlif(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel")
-                && !containsIgnoreCase(material, "foil")
-                && !containsIgnoreCase(material, "shlif");
-    }
-
-    /**
-     * нерж. зерк
-     */
-    private static boolean isStainlessSteelFoil(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Foil");
-    }
-
-    private static boolean isMildSteelHkOrZintec(String material) {
-        return isZintec(material) || isMildSteelHk(material);
-    }
-
-    /**
-     * нерж. шлиф
-     */
-    private static boolean isStainlessSteelShlif(String material) {
-        return StringUtils.startsWithIgnoreCase(material, "Stainless Steel Shlif");
-    }
-
-    private static int compare(double d1, double d2, double precision) {
-        double diff = d1 - d2;
-        if (Math.abs(diff) <= precision) {
-            return 0;
-        }
-        return Double.compare(d1, d2);
-    }
-
     private void fillTable2() {
         List<CompoundAggregation> oldItems = new ArrayList<>(table2.getItems());
         Map<Triple<Double, String, String>, Double> oldItemsMaterialsPrices = new HashMap<>();
@@ -1430,49 +1535,6 @@ public class Controller3 extends Controller {
         }
 
         table2.setItems(items);
-    }
-
-    private static String getAttrValue(RadanAttributes radanAttributes, String attrNum) {
-        return ofNullable(radanAttributes)
-                .map(RadanAttributes::getGroups)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(containsIgnoreCase(Group::getName, "Производство"))
-                .map(Group::getAttrs)
-                .flatMap(List::stream)
-                .filter(equalsBy(Attr::getNum, attrNum))
-                .map(Attr::getValue)
-                .findFirst().get();
-    }
-
-    private static String getInfoValue(QuotationInfo quotationInfo, String infoNum) {
-        return ofNullable(quotationInfo)
-                .map(QuotationInfo::getInfos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(equalsBy(Info::getNum, infoNum))
-                .map(Info::getValue)
-                .findFirst().get();
-    }
-
-    private static String getBrand(List<OrderRow> orderRows, QuotationInfo quotationInfo) throws Exception {
-
-        String name = ofNullable(quotationInfo)
-                .map(QuotationInfo::getInfos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(equalsBy(Info::getNum, "4"))
-                .map(Info::getSymbols)
-                .flatMap(List::stream)
-                .findFirst()
-                .get().getName();
-
-        for (OrderRow orderRow : orderRows) {
-            if (StringUtils.startsWithIgnoreCase(orderRow.getDetailResultName(), name)) {
-                return orderRow.getMaterialBrand();
-            }
-        }
-        throw new Exception("Не найдена марка материала для " + name);
     }
 
     private void initializeTable1() {
@@ -1850,67 +1912,5 @@ public class Controller3 extends Controller {
                 table2.requestFocus();
             });
         });
-    }
-
-    private String getClientName(String orderFilePath) {
-        try (FileInputStream inputStream = new FileInputStream(new File(orderFilePath));
-             Workbook workbook = getWorkbook(inputStream, orderFilePath)
-        ) {
-            Sheet sheet = workbook.getSheetAt(0);
-            SHEET:
-            for (int j = sheet.getFirstRowNum(); j <= sheet.getLastRowNum(); j++) {
-                final Row row = sheet.getRow(j);
-                if (row == null) {
-                    continue;
-                }
-                for (int k = row.getFirstCellNum(); k < row.getLastCellNum(); k++) {
-                    Cell cell = row.getCell(k);
-                    if (cell != null) {
-                        String value;
-                        try {
-                            value = cell.getStringCellValue();
-                            if (containsIgnoreCase(value, "Заказчик:")) {
-                                Cell clientNameCell = row.getCell(cell.getColumnIndex() + 1);
-                                if (clientNameCell != null) {
-                                    try {
-                                        return clientNameCell.getStringCellValue();
-                                    } catch (Exception e) {
-                                        logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
-                                        e.printStackTrace();
-                                    }
-                                }
-                                break SHEET;
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    private List<Double> getPolymerTypeList() {
-        List<Double> res = new ArrayList<>(10);
-        try (FileInputStream inputStream = new FileInputStream(this.specFile);
-             Workbook workbook = getWorkbook(inputStream, this.specFile.getAbsolutePath())
-        ) {
-            Sheet sheet = workbook.getSheet("прайс");
-            for (int i = 45; i < 52; i++) {
-                Cell cell = sheet.getRow(i).getCell(10);
-                if (cell != null) {
-                    res.add(cell.getNumericCellValue());
-                }
-            }
-
-        } catch (Exception e) {
-            logError("Не удалось извлечь цифры полимерки с листа \"прайс\": " + e.getMessage());
-            e.printStackTrace();
-        }
-        res.set(0, null);
-        return res;
     }
 }
