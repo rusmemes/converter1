@@ -1,14 +1,5 @@
 package ru.ewromet;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
@@ -17,6 +8,14 @@ import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
 
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 
@@ -121,6 +120,7 @@ public abstract class Controller implements Logger {
         Text text = new Text(line);
         text.setFill(Color.RED);
         logArea.getItems().add(0, text);
+        System.err.println(line);
     }
 
     @Override
@@ -128,6 +128,7 @@ public abstract class Controller implements Logger {
         Text text = new Text(line);
         text.setFill(Color.BLUE);
         logArea.getItems().add(0, text);
+        System.out.println(line);
     }
 
     protected void chooseFileAndAccept(FileChooser.ExtensionFilter extensionFilter, String title, ExtendedConsumer<File> fileConsumer) {

@@ -1,12 +1,6 @@
 package ru.ewromet;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.EnumMap;
@@ -16,12 +10,29 @@ import java.util.Properties;
 public class Preferences {
 
     public static final String CONVERTER_DIR_ABS_PATH = Paths.get(System.getProperty("user.home"), "converter").toString();
+    public static final String LOG = Paths.get(CONVERTER_DIR_ABS_PATH, "log.txt").toString();
     private static final File file = Paths.get(CONVERTER_DIR_ABS_PATH, "converter1.ini").toFile();
 
     static {
         File dir = new File(CONVERTER_DIR_ABS_PATH);
         if (!dir.exists()) {
             dir.mkdir();
+        }
+        File log = new File(LOG);
+        if (!log.exists()) {
+            try {
+                log.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (log.exists()) {
+            try {
+                System.setErr(new PrintStream(new FileOutputStream(log, true), true));
+                System.setOut(new PrintStream(new FileOutputStream(log, true), true));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -31,7 +42,7 @@ public class Preferences {
         }
     }};
 
-    Preferences() throws IOException, InvocationTargetException, IllegalAccessException {
+    Preferences() throws IOException {
         if (file.exists()) {
             try (InputStream in = new FileInputStream(file)) {
                 Properties properties = new Properties();
