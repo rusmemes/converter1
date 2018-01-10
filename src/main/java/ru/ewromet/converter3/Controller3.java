@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -266,39 +267,51 @@ public class Controller3 extends Controller {
     }
 
     private static String getAttrValue(RadanAttributes radanAttributes, String attrNum) {
-        return ofNullable(radanAttributes)
-                .map(RadanAttributes::getGroups)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(containsIgnoreCase(Group::getName, "Производство"))
-                .map(Group::getAttrs)
-                .flatMap(List::stream)
-                .filter(equalsBy(Attr::getNum, attrNum))
-                .map(Attr::getValue)
-                .findFirst().get();
+        try {
+            return ofNullable(radanAttributes)
+                    .map(RadanAttributes::getGroups)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(containsIgnoreCase(Group::getName, "Производство"))
+                    .map(Group::getAttrs)
+                    .flatMap(List::stream)
+                    .filter(equalsBy(Attr::getNum, attrNum))
+                    .map(Attr::getValue)
+                    .findFirst().get();
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException("В sym-файле не найдено значение для атрибута " + attrNum, e);
+        }
     }
 
     private static String getInfoValue(QuotationInfo quotationInfo, String infoNum) {
-        return ofNullable(quotationInfo)
-                .map(QuotationInfo::getInfos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(equalsBy(Info::getNum, infoNum))
-                .map(Info::getValue)
-                .findFirst().get();
+        try {
+            return ofNullable(quotationInfo)
+                    .map(QuotationInfo::getInfos)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(equalsBy(Info::getNum, infoNum))
+                    .map(Info::getValue)
+                    .findFirst().get();
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException("В sym-файле не найдено значение для атрибута " + infoNum, e);
+        }
     }
 
     private static String getBrand(List<OrderRow> orderRows, QuotationInfo quotationInfo) throws Exception {
-
-        String name = ofNullable(quotationInfo)
-                .map(QuotationInfo::getInfos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .filter(equalsBy(Info::getNum, "4"))
-                .map(Info::getSymbols)
-                .flatMap(List::stream)
-                .findFirst()
-                .get().getName();
+        String name;
+        try {
+            name = ofNullable(quotationInfo)
+                    .map(QuotationInfo::getInfos)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(equalsBy(Info::getNum, "4"))
+                    .map(Info::getSymbols)
+                    .flatMap(List::stream)
+                    .findFirst()
+                    .get().getName();
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException("В sym-файле не найдено значение для атрибута 4", e);
+        }
 
         for (OrderRow orderRow : orderRows) {
             if (StringUtils.startsWithIgnoreCase(orderRow.getDetailResultName(), name)) {

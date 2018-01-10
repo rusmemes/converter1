@@ -373,7 +373,7 @@ public class Controller2 extends Controller {
     /**
      * /rcd:RadanCompoundDocument/rcd:RadanAttributes/rcd:Group[@name='Геометрия']/rcd:Attr[@num='168']
      */
-    private int injectCutLength(RadanCompoundDocument radanCompoundDocument) throws Exception {
+    private int injectCutLength(RadanCompoundDocument radanCompoundDocument) {
         double asDouble = getGroupAttrValueAsDouble(
                 radanCompoundDocument,
                 containsIgnoreCase(Group::getName, "Геометрия"),
