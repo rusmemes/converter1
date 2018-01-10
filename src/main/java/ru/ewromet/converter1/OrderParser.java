@@ -126,6 +126,7 @@ public class OrderParser {
                         try {
                             cell.getNumericCellValue();
                         } catch (Exception e) {
+                            e.printStackTrace();
                             logger.logMessage("Окончание таблицы - строка " + l);
                             break;
                         }
@@ -138,6 +139,7 @@ public class OrderParser {
                         try {
                             stringCellValue = cell.getStringCellValue();
                         } catch (Exception e) {
+                            e.printStackTrace();
                             double numericCellValue = cell.getNumericCellValue();
                             if (Double.compare(numericCellValue, (int) numericCellValue) == 0) {
                                 stringCellValue = String.valueOf((int) numericCellValue);
@@ -180,6 +182,7 @@ public class OrderParser {
                         }
                         orderRow.setPosNumber(posNumber);
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException("некорректная позиция: " + e.getMessage());
                     }
                     break;
@@ -187,6 +190,7 @@ public class OrderParser {
                     try {
                         orderRow.setDetailName(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         double numericCellValue = cell.getNumericCellValue();
                         if (Double.compare(numericCellValue, (int) numericCellValue) == 0) {
                             orderRow.setDetailName(String.valueOf((int) numericCellValue));
@@ -203,6 +207,7 @@ public class OrderParser {
                         }
                         orderRow.setCount(count);
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте количество " + e.getMessage());
                     }
                     break;
@@ -211,6 +216,7 @@ public class OrderParser {
                     try {
                         value = cell.getStringCellValue().trim().toLowerCase();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте материал " + e.getMessage());
                     }
                     if (!Controller1.getMATERIALS2DIR().containsKey(value)) {
@@ -224,6 +230,7 @@ public class OrderParser {
                     try {
                         brand = cell.getStringCellValue();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         try {
                             double numericCellValue = cell.getNumericCellValue();
                             if (numericCellValue == (int) numericCellValue) {
@@ -248,6 +255,7 @@ public class OrderParser {
                         }
                         orderRow.setThickness(thickness);
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "толщина материала " + e.getMessage());
                     }
                     break;
@@ -255,6 +263,7 @@ public class OrderParser {
                     try {
                         orderRow.setColor(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         try {
                             final double numericCellValue = cell.getNumericCellValue();
                             if (numericCellValue == (int) numericCellValue) {
@@ -271,6 +280,7 @@ public class OrderParser {
                     try {
                         orderRow.setOwner(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте принадлежность " + e.getMessage());
                     }
                     break;
@@ -282,6 +292,7 @@ public class OrderParser {
                         }
                         orderRow.setBendsCount(bendsCount);
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте количество гибов " + e.getMessage());
                     }
                     break;
@@ -289,6 +300,7 @@ public class OrderParser {
                     try {
                         orderRow.setDrawCreation(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте создание чертежа " + e.getMessage());
                     }
                     break;
@@ -296,6 +308,7 @@ public class OrderParser {
                     try {
                         orderRow.setCleaning(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте зачистку " + e.getMessage());
                     }
                     break;
@@ -303,6 +316,7 @@ public class OrderParser {
                     try {
                         orderRow.setWasteReturn(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат отходов " + e.getMessage());
                     }
                     break;
@@ -310,6 +324,7 @@ public class OrderParser {
                     try {
                         orderRow.setCuttingReturn(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new OrderParserException(orderRow.getPosNumber(), "проверьте возврат высечки " + e.getMessage());
                     }
                     break;
@@ -317,6 +332,7 @@ public class OrderParser {
                     try {
                         orderRow.setComment(cell.getStringCellValue());
                     } catch (Exception e) {
+                        e.printStackTrace();
                         try {
                             double numericCellValue = cell.getNumericCellValue();
                             if (numericCellValue == (int) numericCellValue) {

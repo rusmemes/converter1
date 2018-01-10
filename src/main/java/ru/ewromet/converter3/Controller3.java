@@ -266,61 +266,6 @@ public class Controller3 extends Controller {
         return StringUtils.startsWithIgnoreCase(material, "Aluminium");
     }
 
-    private static String getAttrValue(RadanAttributes radanAttributes, String attrNum) {
-        try {
-            return ofNullable(radanAttributes)
-                    .map(RadanAttributes::getGroups)
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    .filter(containsIgnoreCase(Group::getName, "Производство"))
-                    .map(Group::getAttrs)
-                    .flatMap(List::stream)
-                    .filter(equalsBy(Attr::getNum, attrNum))
-                    .map(Attr::getValue)
-                    .findFirst().get();
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException("В sym-файле не найдено значение для атрибута " + attrNum, e);
-        }
-    }
-
-    private static String getInfoValue(QuotationInfo quotationInfo, String infoNum) {
-        try {
-            return ofNullable(quotationInfo)
-                    .map(QuotationInfo::getInfos)
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    .filter(equalsBy(Info::getNum, infoNum))
-                    .map(Info::getValue)
-                    .findFirst().get();
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException("В sym-файле не найдено значение для атрибута " + infoNum, e);
-        }
-    }
-
-    private static String getBrand(List<OrderRow> orderRows, QuotationInfo quotationInfo) throws Exception {
-        String name;
-        try {
-            name = ofNullable(quotationInfo)
-                    .map(QuotationInfo::getInfos)
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    .filter(equalsBy(Info::getNum, "4"))
-                    .map(Info::getSymbols)
-                    .flatMap(List::stream)
-                    .findFirst()
-                    .get().getName();
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException("В sym-файле не найдено значение для атрибута 4", e);
-        }
-
-        for (OrderRow orderRow : orderRows) {
-            if (StringUtils.startsWithIgnoreCase(orderRow.getDetailResultName(), name)) {
-                return orderRow.getMaterialBrand();
-            }
-        }
-        throw new Exception("Не найдена марка материала для " + name);
-    }
-
     private void saveCustomMaterialDensity(String material, Double density) {
         customMaterialDensities.put(material, density);
         try {
@@ -328,14 +273,10 @@ public class Controller3 extends Controller {
                     .map(stringDoubleEntry -> stringDoubleEntry.getKey() + ":" + stringDoubleEntry.getValue())
                     .collect(Collectors.joining(";")));
         } catch (IOException e) {
+            e.printStackTrace();
             logError("Не удалось сохранить кастомное значение плотности материала: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    public void setOrderFilePath(String orderFilePath) {
-        this.orderFilePath = orderFilePath;
-        clientName = getClientName(orderFilePath);
     }
 
     private String getClientName(String orderFilePath) {
@@ -361,6 +302,7 @@ public class Controller3 extends Controller {
                                     try {
                                         return clientNameCell.getStringCellValue();
                                     } catch (Exception e) {
+                                        e.printStackTrace();
                                         logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
                                         e.printStackTrace();
                                     }
@@ -373,15 +315,11 @@ public class Controller3 extends Controller {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Не удалось получить имя клиента из файла заявки " + orderFilePath + ": " + e.getMessage());
             e.printStackTrace();
         }
         return "";
-    }
-
-    public void setSpecFile(File specFile) {
-        this.specFile = specFile;
-        polymerTypeChoiceBox.setItems(FXCollections.observableArrayList(getPolymerTypeList()));
     }
 
     private List<Double> getPolymerTypeList() {
@@ -398,23 +336,12 @@ public class Controller3 extends Controller {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Не удалось извлечь цифры полимерки с листа \"прайс\": " + e.getMessage());
             e.printStackTrace();
         }
         res.set(0, null);
         return res;
-    }
-
-    public void setCompoundsPath(String compoundsDirPath) throws Exception {
-        File compoundsDir = new File(compoundsDirPath);
-        if (!compoundsDir.exists() || !compoundsDir.isDirectory()) {
-            throw new Exception("Не найдена папка с компоновками");
-        }
-        files = compoundsDir.listFiles((file, name) -> name.toLowerCase().endsWith(".drg"));
-        if (ArrayUtils.isEmpty(files)) {
-            throw new Exception("В папке " + compoundsDir + " drg-файлы не найдены");
-        }
-        Arrays.sort(files, new WindowsExplorerFilesComparator());
     }
 
     private ChangeListener<String> getChangeListenerFor(TextField textField) {
@@ -435,6 +362,7 @@ public class Controller3 extends Controller {
                         textField.setText(oldValue);
                     }
                 } catch (NumberFormatException e) {
+                    e.printStackTrace();
                     try {
                         double value = Double.parseDouble(newValue);
                         if (value < -100D || value > 500D) {
@@ -461,6 +389,7 @@ public class Controller3 extends Controller {
                     }
                     Integer.parseUnsignedInt(newValue);
                 } catch (NumberFormatException e) {
+                    e.printStackTrace();
                     try {
                         double value = Double.parseDouble(newValue);
                         if (value < 0) {
@@ -481,55 +410,16 @@ public class Controller3 extends Controller {
                     }
                     Integer.parseUnsignedInt(newValue);
                 } catch (NumberFormatException e) {
+                    e.printStackTrace();
                     textField.setText(oldValue);
                 }
             };
         }
     }
 
-    private void initializeTextField() {
-        laserDiscount.textProperty().addListener(getChangeListenerFor(laserDiscount));
-        thinknessDiscount.textProperty().addListener(getChangeListenerFor(thinknessDiscount));
-        draftingTime.textProperty().addListener(getChangeListenerFor(draftingTime));
-        locksmith.textProperty().addListener(getChangeListenerFor(locksmith));
-        poddons.textProperty().addListener(getChangeListenerFor(poddons));
-        boxesAndBags.textProperty().addListener(getChangeListenerFor(boxesAndBags));
-    }
-
-    private void initializeChoiceBoxes() {
-        priceTypeChoiceBox.setItems(FXCollections.observableArrayList(null, "розн", "мелк опт", "опт"));
-        thinknessTypeChoiceBox.setItems(FXCollections.observableArrayList(null, "розн", "мелк опт", "опт"));
-    }
-
-    private void initializeMenu() {
-        final Menu menu = new Menu();
-        menu.setText("Меню");
-
-        MenuItem produceOrderTemplateMenuItem = new MenuItem();
-        produceOrderTemplateMenuItem.setText("Указать шаблон заказа на производство");
-        produceOrderTemplateMenuItem.setOnAction(event -> {
-            logArea.getItems().clear();
-
-            chooseFileAndAccept(
-                    new FileChooser.ExtensionFilter(
-                            "Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"
-                    ),
-                    "Выбор файла",
-                    file -> {
-                        preferences.update(PRODUCE_ORDER_TEMPLATE_PATH, file.getAbsolutePath());
-                        logMessage("Указан шаблон заказа на производство " + file);
-                    }
-            );
-        });
-        produceOrderTemplateMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.T, KeyCombination.CONTROL_DOWN));
-
-        MenuItem saveItem = new MenuItem();
-        saveItem.setText("Сохранить расход металла и сформировать заказ на производство");
-        saveItem.setOnAction(event -> save());
-        saveItem.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN));
-
-        menu.getItems().addAll(produceOrderTemplateMenuItem, saveItem);
-        menuBar.getMenus().add(menu);
+    public void setOrderFilePath(String orderFilePath) {
+        this.orderFilePath = orderFilePath;
+        clientName = getClientName(orderFilePath);
     }
 
     private void save() {
@@ -540,6 +430,7 @@ public class Controller3 extends Controller {
             FileUtils.copyFile(specFile, sourceFile);
             specFile.delete();
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException("Ошибка при копировании " + specFile + " в " + sourceFile);
         }
 
@@ -725,6 +616,7 @@ public class Controller3 extends Controller {
                     try {
                         material = cell.getStringCellValue();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найден вид металла");
                         e.printStackTrace();
                         continue;
@@ -739,6 +631,7 @@ public class Controller3 extends Controller {
                     try {
                         materialBrand = cell.getStringCellValue();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена марка металла");
                         e.printStackTrace();
                         continue;
@@ -753,6 +646,7 @@ public class Controller3 extends Controller {
                     try {
                         thinkness = cell.getNumericCellValue();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена толщина металла");
                         e.printStackTrace();
                         continue;
@@ -816,6 +710,7 @@ public class Controller3 extends Controller {
             try {
                 fillMaterialConsumptionList(workbook);
             } catch (Exception e) {
+                e.printStackTrace();
                 logError("Ошибка при заполнении листа расхода материалов: " + e.getClass().getName() + ' ' + e.getMessage());
                 e.printStackTrace();
             }
@@ -823,6 +718,7 @@ public class Controller3 extends Controller {
             workbook.setForceFormulaRecalculation(true);
             workbook.write(out);
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при заполнении спецификации: " + e.getClass().getName() + ' ' + e.getMessage());
             e.printStackTrace();
             return;
@@ -835,6 +731,7 @@ public class Controller3 extends Controller {
         try {
             createProduceOrder();
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при заполнении заявки на производство: " + e.getClass().getName() + ' ' + e.getMessage());
             e.printStackTrace();
             return;
@@ -843,22 +740,9 @@ public class Controller3 extends Controller {
         logMessage("ДАННЫЕ СОХРАНЕНЫ");
     }
 
-    private Double getDensity(String material) {
-        Double density = customMaterialDensities.get(material);
-        if (density == null) {
-            if (isAluminium(material)) {
-                density = preferences.get(MATERIAL_DENSITY_ALUMINIUM);
-            } else if (isBrass(material)) {
-                density = preferences.get(MATERIAL_DENSITY_BRASS);
-            } else if (isCopper(material)) {
-                density = preferences.get(MATERIAL_DENSITY_COPPER);
-            } else if (isSteelOrZintec(material)) {
-                density = preferences.get(MATERIAL_DENSITY_STEEL_ZINTEC);
-            } else {
-                density = preferences.get(MATERIAL_DENSITY_OTHER);
-            }
-        }
-        return density;
+    public void setSpecFile(File specFile) {
+        this.specFile = specFile;
+        polymerTypeChoiceBox.setItems(FXCollections.observableArrayList(getPolymerTypeList()));
     }
 
     private void eraseOrSetCell(Cell locksmithCell, String value) {
@@ -869,339 +753,22 @@ public class Controller3 extends Controller {
                 Double dValue = Double.valueOf(value);
                 setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), dValue);
             } catch (NumberFormatException e) {
+                e.printStackTrace();
                 setValueToCell(locksmithCell.getRow(), locksmithCell.getColumnIndex(), value);
             }
         }
     }
 
-    private void fillMaterialConsumptionList(Workbook workbook) {
-
-        Sheet sheet = workbook.getSheet("Расход материалов");
-
-        if (sheet == null) {
-            return;
+    public void setCompoundsPath(String compoundsDirPath) throws Exception {
+        File compoundsDir = new File(compoundsDirPath);
+        if (!compoundsDir.exists() || !compoundsDir.isDirectory()) {
+            throw new Exception("Не найдена папка с компоновками");
         }
-
-        if (isNotBlank(clientName)) {
-            sheet.getRow(0).getCell(2).setCellValue(clientName);
+        files = compoundsDir.listFiles((file, name) -> name.toLowerCase().endsWith(".drg"));
+        if (ArrayUtils.isEmpty(files)) {
+            throw new Exception("В папке " + compoundsDir + " drg-файлы не найдены");
         }
-
-        int rowNumber = 4;
-
-        for (Compound compound : table1.getItems()) {
-            Row row = sheet.getRow(rowNumber);
-            if (row == null) {
-                row = sheet.createRow(rowNumber);
-            }
-
-            setValueToCell(row, 0, compound.getPosNumber());
-            setValueToCell(row, 1, compound.getName());
-            setValueToCell(row, 2, compound.getN());
-
-            double thickness = compound.getThickness();
-            setValueToCell(row, 5, thickness);
-            setValueToCell(row, 6, roundByCeil(compound.getXmin() / 1000D));
-            setValueToCell(row, 7, roundByCeil(compound.getYmin() / 1000D));
-
-            double xrM = roundByCeil(compound.getXr() / 1000D);
-            setValueToCell(row, 8, xrM);
-            double yrM = roundByCeil(compound.getYr() / 1000D);
-            setValueToCell(row, 9, yrM);
-
-            Double density = getDensity(compound.getMaterial());
-
-            setValueToCell(row, 10, round(xrM * yrM * thickness * roundByCeil(density / 1000D), 1));
-
-            setValueToCell(row, 11, roundByCeil(compound.getXst() / 1000D));
-            setValueToCell(row, 12, roundByCeil(compound.getYst() / 1000D));
-
-            if (compound.isDin()) {
-                setValueToCell(row, 13, "V");
-            }
-
-            ORDER_ROWS:
-            for (OrderRow orderRow : orderRows) {
-                if (Double.compare(orderRow.getThickness(), thickness) == 0) {
-                    for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
-                        if (compound.getMaterial().equals(pairStringEntry.getValue())
-                                && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
-                                ) {
-                            setValueToCell(row, 3, orderRow.getOriginalMaterial());
-                            setValueToCell(row, 4, orderRow.getMaterialBrand());
-                            if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
-                                setValueToCell(row, 14, "заказчик");
-                            } else {
-                                setValueToCell(row, 14, "исполнитель");
-                            }
-
-                            break ORDER_ROWS;
-                        }
-                    }
-                }
-            }
-
-            rowNumber++;
-        }
-    }
-
-    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell clientCell, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell, Cell weldingCell) {
-
-        if (clientCell != null) {
-            setValueToCell(clientCell.getRow(), clientCell.getColumnIndex(), clientName);
-        }
-
-        if (orderCell != null) {
-            setValueToCell(orderCell.getRow(), orderCell.getColumnIndex(), orderNumber);
-        }
-
-        if (bending && bendingCell != null) { // гибка
-            setValueToCell(bendingCell.getRow(), bendingCell.getColumnIndex(), "Гибка: да");
-        }
-
-        if (weldingCheckBox.isSelected() && weldingCell != null) {
-            setValueToCell(weldingCell.getRow(), weldingCell.getColumnIndex(), "Сварка: да");
-        }
-
-        if (cuttingReturn && cuttingReturnCell != null) { // высечка
-            setValueToCell(cuttingReturnCell.getRow(), cuttingReturnCell.getColumnIndex(), "Высечки: да");
-        }
-
-        if (wasteReturn && wasteReturnCell != null) { // отходы
-            setValueToCell(wasteReturnCell.getRow(), wasteReturnCell.getColumnIndex(), "Возврат отходов: да");
-        }
-
-        if (isNotEmpty(colors) && coloringCell != null) { // окраска
-            if (colors.size() == 1) {
-                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: " + colors.get(0));
-            } else {
-                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: да");
-            }
-        }
-    }
-
-    public void fillTables() throws Exception {
-        fillTable1();
-        fillTable2();
-    }
-
-    @FXML
-    private void initialize() {
-
-        String template = preferences.get(PRODUCE_ORDER_TEMPLATE_PATH);
-        if (StringUtils.isBlank(template)) {
-            logError("Необходимо указать шаблон для заявки на производство в 'Меню' -> 'Указать шаблон заказа на производство'");
-        } else {
-            logMessage("Шаблон заказа на производство будет взят из " + template);
-        }
-
-        initializeMenu();
-        initializeChoiceBoxes();
-        initializeTextField();
-        initializeTable1();
-        initializeTable2();
-
-        String densitiesString = preferences.get(MATERIAL_DENSITY_CUSTOM);
-        if (isNotBlank(densitiesString) && !densitiesString.equals("null")) {
-            Stream.of(densitiesString)
-                    .flatMap(ds -> Stream.of(split(ds, ';')))
-                    .forEach(kvStringPair -> {
-                        String[] split = split(kvStringPair, ':');
-                        customMaterialDensities.put(split[0], Double.valueOf(split[1]));
-                    });
-        }
-
-        allListsCheckBox
-                .selectedProperty()
-                .addListener(
-                        (observable, oldVal, newVal) -> {
-                            table1.getItems().forEach(compound -> fullListCheckBoxAction(newVal, compound, false));
-                            refreshTable(table1, null);
-                            fillTable2();
-                        }
-                );
-    }
-
-    private boolean needToAggregate(CompoundAggregation first, CompoundAggregation second) {
-        return first.materialTriple().equals(second.materialTriple())
-                && first.getXMin_x_yMin_m().equals(second.getXMin_x_yMin_m())
-                && first.getXSt_x_ySt_m().equals(second.getXSt_x_ySt_m())
-                ;
-    }
-
-    private void calcTotalConsumption(List<CompoundAggregation> aggregations) {
-        if (isEmpty(aggregations)) {
-            return;
-        }
-        Map<Triple<Double, String, String>, Set<CompoundAggregation>> map = aggregations.stream().collect(Collectors.groupingBy(
-                CompoundAggregation::materialTriple, Collectors.toSet()
-        ));
-
-        for (Triple<Double, String, String> triple : map.keySet()) {
-            Set<CompoundAggregation> aggregationSet = map.get(triple);
-            double sum = roundByCeil(
-                    aggregationSet.stream()
-                            .mapToDouble(CompoundAggregation::getSize)
-                            .sum()
-            );
-            aggregationSet.forEach(aggregation -> {
-                aggregation.setTotalConsumption(sum);
-                aggregation.setWeight(roundByCeil(sum * (aggregation.getThickness() / 1000D) * (aggregation.getMaterialDensity())));
-            });
-        }
-    }
-
-    private void fillTable1() throws Exception {
-
-        List<RadanCompoundDocument> radanCompoundDocuments = Arrays.stream(files)
-                .map(file -> {
-                    try {
-                        return SymFileParser.parse(file.getAbsolutePath());
-                    } catch (ParserConfigurationException | SAXException | IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .collect(Collectors.toList());
-
-        String projectDirName = new File(orderFilePath).getParentFile().getName();
-
-        try {
-            orderNumber = Integer.parseUnsignedInt(projectDirName);
-        } catch (NumberFormatException e) {
-            throw new Exception("Ошибка при попытке получить номер заказа по названию папки заказа " + projectDirName, e);
-        }
-
-        orderRows = new OrderRowsFileUtil().restoreOrderRows(orderNumber);
-
-        for (int i = 0, filesLength = files.length; i < filesLength; i++) {
-            Compound compound = new Compound();
-            compound.setPosNumber(i + 1);
-            compound.setName(removeExtension(files[i].getName()));
-
-            RadanCompoundDocument radanCompoundDocument = radanCompoundDocuments.get(i);
-            RadanAttributes radanAttributes = radanCompoundDocument.getRadanAttributes();
-
-            compound.setMaterial(getAttrValue(radanAttributes, "119"));
-            compound.setThickness(Double.valueOf(getAttrValue(radanAttributes, "120")));
-            compound.setXst((int) Math.round(Double.valueOf(getAttrValue(radanAttributes, "124"))));
-            compound.setYst((int) Math.round(Double.valueOf(getAttrValue(radanAttributes, "125"))));
-            compound.setN(Integer.valueOf(getAttrValue(radanAttributes, "137")));
-
-            QuotationInfo quotationInfo = radanCompoundDocument.getQuotationInfo();
-
-            try {
-                compound.setXmin(Math.min(compound.getXst(), 20 + (int) Math.round(Double.valueOf(getInfoValue(quotationInfo, "1")))));
-            } catch (Exception ignored) {
-                compound.setXmin(compound.getXst());
-            }
-            try {
-                compound.setYmin(Math.min(compound.getYst(), 20 + (int) Math.round(Double.valueOf(getInfoValue(quotationInfo, "2")))));
-            } catch (Exception ignored) {
-                compound.setYmin(compound.getYst());
-            }
-
-            compound.setMaterialBrand(getBrand(orderRows, quotationInfo));
-
-            setXrYr(compound);
-            calcCompoundEditableCells(compound);
-
-            table1.getItems().addAll(compound);
-        }
-
-        refreshTable(table1, Comparator.comparing(Compound::getPosNumber));
-    }
-
-    private void calcCompoundEditableCells(Compound compound) {
-        compound.setSk(roundByCeil(compound.getXr() / 1000D * compound.getYr() / 1000D));
-        compound.setSo(roundByCeil(compound.getN() * compound.getSk()));
-    }
-
-    private void setXrYr(Compound compound) {
-        String material = compound.getMaterial();
-        double thickness = compound.getThickness();
-
-        if (isMildSteelHkOrZintec(material)) {
-
-            // Если Xmin > или = 80% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
-            int xMin = compound.getXmin();
-            int xSt = compound.getXst();
-            compound.setXr(roundByCeil(xMin >= xSt * 0.8 ? xSt : xMin * 1.2));
-
-            // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
-            int yMin = compound.getYmin();
-            int ySt = compound.getYst();
-            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
-
-            fixXrYrForMildSteelOrZintec(compound);
-
-        } else if (isMildSteelGk(material)) {
-
-            // Если Xmin > или = 90% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
-            int xMin = compound.getXmin();
-            int xSt = compound.getXst();
-            compound.setXr(roundByCeil(xMin >= xSt * 0.8 ? xSt : xMin * 1.1));
-
-            // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
-            int yMin = compound.getYmin();
-            int ySt = compound.getYst();
-            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
-
-            fixXrYrForMildSteelOrZintec(compound);
-
-        } else if ((thickness > 2 && isAluminium(material)) || isStainlessSteelNoFoilNoShlif(material)) {
-
-            // Если Xmin > или = 70% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
-            int xMin = compound.getXmin();
-            int xSt = compound.getXst();
-            compound.setXr(roundByCeil(xMin >= xSt * 0.7 ? xSt : xMin * 1.2));
-
-            // Yr = Yst - всегда
-            compound.setYr(roundByCeil(compound.getYst()));
-
-        } else if (
-            // @formatter:off
-                        (thickness <= 2 && isAluminium(material))
-                                || (
-                                thickness <= 0.8
-                                        && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))
-                                )
-            // @formatter:on
-                ) {
-            // Xr = Xst - всегда
-            compound.setXr(compound.getXst());
-
-            // Yr = Yst - всегда
-            compound.setYr(compound.getYst());
-
-        } else if (thickness >= 1 && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))) {
-
-            // Если Xmin > или = 50% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
-            int xMin = compound.getXmin();
-            int xSt = compound.getXst();
-            compound.setXr(xMin >= xSt / 2 ? xSt : xMin * 1.2);
-
-            // Yr = Yst - всегда
-            compound.setYr(compound.getYst());
-
-        } else if (isBrass(material) || isCopper(material)) {
-
-            // Если Xmin > или = 80% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
-            int xMin = compound.getXmin();
-            int xSt = compound.getXst();
-            compound.setXr(xMin >= xSt * 0.8 ? xSt : xMin * 1.2);
-
-            // Yr = Yst - всегда
-            compound.setYr(compound.getYst());
-        }
-    }
-
-    private void fixXrYrForMildSteelOrZintec(Compound compound) {
-        if (compound.getYmin() <= compound.getYst() / 2 && (compound.getXr() < compound.getXst() || compound.getYr() < compound.getYst())) {
-            if (compound.getXmin() <= compound.getXst() / 2) {
-                compound.setYr(compound.getYst());
-            } else {
-                compound.setXr(compound.getXst());
-            }
-        }
+        Arrays.sort(files, new WindowsExplorerFilesComparator());
     }
 
     private void createProduceOrder() {
@@ -1444,11 +1011,465 @@ public class Controller3 extends Controller {
                 endProductionOrder(colors, bending, cuttingReturn, wasteReturn, orderNumber, clientCell, orderCell, bendingCell, coloringCell, wasteReturnCell, cuttingReturnCell, weldingCell);
                 workbook.write(out);
             } catch (Exception e) {
+                e.printStackTrace();
                 logError("Ошибка при создании заказа на производство " + e.getMessage());
                 e.printStackTrace();
                 break;
             }
         }
+    }
+
+    private void initializeTextField() {
+        laserDiscount.textProperty().addListener(getChangeListenerFor(laserDiscount));
+        thinknessDiscount.textProperty().addListener(getChangeListenerFor(thinknessDiscount));
+        draftingTime.textProperty().addListener(getChangeListenerFor(draftingTime));
+        locksmith.textProperty().addListener(getChangeListenerFor(locksmith));
+        poddons.textProperty().addListener(getChangeListenerFor(poddons));
+        boxesAndBags.textProperty().addListener(getChangeListenerFor(boxesAndBags));
+    }
+
+    private void initializeChoiceBoxes() {
+        priceTypeChoiceBox.setItems(FXCollections.observableArrayList(null, "розн", "мелк опт", "опт"));
+        thinknessTypeChoiceBox.setItems(FXCollections.observableArrayList(null, "розн", "мелк опт", "опт"));
+    }
+
+    private void initializeMenu() {
+        final Menu menu = new Menu();
+        menu.setText("Меню");
+
+        MenuItem produceOrderTemplateMenuItem = new MenuItem();
+        produceOrderTemplateMenuItem.setText("Указать шаблон заказа на производство");
+        produceOrderTemplateMenuItem.setOnAction(event -> {
+            logArea.getItems().clear();
+
+            chooseFileAndAccept(
+                    new FileChooser.ExtensionFilter(
+                            "Файлы с расширением '.xls' либо '.xlsx'", "*.xls", "*.xlsx"
+                    ),
+                    "Выбор файла",
+                    file -> {
+                        preferences.update(PRODUCE_ORDER_TEMPLATE_PATH, file.getAbsolutePath());
+                        logMessage("Указан шаблон заказа на производство " + file);
+                    }
+            );
+        });
+        produceOrderTemplateMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.T, KeyCombination.CONTROL_DOWN));
+
+        MenuItem saveItem = new MenuItem();
+        saveItem.setText("Сохранить расход металла и сформировать заказ на производство");
+        saveItem.setOnAction(event -> save());
+        saveItem.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN));
+
+        menu.getItems().addAll(produceOrderTemplateMenuItem, saveItem);
+        menuBar.getMenus().add(menu);
+    }
+
+    private void fillTable1() throws Exception {
+
+        List<RadanCompoundDocument> radanCompoundDocuments = Arrays.stream(files)
+                .map(file -> {
+                    try {
+                        return SymFileParser.parse(file.getAbsolutePath());
+                    } catch (ParserConfigurationException | SAXException | IOException e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toList());
+
+        String projectDirName = new File(orderFilePath).getParentFile().getName();
+
+        try {
+            orderNumber = Integer.parseUnsignedInt(projectDirName);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            throw new Exception("Ошибка при попытке получить номер заказа по названию папки заказа " + projectDirName, e);
+        }
+
+        orderRows = new OrderRowsFileUtil().restoreOrderRows(orderNumber);
+
+        for (int i = 0, filesLength = files.length; i < filesLength; i++) {
+            Compound compound = new Compound();
+            compound.setPosNumber(i + 1);
+            compound.setName(removeExtension(files[i].getName()));
+
+            RadanCompoundDocument radanCompoundDocument = radanCompoundDocuments.get(i);
+            RadanAttributes radanAttributes = radanCompoundDocument.getRadanAttributes();
+
+            compound.setMaterial(getAttrValue(radanAttributes, "119"));
+            compound.setThickness(Double.valueOf(getAttrValue(radanAttributes, "120")));
+            compound.setXst((int) Math.round(Double.valueOf(getAttrValue(radanAttributes, "124"))));
+            compound.setYst((int) Math.round(Double.valueOf(getAttrValue(radanAttributes, "125"))));
+            compound.setN(Integer.valueOf(getAttrValue(radanAttributes, "137")));
+
+            QuotationInfo quotationInfo = radanCompoundDocument.getQuotationInfo();
+
+            try {
+                compound.setXmin(Math.min(compound.getXst(), 20 + (int) Math.round(Double.valueOf(getInfoValue(quotationInfo, "1")))));
+            } catch (Exception ignored) {
+                compound.setXmin(compound.getXst());
+            }
+            try {
+                compound.setYmin(Math.min(compound.getYst(), 20 + (int) Math.round(Double.valueOf(getInfoValue(quotationInfo, "2")))));
+            } catch (Exception ignored) {
+                compound.setYmin(compound.getYst());
+            }
+
+            compound.setMaterialBrand(getBrand(orderRows, quotationInfo));
+
+            setXrYr(compound);
+            calcCompoundEditableCells(compound);
+
+            table1.getItems().addAll(compound);
+        }
+
+        refreshTable(table1, Comparator.comparing(Compound::getPosNumber));
+    }
+
+    private Double getDensity(String material) {
+        Double density = customMaterialDensities.get(material);
+        if (density == null) {
+            if (isAluminium(material)) {
+                density = preferences.get(MATERIAL_DENSITY_ALUMINIUM);
+            } else if (isBrass(material)) {
+                density = preferences.get(MATERIAL_DENSITY_BRASS);
+            } else if (isCopper(material)) {
+                density = preferences.get(MATERIAL_DENSITY_COPPER);
+            } else if (isSteelOrZintec(material)) {
+                density = preferences.get(MATERIAL_DENSITY_STEEL_ZINTEC);
+            } else {
+                density = preferences.get(MATERIAL_DENSITY_OTHER);
+            }
+        }
+        return density;
+    }
+
+    private static String getAttrValue(RadanAttributes radanAttributes, String attrNum) {
+        try {
+            return ofNullable(radanAttributes)
+                    .map(RadanAttributes::getGroups)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(containsIgnoreCase(Group::getName, "Производство"))
+                    .map(Group::getAttrs)
+                    .flatMap(List::stream)
+                    .filter(equalsBy(Attr::getNum, attrNum))
+                    .map(Attr::getValue)
+                    .findFirst().get();
+        } catch (NoSuchElementException e) {
+            e.printStackTrace();
+            throw new RuntimeException("В sym-файле не найдено значение для атрибута " + attrNum, e);
+        }
+    }
+
+    private void fillMaterialConsumptionList(Workbook workbook) {
+
+        Sheet sheet = workbook.getSheet("Расход материалов");
+
+        if (sheet == null) {
+            return;
+        }
+
+        if (isNotBlank(clientName)) {
+            sheet.getRow(0).getCell(2).setCellValue(clientName);
+        }
+
+        int rowNumber = 4;
+
+        for (Compound compound : table1.getItems()) {
+            Row row = sheet.getRow(rowNumber);
+            if (row == null) {
+                row = sheet.createRow(rowNumber);
+            }
+
+            setValueToCell(row, 0, compound.getPosNumber());
+            setValueToCell(row, 1, compound.getName());
+            setValueToCell(row, 2, compound.getN());
+
+            double thickness = compound.getThickness();
+            setValueToCell(row, 5, thickness);
+            setValueToCell(row, 6, roundByCeil(compound.getXmin() / 1000D));
+            setValueToCell(row, 7, roundByCeil(compound.getYmin() / 1000D));
+
+            double xrM = roundByCeil(compound.getXr() / 1000D);
+            setValueToCell(row, 8, xrM);
+            double yrM = roundByCeil(compound.getYr() / 1000D);
+            setValueToCell(row, 9, yrM);
+
+            Double density = getDensity(compound.getMaterial());
+
+            setValueToCell(row, 10, round(xrM * yrM * thickness * roundByCeil(density / 1000D), 1));
+
+            setValueToCell(row, 11, roundByCeil(compound.getXst() / 1000D));
+            setValueToCell(row, 12, roundByCeil(compound.getYst() / 1000D));
+
+            if (compound.isDin()) {
+                setValueToCell(row, 13, "V");
+            }
+
+            ORDER_ROWS:
+            for (OrderRow orderRow : orderRows) {
+                if (Double.compare(orderRow.getThickness(), thickness) == 0) {
+                    for (Map.Entry<Pair<String, String>, String> pairStringEntry : Controller1.getMATERIALS().entrySet()) {
+                        if (compound.getMaterial().equals(pairStringEntry.getValue())
+                                && Pair.of(orderRow.getOriginalMaterial(), orderRow.getMaterialBrand()).equals(pairStringEntry.getKey())
+                                ) {
+                            setValueToCell(row, 3, orderRow.getOriginalMaterial());
+                            setValueToCell(row, 4, orderRow.getMaterialBrand());
+                            if (containsIgnoreCase(orderRow.getOwner(), "заказчик")) {
+                                setValueToCell(row, 14, "заказчик");
+                            } else {
+                                setValueToCell(row, 14, "исполнитель");
+                            }
+
+                            break ORDER_ROWS;
+                        }
+                    }
+                }
+            }
+
+            rowNumber++;
+        }
+    }
+
+    private void endProductionOrder(List<String> colors, boolean bending, boolean cuttingReturn, boolean wasteReturn, Integer orderNumber, Cell clientCell, Cell orderCell, Cell bendingCell, Cell coloringCell, Cell wasteReturnCell, Cell cuttingReturnCell, Cell weldingCell) {
+
+        if (clientCell != null) {
+            setValueToCell(clientCell.getRow(), clientCell.getColumnIndex(), clientName);
+        }
+
+        if (orderCell != null) {
+            setValueToCell(orderCell.getRow(), orderCell.getColumnIndex(), orderNumber);
+        }
+
+        if (bending && bendingCell != null) { // гибка
+            setValueToCell(bendingCell.getRow(), bendingCell.getColumnIndex(), "Гибка: да");
+        }
+
+        if (weldingCheckBox.isSelected() && weldingCell != null) {
+            setValueToCell(weldingCell.getRow(), weldingCell.getColumnIndex(), "Сварка: да");
+        }
+
+        if (cuttingReturn && cuttingReturnCell != null) { // высечка
+            setValueToCell(cuttingReturnCell.getRow(), cuttingReturnCell.getColumnIndex(), "Высечки: да");
+        }
+
+        if (wasteReturn && wasteReturnCell != null) { // отходы
+            setValueToCell(wasteReturnCell.getRow(), wasteReturnCell.getColumnIndex(), "Возврат отходов: да");
+        }
+
+        if (isNotEmpty(colors) && coloringCell != null) { // окраска
+            if (colors.size() == 1) {
+                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: " + colors.get(0));
+            } else {
+                setValueToCell(coloringCell.getRow(), coloringCell.getColumnIndex(), "Окраска: да");
+            }
+        }
+    }
+
+    public void fillTables() throws Exception {
+        fillTable1();
+        fillTable2();
+    }
+
+    @FXML
+    private void initialize() {
+
+        String template = preferences.get(PRODUCE_ORDER_TEMPLATE_PATH);
+        if (StringUtils.isBlank(template)) {
+            logError("Необходимо указать шаблон для заявки на производство в 'Меню' -> 'Указать шаблон заказа на производство'");
+        } else {
+            logMessage("Шаблон заказа на производство будет взят из " + template);
+        }
+
+        initializeMenu();
+        initializeChoiceBoxes();
+        initializeTextField();
+        initializeTable1();
+        initializeTable2();
+
+        String densitiesString = preferences.get(MATERIAL_DENSITY_CUSTOM);
+        if (isNotBlank(densitiesString) && !densitiesString.equals("null")) {
+            Stream.of(densitiesString)
+                    .flatMap(ds -> Stream.of(split(ds, ';')))
+                    .forEach(kvStringPair -> {
+                        String[] split = split(kvStringPair, ':');
+                        customMaterialDensities.put(split[0], Double.valueOf(split[1]));
+                    });
+        }
+
+        allListsCheckBox
+                .selectedProperty()
+                .addListener(
+                        (observable, oldVal, newVal) -> {
+                            table1.getItems().forEach(compound -> fullListCheckBoxAction(newVal, compound, false));
+                            refreshTable(table1, null);
+                            fillTable2();
+                        }
+                );
+    }
+
+    private boolean needToAggregate(CompoundAggregation first, CompoundAggregation second) {
+        return first.materialTriple().equals(second.materialTriple())
+                && first.getXMin_x_yMin_m().equals(second.getXMin_x_yMin_m())
+                && first.getXSt_x_ySt_m().equals(second.getXSt_x_ySt_m())
+                ;
+    }
+
+    private void calcTotalConsumption(List<CompoundAggregation> aggregations) {
+        if (isEmpty(aggregations)) {
+            return;
+        }
+        Map<Triple<Double, String, String>, Set<CompoundAggregation>> map = aggregations.stream().collect(Collectors.groupingBy(
+                CompoundAggregation::materialTriple, Collectors.toSet()
+        ));
+
+        for (Triple<Double, String, String> triple : map.keySet()) {
+            Set<CompoundAggregation> aggregationSet = map.get(triple);
+            double sum = roundByCeil(
+                    aggregationSet.stream()
+                            .mapToDouble(CompoundAggregation::getSize)
+                            .sum()
+            );
+            aggregationSet.forEach(aggregation -> {
+                aggregation.setTotalConsumption(sum);
+                aggregation.setWeight(roundByCeil(sum * (aggregation.getThickness() / 1000D) * (aggregation.getMaterialDensity())));
+            });
+        }
+    }
+
+    private static String getInfoValue(QuotationInfo quotationInfo, String infoNum) {
+        try {
+            return ofNullable(quotationInfo)
+                    .map(QuotationInfo::getInfos)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(equalsBy(Info::getNum, infoNum))
+                    .map(Info::getValue)
+                    .findFirst().get();
+        } catch (NoSuchElementException e) {
+            e.printStackTrace();
+            throw new RuntimeException("В sym-файле не найдено значение для атрибута " + infoNum, e);
+        }
+    }
+
+    private void calcCompoundEditableCells(Compound compound) {
+        compound.setSk(roundByCeil(compound.getXr() / 1000D * compound.getYr() / 1000D));
+        compound.setSo(roundByCeil(compound.getN() * compound.getSk()));
+    }
+
+    private void setXrYr(Compound compound) {
+        String material = compound.getMaterial();
+        double thickness = compound.getThickness();
+
+        if (isMildSteelHkOrZintec(material)) {
+
+            // Если Xmin > или = 80% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
+            int xMin = compound.getXmin();
+            int xSt = compound.getXst();
+            compound.setXr(roundByCeil(xMin >= xSt * 0.8 ? xSt : xMin * 1.2));
+
+            // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
+            int yMin = compound.getYmin();
+            int ySt = compound.getYst();
+            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
+
+            fixXrYrForMildSteelOrZintec(compound);
+
+        } else if (isMildSteelGk(material)) {
+
+            // Если Xmin > или = 90% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
+            int xMin = compound.getXmin();
+            int xSt = compound.getXst();
+            compound.setXr(roundByCeil(xMin >= xSt * 0.8 ? xSt : xMin * 1.1));
+
+            // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
+            int yMin = compound.getYmin();
+            int ySt = compound.getYst();
+            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
+
+            fixXrYrForMildSteelOrZintec(compound);
+
+        } else if ((thickness > 2 && isAluminium(material)) || isStainlessSteelNoFoilNoShlif(material)) {
+
+            // Если Xmin > или = 70% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
+            int xMin = compound.getXmin();
+            int xSt = compound.getXst();
+            compound.setXr(roundByCeil(xMin >= xSt * 0.7 ? xSt : xMin * 1.2));
+
+            // Yr = Yst - всегда
+            compound.setYr(roundByCeil(compound.getYst()));
+
+        } else if (
+            // @formatter:off
+                        (thickness <= 2 && isAluminium(material))
+                                || (
+                                thickness <= 0.8
+                                        && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))
+                                )
+            // @formatter:on
+                ) {
+            // Xr = Xst - всегда
+            compound.setXr(compound.getXst());
+
+            // Yr = Yst - всегда
+            compound.setYr(compound.getYst());
+
+        } else if (thickness >= 1 && (isStainlessSteelFoil(material) || isStainlessSteelShlif(material))) {
+
+            // Если Xmin > или = 50% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
+            int xMin = compound.getXmin();
+            int xSt = compound.getXst();
+            compound.setXr(xMin >= xSt / 2 ? xSt : xMin * 1.2);
+
+            // Yr = Yst - всегда
+            compound.setYr(compound.getYst());
+
+        } else if (isBrass(material) || isCopper(material)) {
+
+            // Если Xmin > или = 80% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
+            int xMin = compound.getXmin();
+            int xSt = compound.getXst();
+            compound.setXr(xMin >= xSt * 0.8 ? xSt : xMin * 1.2);
+
+            // Yr = Yst - всегда
+            compound.setYr(compound.getYst());
+        }
+    }
+
+    private void fixXrYrForMildSteelOrZintec(Compound compound) {
+        if (compound.getYmin() <= compound.getYst() / 2 && (compound.getXr() < compound.getXst() || compound.getYr() < compound.getYst())) {
+            if (compound.getXmin() <= compound.getXst() / 2) {
+                compound.setYr(compound.getYst());
+            } else {
+                compound.setXr(compound.getXst());
+            }
+        }
+    }
+
+    private static String getBrand(List<OrderRow> orderRows, QuotationInfo quotationInfo) throws Exception {
+        String name;
+        try {
+            name = ofNullable(quotationInfo)
+                    .map(QuotationInfo::getInfos)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(equalsBy(Info::getNum, "4"))
+                    .map(Info::getSymbols)
+                    .flatMap(List::stream)
+                    .findFirst()
+                    .get().getName();
+        } catch (NoSuchElementException e) {
+            e.printStackTrace();
+            throw new RuntimeException("В sym-файле не найдено значение для атрибута 4", e);
+        }
+
+        for (OrderRow orderRow : orderRows) {
+            if (StringUtils.startsWithIgnoreCase(orderRow.getDetailResultName(), name)) {
+                return orderRow.getMaterialBrand();
+            }
+        }
+        throw new Exception("Не найдена марка материала для " + name);
     }
 
     private void fillTable2() {

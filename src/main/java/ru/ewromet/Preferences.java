@@ -1,6 +1,13 @@
 package ru.ewromet;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.EnumMap;
@@ -24,6 +31,7 @@ public class Preferences {
                 log.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
+                e.printStackTrace();
             }
         }
         if (log.exists()) {
@@ -31,6 +39,7 @@ public class Preferences {
                 System.setErr(new PrintStream(new FileOutputStream(log, true), true));
                 System.setOut(new PrintStream(new FileOutputStream(log, true), true));
             } catch (FileNotFoundException e) {
+                e.printStackTrace();
                 e.printStackTrace();
             }
         }
@@ -103,6 +112,7 @@ public class Preferences {
             try {
                 valueOfMethod = defaultValue.getClass().getMethod("valueOf", String.class);
             } catch (NoSuchMethodException e) {
+                e.printStackTrace();
                 try {
                     valueOfMethod = defaultValue.getClass().getMethod("valueOf", Object.class);
                 } catch (NoSuchMethodException e1) {

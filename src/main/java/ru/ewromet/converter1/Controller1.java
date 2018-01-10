@@ -178,6 +178,7 @@ public class Controller1 extends Controller {
             try {
                 preferences.update(RENAME_FILES, ((CheckMenuItem) event.getSource()).isSelected());
             } catch (IOException e) {
+                e.printStackTrace();
                 logError("Ошибка записи настроек " + e.getMessage());
             }
         });
@@ -414,6 +415,7 @@ public class Controller1 extends Controller {
                     FileUtils.copyFile(file, dst);
                     files2DeleteInFuture.add(file);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     logError("Ошибка при копировании " + file.getAbsolutePath() + " в " + dst.getParentFile().getAbsolutePath() + ": " + e.getMessage());
                 }
             }
@@ -452,10 +454,12 @@ public class Controller1 extends Controller {
                                 try {
                                     FileUtils.copyFile(old, path);
                                 } catch (Exception e) {
+                                    e.printStackTrace();
                                     files2DeleteInFuture.remove(old);
                                     logMessage("Попытка не удалась");
                                 }
                             } catch (Exception e) {
+                                e.printStackTrace();
                                 logError("Ошибка при копировании " + old.getAbsolutePath() + " в " + destFile.getParent() + ": " + e.getMessage());
                                 throw new Exception("Проверьте, не заблокирован ли файл " + old.getAbsolutePath() + " какой-либо программой");
                             }
@@ -500,37 +504,32 @@ public class Controller1 extends Controller {
             saveItem.setDisable(true);
             progressBar.setProgress(1);
         } catch (Exception e) {
+            e.printStackTrace();
             logError(e.getMessage());
         }
     }
 
-    private static void initMaterials() {
-        if (materialsFile.exists()) {
-            try {
-                List<String> csvLines = IOUtils.readLines(new FileInputStream(materialsFile), forName("windows-1251"));
-                Map<Pair<String, String>, String> map = new HashMap<>();
-                for (String csvLine : csvLines) {
-                    String[] split = split(trimToNull(csvLine), ';');
-                    if (ArrayUtils.isEmpty(split) || split.length != 3) {
-                        throw new RuntimeException(Arrays.toString(split));
-                    }
-                    map.put(
-                            of(
-                                    trimToEmpty(split[0]),
-                                    trimToEmpty(split[1])
-                            ),
-                            trimToEmpty(split[2])
-                    );
+    private void openConverter2Window() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
+            Parent root = loader.load();
+            Controller2 controller = loader.getController();
+            controller.setController1(this);
+            Stage stage = new Stage();
+            controller.setStage(stage);
+            root.setOnKeyReleased(event -> {
+                if (event.getCode() == KeyCode.R && event.isControlDown()) {
+                    controller.calcButton.fire();
                 }
-                MATERIALS = Collections.unmodifiableMap(map);
-                setOtherMaterialMaps();
-                return;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            });
+            stage.setTitle("Окно расчёта");
+            stage.setScene(new Scene(root));
+            stage.show();
+            controller.setFocus();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logError("Ошибка при открытии окна: " + e.getMessage());
         }
-        MATERIALS = getMaterialsMap();
-        setOtherMaterialMaps();
     }
 
     private static void setOtherMaterialMaps() {
@@ -617,26 +616,34 @@ public class Controller1 extends Controller {
         }});
     }
 
-    private void openConverter2Window() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/converter2.fxml"));
-            Parent root = loader.load();
-            Controller2 controller = loader.getController();
-            controller.setController1(this);
-            Stage stage = new Stage();
-            controller.setStage(stage);
-            root.setOnKeyReleased(event -> {
-                if (event.getCode() == KeyCode.R && event.isControlDown()) {
-                    controller.calcButton.fire();
+    private static void initMaterials() {
+        if (materialsFile.exists()) {
+            try {
+                List<String> csvLines = IOUtils.readLines(new FileInputStream(materialsFile), forName("windows-1251"));
+                Map<Pair<String, String>, String> map = new HashMap<>();
+                for (String csvLine : csvLines) {
+                    String[] split = split(trimToNull(csvLine), ';');
+                    if (ArrayUtils.isEmpty(split) || split.length != 3) {
+                        throw new RuntimeException(Arrays.toString(split));
+                    }
+                    map.put(
+                            of(
+                                    trimToEmpty(split[0]),
+                                    trimToEmpty(split[1])
+                            ),
+                            trimToEmpty(split[2])
+                    );
                 }
-            });
-            stage.setTitle("Окно расчёта");
-            stage.setScene(new Scene(root));
-            stage.show();
-            controller.setFocus();
-        } catch (Exception e) {
-            logError("Ошибка при открытии окна: " + e.getMessage());
+                MATERIALS = Collections.unmodifiableMap(map);
+                setOtherMaterialMaps();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+                e.printStackTrace();
+            }
         }
+        MATERIALS = getMaterialsMap();
+        setOtherMaterialMaps();
     }
 
     private void createCsvFile(File directory, String orderNumber, List<OrderRow> orderRows) throws IOException {

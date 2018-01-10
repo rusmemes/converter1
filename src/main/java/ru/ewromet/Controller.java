@@ -1,5 +1,14 @@
 package ru.ewromet;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
@@ -8,14 +17,6 @@ import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
 
 import static ru.ewromet.Preferences.Key.LAST_PATH;
 
@@ -30,6 +31,7 @@ public abstract class Controller implements Logger {
         try {
             preferences = new Preferences();
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("Ошибка при чтении файла настроек");
             e.printStackTrace();
         }
@@ -103,11 +105,13 @@ public abstract class Controller implements Logger {
             try {
                 fileConsumer.accept(file);
             } catch (Exception e) {
+                e.printStackTrace();
                 logError(e.getMessage());
             }
             try {
                 preferences.update(LAST_PATH, file.getParent());
             } catch (IOException e) {
+                e.printStackTrace();
                 logError("Ошибка записи настроек " + e.getMessage());
             }
         } else {

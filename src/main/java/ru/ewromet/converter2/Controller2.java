@@ -117,6 +117,7 @@ public class Controller2 extends Controller {
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
+                            e.printStackTrace();
                         }
                     }
             );
@@ -129,6 +130,7 @@ public class Controller2 extends Controller {
                 try {
                     preferences.update(SPECIFICATION_TEMPLATE_PATH, text);
                 } catch (IOException e) {
+                    e.printStackTrace();
                     logError("Не удалось сохранить путь к шаблону спецификации для будущего использования " + e.getMessage());
                 }
             }
@@ -174,6 +176,7 @@ public class Controller2 extends Controller {
         try {
             orderNumber = Integer.parseUnsignedInt(orderFile.getParentFile().getName());
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при попытке ипользовать название папки с заявкой в числовом виде как номер заказа для вставки в спецификацию");
             return;
         }
@@ -183,6 +186,7 @@ public class Controller2 extends Controller {
             try {
                 FileUtils.copyFile(template, specTmpFile);
             } catch (IOException e) {
+                e.printStackTrace();
                 logError("Не удалось скопировать шаблон спецификации в " + specTmpFile.getAbsolutePath() + " " + e.getMessage());
                 return;
             }
@@ -192,6 +196,7 @@ public class Controller2 extends Controller {
         try {
             orderRows = orderRowsFileUtil.restoreOrderRows(orderNumber);
         } catch (IOException e) {
+            e.printStackTrace();
             logError("Ошибка при выгрузке информации по заявке из временного файла: " + e.getMessage());
             return;
         }
@@ -200,6 +205,7 @@ public class Controller2 extends Controller {
         try {
             row2SymInfo.putAll(orderRows.stream().collect(toMap(identity(), this::symFileOf)));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при выгрузке информации из sym-файлов: " + e.getMessage());
             return;
         }
@@ -233,6 +239,7 @@ public class Controller2 extends Controller {
             workbook.setForceFormulaRecalculation(true);
             workbook.write(out);
         } catch (IOException e) {
+            e.printStackTrace();
             logError("Ошибка при заполнении спецификации: " + e.getClass().getName() + ' ' + e.getMessage());
             return;
         } finally {
@@ -261,6 +268,7 @@ public class Controller2 extends Controller {
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при открытии окна: " + e.getMessage());
         }
     }
@@ -314,6 +322,7 @@ public class Controller2 extends Controller {
         try {
             radanCompoundDocument = SymFileParser.parse(symFilePath);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Ошибка парсинга sym-файла", e);
         }
 
@@ -322,48 +331,56 @@ public class Controller2 extends Controller {
         try {
             symFileInfo.setCutLength(injectCutLength(radanCompoundDocument));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении длины резки из sym-файла " + symFilePath);
         }
 
         try {
             symFileInfo.setInsertsCount(injectInsertsCount(radanCompoundDocument));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении количества  врезов из sym-файла " + symFilePath);
         }
 
         try {
             symFileInfo.setActualArea(injectActualArea(radanCompoundDocument));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении фактической площади детали из sym-файла " + symFilePath);
         }
 
         try {
             symFileInfo.setAreaWithInternalContours(injectAreaWithInternalContours(radanCompoundDocument));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении площади детали с внутренними контурами из sym-файла " + symFilePath);
         }
 
         try {
             symFileInfo.setSizeX(injectSizeX(radanCompoundDocument));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении габарита по X из sym-файла " + symFilePath);
         }
 
         try {
             symFileInfo.setSizeY(injectSizeY(radanCompoundDocument));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении габарита по Y из sym-файла " + symFilePath);
         }
 
         try {
             symFileInfo.setCutTimeUniMach(injectCutTime(radanCompoundDocument, "psys_EWR001_2"));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении время резки UniMach из sym-файла " + symFilePath);
         }
 
         try {
             symFileInfo.setCutTimeTrumpf(injectCutTime(radanCompoundDocument, "psys_EWR001_1"));
         } catch (Exception e) {
+            e.printStackTrace();
             logError("Ошибка при извлечении время резки Trumpf из sym-файла " + symFilePath);
         }
 
