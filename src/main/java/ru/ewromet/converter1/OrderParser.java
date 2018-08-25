@@ -1,5 +1,17 @@
 package ru.ewromet.converter1;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import ru.ewromet.FileRow;
+import ru.ewromet.Logger;
+import ru.ewromet.OrderRow;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Comparator;
@@ -10,26 +22,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import ru.ewromet.FileRow;
-import ru.ewromet.Logger;
-import ru.ewromet.OrderRow;
-
 import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static ru.ewromet.Utils.getWorkbook;
 import static ru.ewromet.Utils.searchFilesRecursively;
 
-public class OrderParser {
+class OrderParser {
 
     private static final String DWG_EXTENSION = ".dwg";
     private static final String DXF_EXTENSION = ".dxf";
@@ -51,11 +50,7 @@ public class OrderParser {
         put(14, "комментарий");
     }};
 
-    public Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parse(File orderExcelFile, Logger logger) throws Exception {
-        return parse(orderExcelFile, logger, true);
-    }
-
-    public Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parse(File orderExcelFile, Logger logger, boolean withFiles) throws Exception {
+    Pair<ObservableList<OrderRow>, ObservableList<FileRow>> parse(File orderExcelFile, Logger logger) throws Exception {
 
         ObservableList<OrderRow> result = FXCollections.observableArrayList();
 
@@ -163,10 +158,10 @@ public class OrderParser {
             logger.logError("Данные не найдены");
         }
 
-        return Pair.of(result, withFiles ? searchFiles(result, orderExcelFile) : FXCollections.emptyObservableList());
+        return Pair.of(result, searchFiles(result, orderExcelFile));
     }
 
-    private OrderRow createOrderRowFromExcelRow(Row excelRow) throws Exception {
+    private OrderRow createOrderRowFromExcelRow(Row excelRow) {
         final OrderRow orderRow = new OrderRow();
         for (Integer columnIndex : tableColumns.keySet()) {
             final Cell cell = excelRow.getCell(columnIndex);

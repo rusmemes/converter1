@@ -6,7 +6,7 @@ public class OrderParserException extends RuntimeException {
         super(info.toString());
     }
 
-    public OrderParserException(int pos, Object info) {
+    OrderParserException(int pos, Object info) {
         super("Строка " + pos + ": " + info.toString());
     }
 }

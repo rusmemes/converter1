@@ -1,41 +1,5 @@
 package ru.ewromet.converter3;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.xml.sax.SAXException;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
@@ -59,6 +23,18 @@ import javafx.scene.input.KeyCombination;
 import javafx.stage.FileChooser;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.xml.sax.SAXException;
 import ru.ewromet.Controller;
 import ru.ewromet.OrderRow;
 import ru.ewromet.OrderRowsFileUtil;
@@ -73,6 +49,28 @@ import ru.ewromet.converter2.parser.QuotationInfo;
 import ru.ewromet.converter2.parser.RadanAttributes;
 import ru.ewromet.converter2.parser.RadanCompoundDocument;
 import ru.ewromet.converter2.parser.SymFileParser;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -616,7 +614,6 @@ public class Controller3 extends Controller {
                     try {
                         material = cell.getStringCellValue();
                     } catch (Exception e) {
-                        e.printStackTrace();
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найден вид металла");
                         e.printStackTrace();
                         continue;
@@ -631,7 +628,6 @@ public class Controller3 extends Controller {
                     try {
                         materialBrand = cell.getStringCellValue();
                     } catch (Exception e) {
-                        e.printStackTrace();
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена марка металла");
                         e.printStackTrace();
                         continue;
@@ -646,7 +642,6 @@ public class Controller3 extends Controller {
                     try {
                         thinkness = cell.getNumericCellValue();
                     } catch (Exception e) {
-                        e.printStackTrace();
                         logError("В файле " + specFile + " на вкладке 'расчет' в строке таблицы #" + metallCellNum + " не найдена толщина металла");
                         e.printStackTrace();
                         continue;
@@ -1326,10 +1321,11 @@ public class Controller3 extends Controller {
 
         for (Triple<Double, String, String> triple : map.keySet()) {
             Set<CompoundAggregation> aggregationSet = map.get(triple);
-            double sum = roundByCeil(
+            double sum = round(
                     aggregationSet.stream()
                             .mapToDouble(CompoundAggregation::getSize)
-                            .sum()
+                            .sum(),
+                    4
             );
             aggregationSet.forEach(aggregation -> {
                 aggregation.setTotalConsumption(sum);
@@ -1354,8 +1350,8 @@ public class Controller3 extends Controller {
     }
 
     private void calcCompoundEditableCells(Compound compound) {
-        compound.setSk(roundByCeil(compound.getXr() / 1000D * compound.getYr() / 1000D));
-        compound.setSo(roundByCeil(compound.getN() * compound.getSk()));
+        compound.setSk(round(compound.getXr() / 1000D * compound.getYr() / 1000D, 4));
+        compound.setSo(round(compound.getN() * compound.getSk(), 4));
     }
 
     private void setXrYr(Compound compound) {
@@ -1372,7 +1368,7 @@ public class Controller3 extends Controller {
             // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
             int yMin = compound.getYmin();
             int ySt = compound.getYst();
-            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
+            compound.setYr(roundByCeil(yMin < ySt / 2D ? ySt / 2D : ySt));
 
             fixXrYrForMildSteelOrZintec(compound);
 
@@ -1386,7 +1382,7 @@ public class Controller3 extends Controller {
             // Если Ymin < (Yst/2), то Yr = Yst/2, иначе Yr = Yst
             int yMin = compound.getYmin();
             int ySt = compound.getYst();
-            compound.setYr(roundByCeil(yMin < ySt / 2 ? ySt / 2 : ySt));
+            compound.setYr(roundByCeil(yMin < ySt / 2D ? ySt / 2D : ySt));
 
             fixXrYrForMildSteelOrZintec(compound);
 
@@ -1420,7 +1416,7 @@ public class Controller3 extends Controller {
             // Если Xmin > или = 50% от Xst, то Xr = Xst, иначе Xr=Xmin*1,2
             int xMin = compound.getXmin();
             int xSt = compound.getXst();
-            compound.setXr(xMin >= xSt / 2 ? xSt : xMin * 1.2);
+            compound.setXr(xMin >= xSt / 2D ? xSt : xMin * 1.2);
 
             // Yr = Yst - всегда
             compound.setYr(compound.getYst());

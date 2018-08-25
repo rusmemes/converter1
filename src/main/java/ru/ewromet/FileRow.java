@@ -33,8 +33,8 @@ public class FileRow {
 
     @Override
     public int hashCode() {
-        int result = posNumber != null ? posNumber.hashCode() : 0;
-        result = 31 * result + (filePath != null ? filePath.hashCode() : 0);
+        int result = posNumber.hashCode();
+        result = 31 * result + filePath.hashCode();
         return result;
     }
 
@@ -49,10 +49,10 @@ public class FileRow {
 
         FileRow fileRow = (FileRow) o;
 
-        if (posNumber != null ? !posNumber.equals(fileRow.posNumber) : fileRow.posNumber != null) {
+        if (!posNumber.equals(fileRow.posNumber)) {
             return false;
         }
-        if (filePath != null ? !filePath.equals(fileRow.filePath) : fileRow.filePath != null) {
+        if (!filePath.equals(fileRow.filePath)) {
             return false;
         }
 
